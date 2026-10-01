@@ -18,7 +18,6 @@ import android.provider.Settings
 import android.text.InputType
 import android.view.Gravity
 import android.view.View
-import android.view.ViewGroup
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -161,19 +160,81 @@ class MainActivity : AppCompatActivity() {
 
     private fun showCreate() {
         stopCamera()
-        val c = column(); c.addView(title("QR Kod Oluştur")); c.addView(note("URL, metin, Wi‑Fi, telefon, e-posta veya kişi bilgisi oluşturun."))
+        val c = column()
+        c.addView(title("QR Kod Oluştur"))
+        c.addView(note("URL, metin, Wi‑Fi, telefon, e-posta veya kişi bilgisi için QR üretin; görseli kaydedin ya da paylaşın."))
+
         val types = arrayOf("URL","Metin","Wi-Fi","Telefon","E-posta","Kişi")
-        val spinner = Spinner(this).apply { adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, types) }
-        val main = input("İçerik"); val extra = input("Ek bilgi / şifre")
-        val image = ImageView(this).apply { adjustViewBounds=true; visibility=View.GONE; setBackgroundColor(Color.WHITE) }
-        c.addView(spinner, params(12,58)); c.addView(main, params(10,58)); c.addView(extra, params(10,58))
+        val spinner = Spinner(this).apply {
+            adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, types)
+        }
+        val main = input("Web adresi")
+        val extra = input("Ek bilgi").apply { visibility = View.GONE }
+        val image = ImageView(this).apply {
+            adjustViewBounds = true
+            visibility = View.GONE
+            setBackgroundColor(Color.WHITE)
+            setPadding(dp(14),dp(14),dp(14),dp(14))
+        }
+        val payloadPreview = note("").apply { visibility = View.GONE }
+        val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; visibility = View.GONE }
+        var generated: Bitmap? = null
+        var payload = ""
+
+        fun configureFields(position: Int) {
+            extra.text.clear()
+            when (types[position]) {
+                "URL" -> { main.hint = "Web adresi"; extra.visibility = View.GONE }
+                "Metin" -> { main.hint = "Metin"; extra.visibility = View.GONE }
+                "Wi-Fi" -> { main.hint = "Wi‑Fi adı (SSID)"; extra.hint = "Wi‑Fi şifresi"; extra.visibility = View.VISIBLE }
+                "Telefon" -> { main.hint = "Telefon numarası"; extra.visibility = View.GONE }
+                "E-posta" -> { main.hint = "E-posta adresi"; extra.visibility = View.GONE }
+                "Kişi" -> { main.hint = "Ad soyad"; extra.hint = "Telefon"; extra.visibility = View.VISIBLE }
+            }
+            generated = null
+            payload = ""
+            image.visibility = View.GONE
+            payloadPreview.visibility = View.GONE
+            actions.visibility = View.GONE
+        }
+
+        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) = configureFields(position)
+            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+        }
+
+        actions.addView(button("Paylaş", false) {
+            generated?.let { bmp -> runCatching { QrImageActions.share(this, bmp) }.onFailure { toast("QR paylaşılamadı") } }
+        }, LinearLayout.LayoutParams(0,dp(48),1f).apply { marginEnd=dp(8) })
+        actions.addView(button("Kaydet", false) {
+            generated?.let { bmp ->
+                runCatching { QrImageActions.save(this, bmp) }
+                    .onSuccess(::toast)
+                    .onFailure { toast("QR kaydedilemedi") }
+            }
+        }, LinearLayout.LayoutParams(0,dp(48),1f))
+
+        c.addView(spinner, params(12,58))
+        c.addView(main, params(10,58))
+        c.addView(extra, params(10,58))
         c.addView(button("QR Kod Oluştur") {
             val value = main.text.toString()
             if (value.isBlank()) main.error = "Bu alan gerekli" else {
-                val bmp: Bitmap = QrCodeUtil.create(QrPayloadBuilder.build(spinner.selectedItem.toString(), value, extra.text.toString()))
-                image.setImageBitmap(bmp); image.visibility=View.VISIBLE
+                payload = QrPayloadBuilder.build(spinner.selectedItem.toString(), value, extra.text.toString())
+                generated = QrCodeUtil.create(payload)
+                image.setImageBitmap(generated)
+                image.visibility = View.VISIBLE
+                payloadPreview.text = "Kod içeriği: $payload"
+                payloadPreview.visibility = View.VISIBLE
+                actions.visibility = View.VISIBLE
             }
-        }, params(12)); c.addView(image, LinearLayout.LayoutParams(-1, dp(340)).apply { topMargin=dp(14) })
+        }, params(12))
+        c.addView(image, LinearLayout.LayoutParams(-1, dp(340)).apply { topMargin=dp(14) })
+        c.addView(payloadPreview, LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(8) })
+        c.addView(actions, LinearLayout.LayoutParams(-1,dp(48)).apply { topMargin=dp(10) })
+        c.addView(button("İçeriği Kopyala", false) {
+            if (payload.isBlank()) toast("Önce QR kod oluşturun") else copy(payload)
+        }, params(10))
         put(scroll(c))
     }
 
