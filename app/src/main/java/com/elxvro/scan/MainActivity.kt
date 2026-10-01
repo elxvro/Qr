@@ -10,8 +10,11 @@ import android.content.res.ColorStateList
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.net.Uri
 import android.os.Bundle
+import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.provider.ContactsContract
@@ -43,11 +46,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var store: ScanStore
     private val scanner by lazy { BarcodeScanning.getClient() }
     private val executor = Executors.newSingleThreadExecutor()
+    private val deduplicator = ScanDeduplicator(1500L)
     private var provider: ProcessCameraProvider? = null
     private var camera: Camera? = null
+    private var tone: ToneGenerator? = null
     private var busy = false
     private var dialogOpen = false
     private var historyFilter = HistoryFilter.ALL
+    private var historyQuery = ""
+    private var newestFirst = true
 
     private val permission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { showScan() }
     private val gallery = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -58,11 +65,20 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         store = ScanStore(getSharedPreferences("elxvro_scan", MODE_PRIVATE))
         setContentView(shell())
-        nav.selectedItemId = SCAN
+        if (getSharedPreferences("elxvro_scan", MODE_PRIVATE).getBoolean("onboarding_seen", false)) {
+            nav.selectedItemId = SCAN
+        } else {
+            showOnboarding()
+        }
     }
 
     override fun onDestroy() {
-        provider?.unbindAll(); scanner.close(); executor.shutdown(); super.onDestroy()
+        provider?.unbindAll()
+        scanner.close()
+        executor.shutdown()
+        tone?.release()
+        tone = null
+        super.onDestroy()
     }
 
     private fun shell(): View {
@@ -76,7 +92,12 @@ class MainActivity : AppCompatActivity() {
             menu.add(0, HISTORY, 2, "Geçmiş").setIcon(android.R.drawable.ic_menu_recent_history)
             menu.add(0, SETTINGS, 3, "Ayarlar").setIcon(android.R.drawable.ic_menu_preferences)
             setOnItemSelectedListener {
-                when (it.itemId) { SCAN -> showScan(); CREATE -> showCreate(); HISTORY -> showHistory(); SETTINGS -> showSettings() }
+                when (it.itemId) {
+                    SCAN -> showScan()
+                    CREATE -> showCreate()
+                    HISTORY -> showHistory()
+                    SETTINGS -> showSettings()
+                }
                 true
             }
         }
@@ -84,12 +105,36 @@ class MainActivity : AppCompatActivity() {
         return root
     }
 
+    private fun showOnboarding() {
+        stopCamera()
+        nav.visibility = View.GONE
+        val c = column(Gravity.CENTER)
+        c.addView(ImageView(this).apply {
+            setImageResource(com.elxvro.scan.R.drawable.ic_launcher)
+            contentDescription = "ELXVRO Scan logosu"
+        }, LinearLayout.LayoutParams(dp(118), dp(118)).apply { gravity = Gravity.CENTER_HORIZONTAL })
+        c.addView(title("ELXVRO Scan").apply { gravity = Gravity.CENTER_HORIZONTAL }, params(18, 46))
+        c.addView(note("QR ve barkodları hızlıca tarayın, galeriden okuyun, kendi QR kodunuzu oluşturun ve geçmişinizi cihazınızda yönetin.").apply {
+            gravity = Gravity.CENTER_HORIZONTAL
+            textAlignment = View.TEXT_ALIGNMENT_CENTER
+        })
+        c.addView(note("• Tarama yerel çalışır\n• Kamera görüntüsü sunucuya yüklenmez\n• QR üretimi çevrimdışı yapılır\n• Geçmiş yalnızca cihazda saklanır"))
+        c.addView(button("Başla") {
+            getSharedPreferences("elxvro_scan", MODE_PRIVATE).edit().putBoolean("onboarding_seen", true).apply()
+            nav.visibility = View.VISIBLE
+            nav.selectedItemId = SCAN
+        }, params(18))
+        c.addView(button("Gizlilik Bilgisi", false) { showPrivacy() }, params(10))
+        put(scroll(c))
+    }
+
     private fun showScan() {
+        nav.visibility = View.VISIBLE
         stopCamera()
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             val box = column(Gravity.CENTER)
             box.addView(title("Kamera izni gerekli"))
-            box.addView(note("Canlı QR ve barkod taraması için kamera izni verin."))
+            box.addView(note("Canlı QR ve barkod taraması için kamera izni verin. İzin vermeden de galeriden kod okuyabilirsiniz."))
             box.addView(button("Kamera İzni Ver") { permission.launch(Manifest.permission.CAMERA) }, params(12))
             box.addView(button("Galeriden Oku", false) { gallery.launch("image/*") }, params(10))
             put(ScrollView(this).apply { addView(box) })
@@ -100,27 +145,44 @@ class MainActivity : AppCompatActivity() {
         root.addView(preview, FrameLayout.LayoutParams(-1, -1))
         root.addView(ScannerOverlayView(this), FrameLayout.LayoutParams(-1, -1))
         root.addView(TextView(this).apply {
-            text = "ELXVRO Scan\nQR veya barkodu çerçeveye getirin"; textSize = 18f; setTextColor(Color.WHITE)
-            setPadding(dp(18), dp(18), dp(18), dp(8)); setShadowLayer(8f, 0f, 2f, Color.BLACK)
+            text = "ELXVRO Scan\nQR veya barkodu çerçeveye getirin"
+            textSize = 18f
+            setTextColor(Color.WHITE)
+            setPadding(dp(18), dp(18), dp(18), dp(8))
+            setShadowLayer(8f, 0f, 2f, Color.BLACK)
         }, FrameLayout.LayoutParams(-1, dp(90), Gravity.TOP))
-        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(dp(14), dp(8), dp(14), dp(8)); background = rounded(Color.argb(190,7,17,31),18) }
-        row.addView(button("Galeri", false) { gallery.launch("image/*") }, LinearLayout.LayoutParams(0, dp(50), 1f).apply { marginEnd=dp(8) })
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(dp(14), dp(8), dp(14), dp(8))
+            background = rounded(Color.argb(190, 7, 17, 31), 18)
+        }
+        row.addView(button("Galeri", false) { gallery.launch("image/*") }, LinearLayout.LayoutParams(0, dp(50), 1f).apply { marginEnd = dp(8) })
         var torch = false
         row.addView(button("Fener", false) { v ->
-            if (camera?.cameraInfo?.hasFlashUnit() == true) { torch = !torch; camera?.cameraControl?.enableTorch(torch); (v as MaterialButton).text = if(torch) "Fener Açık" else "Fener" }
-            else toast("Flaş bulunamadı")
+            if (camera?.cameraInfo?.hasFlashUnit() == true) {
+                torch = !torch
+                camera?.cameraControl?.enableTorch(torch)
+                (v as MaterialButton).text = if (torch) "Fener Açık" else "Fener"
+            } else toast("Flaş bulunamadı")
         }, LinearLayout.LayoutParams(0, dp(50), 1f))
-        root.addView(row, FrameLayout.LayoutParams(-1, dp(68), Gravity.BOTTOM).apply { leftMargin=dp(18); rightMargin=dp(18); bottomMargin=dp(18) })
-        put(root); startCamera(preview)
+        root.addView(row, FrameLayout.LayoutParams(-1, dp(68), Gravity.BOTTOM).apply {
+            leftMargin = dp(18); rightMargin = dp(18); bottomMargin = dp(18)
+        })
+        put(root)
+        startCamera(preview)
     }
 
     private fun startCamera(view: PreviewView) {
         val future = ProcessCameraProvider.getInstance(this)
         future.addListener({
             runCatching {
-                val p = future.get(); provider = p; p.unbindAll()
+                val p = future.get()
+                provider = p
+                p.unbindAll()
                 val preview = Preview.Builder().build().also { it.setSurfaceProvider(view.surfaceProvider) }
-                val analysis = ImageAnalysis.Builder().setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build()
+                val analysis = ImageAnalysis.Builder()
+                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                    .build()
                 analysis.setAnalyzer(executor) { proxy -> analyze(proxy) }
                 camera = p.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, preview, analysis)
             }.onFailure { toast("Kamera başlatılamadı") }
@@ -133,32 +195,41 @@ class MainActivity : AppCompatActivity() {
         busy = true
         scanner.process(InputImage.fromMediaImage(media, proxy.imageInfo.rotationDegrees))
             .addOnSuccessListener { codes -> codes.firstOrNull()?.let(::found) }
-            .addOnCompleteListener { busy=false; proxy.close() }
+            .addOnCompleteListener { busy = false; proxy.close() }
     }
 
     private fun scanGallery(uri: Uri) {
         runCatching { InputImage.fromFilePath(this, uri) }.onSuccess { image ->
-            scanner.process(image).addOnSuccessListener { list -> list.firstOrNull()?.let(::found) ?: toast("Kod bulunamadı") }
+            scanner.process(image)
+                .addOnSuccessListener { list -> list.firstOrNull()?.let(::found) ?: toast("Kod bulunamadı") }
                 .addOnFailureListener { toast("Görsel okunamadı") }
         }.onFailure { toast("Görsel açılamadı") }
     }
 
     private fun found(code: Barcode) {
-        val raw = code.rawValue.orEmpty(); if (raw.isBlank() || dialogOpen) return
+        val raw = code.rawValue.orEmpty().trim()
+        if (raw.isBlank() || dialogOpen) return
+        if (!deduplicator.shouldAccept(raw, SystemClock.elapsedRealtime())) return
         runOnUiThread {
-            dialogOpen = true; vibrate()
+            if (dialogOpen) return@runOnUiThread
+            dialogOpen = true
+            playFeedback()
             val kind = if (code.format == Barcode.FORMAT_QR_CODE) "QR" else "Barkod"
             val format = format(code.format)
             val item = store.add(raw, format, kind)
             val smart = SmartActionResolver.resolve(raw, kind, semanticType(code.valueType))
-            val box = column().apply { setPadding(dp(22),dp(18),dp(22),dp(8)) }
+            val box = column().apply { setPadding(dp(22), dp(18), dp(22), dp(8)) }
             box.addView(title(type(code.valueType)))
             box.addView(note("$format\n$raw"))
+            box.addView(note("Yerel tarama • Sonuç cihazınızda işlendi"))
             AlertDialog.Builder(this).setView(box)
-                .setPositiveButton(smart.label) { _,_-> executeSmartAction(smart) }
-                .setNeutralButton("Kopyala") { _,_-> copy(raw) }
-                .setNegativeButton("Favori") { _,_-> store.toggleFavorite(item.id) }
-                .create().apply { setOnDismissListener { dialogOpen=false }; show() }
+                .setPositiveButton(smart.label) { _, _ -> executeSmartAction(smart) }
+                .setNeutralButton("Kopyala") { _, _ -> copy(raw) }
+                .setNegativeButton("Favori") { _, _ -> store.toggleFavorite(item.id) }
+                .create().apply {
+                    setOnDismissListener { dialogOpen = false }
+                    show()
+                }
         }
     }
 
@@ -168,7 +239,7 @@ class MainActivity : AppCompatActivity() {
         c.addView(title("QR Kod Oluştur"))
         c.addView(note("URL, metin, Wi‑Fi, telefon, e-posta veya kişi bilgisi için QR üretin; görseli kaydedin ya da paylaşın."))
 
-        val types = arrayOf("URL","Metin","Wi-Fi","Telefon","E-posta","Kişi")
+        val types = arrayOf("URL", "Metin", "Wi-Fi", "Telefon", "E-posta", "Kişi")
         val spinner = Spinner(this).apply {
             adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, types)
         }
@@ -178,7 +249,8 @@ class MainActivity : AppCompatActivity() {
             adjustViewBounds = true
             visibility = View.GONE
             setBackgroundColor(Color.WHITE)
-            setPadding(dp(14),dp(14),dp(14),dp(14))
+            setPadding(dp(14), dp(14), dp(14), dp(14))
+            contentDescription = "Oluşturulan QR kod"
         }
         val payloadPreview = note("").apply { visibility = View.GONE }
         val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; visibility = View.GONE }
@@ -209,18 +281,18 @@ class MainActivity : AppCompatActivity() {
 
         actions.addView(button("Paylaş", false) {
             generated?.let { bmp -> runCatching { QrImageActions.share(this, bmp) }.onFailure { toast("QR paylaşılamadı") } }
-        }, LinearLayout.LayoutParams(0,dp(48),1f).apply { marginEnd=dp(8) })
+        }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginEnd = dp(8) })
         actions.addView(button("Kaydet", false) {
             generated?.let { bmp ->
                 runCatching { QrImageActions.save(this, bmp) }
                     .onSuccess(::toast)
                     .onFailure { toast("QR kaydedilemedi") }
             }
-        }, LinearLayout.LayoutParams(0,dp(48),1f))
+        }, LinearLayout.LayoutParams(0, dp(48), 1f))
 
-        c.addView(spinner, params(12,58))
-        c.addView(main, params(10,58))
-        c.addView(extra, params(10,58))
+        c.addView(spinner, params(12, 58))
+        c.addView(main, params(10, 58))
+        c.addView(extra, params(10, 58))
         c.addView(button("QR Kod Oluştur") {
             val value = main.text.toString()
             if (value.isBlank()) main.error = "Bu alan gerekli" else {
@@ -233,9 +305,9 @@ class MainActivity : AppCompatActivity() {
                 actions.visibility = View.VISIBLE
             }
         }, params(12))
-        c.addView(image, LinearLayout.LayoutParams(-1, dp(340)).apply { topMargin=dp(14) })
-        c.addView(payloadPreview, LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(8) })
-        c.addView(actions, LinearLayout.LayoutParams(-1,dp(48)).apply { topMargin=dp(10) })
+        c.addView(image, LinearLayout.LayoutParams(-1, dp(340)).apply { topMargin = dp(14) })
+        c.addView(payloadPreview, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        c.addView(actions, LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(10) })
         c.addView(button("İçeriği Kopyala", false) {
             if (payload.isBlank()) toast("Önce QR kod oluşturun") else copy(payload)
         }, params(10))
@@ -247,7 +319,20 @@ class MainActivity : AppCompatActivity() {
         stopCamera()
         val c = column()
         c.addView(title("Geçmiş ve Favoriler"))
-        c.addView(note("Taradığınız kodları yönetin, favorileyin veya tek tek silin."))
+        c.addView(note("Kayıtları arayın, filtreleyin, sıralayın, favorileyin veya silin."))
+
+        val search = input("Ara: içerik, tür veya format").apply { setText(historyQuery) }
+        c.addView(search, params(12, 54))
+        val searchActions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        searchActions.addView(button("Ara") {
+            historyQuery = search.text.toString().trim()
+            showHistory(historyFilter)
+        }, LinearLayout.LayoutParams(0, dp(46), 1f).apply { marginEnd = dp(6) })
+        searchActions.addView(button("Temizle", false) {
+            historyQuery = ""
+            showHistory(historyFilter)
+        }, LinearLayout.LayoutParams(0, dp(46), 1f))
+        c.addView(searchActions, params(8, 46))
 
         val tabs = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         listOf(
@@ -261,34 +346,40 @@ class MainActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams(0, dp(44), 1f).apply { if (index > 0) marginStart = dp(6) }
             )
         }
-        c.addView(tabs, params(12,44))
+        c.addView(tabs, params(10, 44))
+        c.addView(button(if (newestFirst) "Sıralama: Yeni → Eski" else "Sıralama: Eski → Yeni", false) {
+            newestFirst = !newestFirst
+            showHistory(historyFilter)
+        }, params(8, 44))
 
         val all = store.list()
-        val visible = HistoryLogic.filter(all, historyFilter)
-        c.addView(note("${visible.size} kayıt • ${all.count { it.favorite }} favori"))
+        val visible = HistoryLogic.searchAndFilter(all, historyFilter, historyQuery, newestFirst)
+        c.addView(note("${visible.size} kayıt • ${all.count { it.favorite }} favori${if (historyQuery.isNotBlank()) " • Arama: $historyQuery" else ""}"))
 
         if (visible.isEmpty()) {
-            c.addView(note(if (historyFilter == HistoryFilter.FAVORITES) "Henüz favori kayıt yok." else "Bu bölümde kayıt yok."))
+            c.addView(note(if (historyQuery.isNotBlank()) "Aramanızla eşleşen kayıt yok." else if (historyFilter == HistoryFilter.FAVORITES) "Henüz favori kayıt yok." else "Bu bölümde kayıt yok."))
         } else visible.forEach { item ->
             val smart = SmartActionResolver.resolve(item.value, item.kind)
             val card = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
-                setPadding(dp(14),dp(12),dp(14),dp(12))
-                background = rounded(surface(),14)
+                setPadding(dp(14), dp(12), dp(14), dp(12))
+                background = rounded(surface(), 14)
             }
             card.addView(TextView(this).apply {
-                text = "${if(item.favorite) "★ " else ""}${item.kind} • ${item.format}\n${item.value}\n${SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date(item.time))}"
-                textSize=15f; setTextColor(fg()); setTextIsSelectable(true)
+                text = "${if (item.favorite) "★ " else ""}${item.kind} • ${item.format}\n${item.value}\n${SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date(item.time))}"
+                textSize = 15f
+                setTextColor(fg())
+                setTextIsSelectable(true)
                 setOnClickListener { executeSmartAction(smart) }
             })
-            val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0,dp(10),0,0) }
-            actions.addView(button(if(item.favorite) "★ Favori" else "☆ Favori", false) {
+            val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(10), 0, 0) }
+            actions.addView(button(if (item.favorite) "★ Favori" else "☆ Favori", false) {
                 store.toggleFavorite(item.id); showHistory(historyFilter)
-            }, LinearLayout.LayoutParams(0,dp(42),1f).apply { marginEnd=dp(6) })
-            actions.addView(button(smart.label, false) { executeSmartAction(smart) }, LinearLayout.LayoutParams(0,dp(42),1f).apply { marginEnd=dp(6) })
-            actions.addView(button("Sil", false) { confirmDelete(item) }, LinearLayout.LayoutParams(0,dp(42),1f))
+            }, LinearLayout.LayoutParams(0, dp(42), 1f).apply { marginEnd = dp(6) })
+            actions.addView(button(smart.label, false) { executeSmartAction(smart) }, LinearLayout.LayoutParams(0, dp(42), 1f).apply { marginEnd = dp(6) })
+            actions.addView(button("Sil", false) { confirmDelete(item) }, LinearLayout.LayoutParams(0, dp(42), 1f))
             card.addView(actions)
-            c.addView(card, LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(9) })
+            c.addView(card, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(9) })
         }
         put(scroll(c))
     }
@@ -303,21 +394,63 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showSettings() {
-        stopCamera(); val prefs=getSharedPreferences("elxvro_scan",MODE_PRIVATE); val c=column(); c.addView(title("Ayarlar"))
-        c.addView(switchRow("Titreşim","Tarama sonrası titreşim",prefs.getBoolean("vibrate",true)) { prefs.edit().putBoolean("vibrate",it).apply() }, params(12,68))
-        c.addView(switchRow("Koyu tema","Uygulama renklerini değiştir",prefs.getBoolean("dark",true)) { prefs.edit().putBoolean("dark",it).apply(); recreate() }, params(10,68))
-        c.addView(button("Geçmişi Temizle", false) { store.clear(); toast("Geçmiş temizlendi") }, params(12))
+        stopCamera()
+        val prefs = getSharedPreferences("elxvro_scan", MODE_PRIVATE)
+        val c = column()
+        c.addView(title("Ayarlar"))
+        c.addView(note("ELXVRO Scan 1.0.0"))
+        c.addView(switchRow("Tarama sesi", "Kod bulunduğunda kısa ses çal", prefs.getBoolean("sound", true)) {
+            prefs.edit().putBoolean("sound", it).apply()
+        }, params(12, 68))
+        c.addView(switchRow("Titreşim", "Tarama sonrası kısa titreşim", prefs.getBoolean("vibrate", true)) {
+            prefs.edit().putBoolean("vibrate", it).apply()
+        }, params(10, 68))
+        c.addView(switchRow("Koyu tema", "Uygulama renklerini değiştir", prefs.getBoolean("dark", true)) {
+            prefs.edit().putBoolean("dark", it).apply(); recreate()
+        }, params(10, 68))
+        c.addView(note("Gizlilik: Kamera kareleri ve tarama geçmişi sunucuya gönderilmez. Temel tarama ve QR oluşturma internet olmadan çalışır."))
+        c.addView(button("Gizlilik ve Veri Kullanımı", false) { showPrivacy() }, params(12))
+        c.addView(button("Geçmişi Temizle", false) {
+            AlertDialog.Builder(this)
+                .setTitle("Geçmişi temizle")
+                .setMessage("Tüm tarama geçmişi ve favoriler silinsin mi?")
+                .setPositiveButton("Temizle") { _, _ -> store.clear(); toast("Geçmiş temizlendi") }
+                .setNegativeButton("Vazgeç", null)
+                .show()
+        }, params(10))
+        c.addView(button("Tanıtımı Tekrar Göster", false) {
+            prefs.edit().putBoolean("onboarding_seen", false).apply()
+            showOnboarding()
+        }, params(10))
         c.addView(button("Wi‑Fi Ayarları", false) { startActivity(Intent(Settings.ACTION_WIFI_SETTINGS)) }, params(10))
         put(scroll(c))
     }
 
-    private fun switchRow(a:String,b:String,checked:Boolean,on:(Boolean)->Unit):View {
-        val r=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL; setPadding(dp(14),dp(8),dp(12),dp(8)); background=rounded(surface(),14) }
-        val t=TextView(this).apply { text="$a\n$b"; textSize=14f; setTextColor(fg()) }; r.addView(t,LinearLayout.LayoutParams(0,-2,1f))
-        r.addView(SwitchMaterial(this).apply { isChecked=checked; setOnCheckedChangeListener { _,v->on(v) } }); return r
+    private fun showPrivacy() {
+        AlertDialog.Builder(this)
+            .setTitle("Gizlilik ve Veri Kullanımı")
+            .setMessage(
+                "ELXVRO Scan, QR ve barkod taramasını cihaz üzerinde gerçekleştirir. Kamera görüntüleri bir sunucuya yüklenmez. " +
+                    "Tarama geçmişi ve favoriler yalnızca uygulamanın yerel verisinde tutulur. QR kod oluşturma işlemi de cihaz üzerinde yapılır. " +
+                    "Web sitesi, harita, e-posta veya ürün arama gibi akıllı işlemleri seçtiğinizde ilgili harici uygulama açılır. " +
+                    "Geçmişinizi Ayarlar bölümünden istediğiniz zaman temizleyebilirsiniz."
+            )
+            .setPositiveButton("Tamam", null)
+            .show()
     }
 
-    private fun open(value:String, kind:String) = executeSmartAction(SmartActionResolver.resolve(value, kind))
+    private fun switchRow(a: String, b: String, checked: Boolean, on: (Boolean) -> Unit): View {
+        val r = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(14), dp(8), dp(12), dp(8))
+            background = rounded(surface(), 14)
+        }
+        val t = TextView(this).apply { text = "$a\n$b"; textSize = 14f; setTextColor(fg()) }
+        r.addView(t, LinearLayout.LayoutParams(0, -2, 1f))
+        r.addView(SwitchMaterial(this).apply { isChecked = checked; setOnCheckedChangeListener { _, v -> on(v) } })
+        return r
+    }
 
     private fun executeSmartAction(action: SmartAction) {
         runCatching {
@@ -357,42 +490,115 @@ class MainActivity : AppCompatActivity() {
         return pattern.find(raw)?.groupValues?.getOrNull(1)?.trim()?.takeIf { it.isNotBlank() }
     }
 
-    private fun copy(v:String){ (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("ELXVRO Scan",v)); toast("Kopyalandı") }
-    private fun share(v:String){ startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type="text/plain"; putExtra(Intent.EXTRA_TEXT,v) },"Paylaş")) }
-    private fun vibrate(){ if(getSharedPreferences("elxvro_scan",MODE_PRIVATE).getBoolean("vibrate",true)){ val v=getSystemService(Context.VIBRATOR_SERVICE) as Vibrator; if(android.os.Build.VERSION.SDK_INT>=26)v.vibrate(VibrationEffect.createOneShot(60,VibrationEffect.DEFAULT_AMPLITUDE)) else @Suppress("DEPRECATION") v.vibrate(60) } }
-    private fun stopCamera(){ provider?.unbindAll(); camera=null }
-
-    private fun semanticType(t:Int)=when(t){
-        Barcode.TYPE_URL->"URL"
-        Barcode.TYPE_PHONE->"PHONE"
-        Barcode.TYPE_EMAIL->"EMAIL"
-        Barcode.TYPE_WIFI->"WIFI"
-        Barcode.TYPE_SMS->"SMS"
-        Barcode.TYPE_GEO->"GEO"
-        Barcode.TYPE_CONTACT_INFO->"CONTACT"
-        Barcode.TYPE_PRODUCT, Barcode.TYPE_ISBN->"PRODUCT"
-        else->"TEXT"
+    private fun playFeedback() {
+        val prefs = getSharedPreferences("elxvro_scan", MODE_PRIVATE)
+        if (prefs.getBoolean("sound", true)) {
+            if (tone == null) tone = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 65)
+            tone?.startTone(ToneGenerator.TONE_PROP_BEEP, 80)
+        }
+        if (prefs.getBoolean("vibrate", true)) {
+            val vibrator = getSystemService(Vibrator::class.java)
+            if (android.os.Build.VERSION.SDK_INT >= 26) {
+                vibrator?.vibrate(VibrationEffect.createOneShot(55, VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator?.vibrate(55)
+            }
+        }
     }
 
-    private fun format(f:Int)=when(f){ Barcode.FORMAT_QR_CODE->"QR Code"; Barcode.FORMAT_EAN_13->"EAN-13"; Barcode.FORMAT_EAN_8->"EAN-8"; Barcode.FORMAT_UPC_A->"UPC-A"; Barcode.FORMAT_UPC_E->"UPC-E"; Barcode.FORMAT_CODE_128->"Code 128"; Barcode.FORMAT_CODE_39->"Code 39"; Barcode.FORMAT_DATA_MATRIX->"Data Matrix"; Barcode.FORMAT_PDF417->"PDF417"; Barcode.FORMAT_AZTEC->"Aztec"; else->"Barkod" }
-    private fun type(t:Int)=when(t){ Barcode.TYPE_URL->"Web Sitesi"; Barcode.TYPE_PHONE->"Telefon"; Barcode.TYPE_EMAIL->"E-posta"; Barcode.TYPE_WIFI->"Wi‑Fi"; Barcode.TYPE_SMS->"SMS"; Barcode.TYPE_GEO->"Konum"; Barcode.TYPE_CONTACT_INFO->"Kişi"; Barcode.TYPE_PRODUCT, Barcode.TYPE_ISBN->"Ürün Barkodu"; else->"Tarama Sonucu" }
+    private fun copy(v: String) {
+        (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
+            .setPrimaryClip(ClipData.newPlainText("ELXVRO Scan", v))
+        toast("Kopyalandı")
+    }
 
-    private fun put(v:View){ content.removeAllViews(); content.addView(v,FrameLayout.LayoutParams(-1,-1)) }
-    private fun scroll(v:View)=ScrollView(this).apply { setBackgroundColor(bg()); addView(v) }
-    private fun column(gravityValue:Int=Gravity.TOP)=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; gravity=gravityValue; setPadding(dp(18),dp(18),dp(18),dp(24)); setBackgroundColor(bg()) }
-    private fun title(s:String)=TextView(this).apply { text=s; textSize=24f; setTextColor(fg()) }
-    private fun note(s:String)=TextView(this).apply { text=s; textSize=14f; setTextColor(muted()); setPadding(0,dp(6),0,dp(6)); setTextIsSelectable(true) }
-    private fun input(h:String)=EditText(this).apply { hint=h; setTextColor(fg()); setHintTextColor(muted()); inputType=InputType.TYPE_CLASS_TEXT; isSingleLine=true; setPadding(dp(14),dp(8),dp(14),dp(8)); background=rounded(surface(),14) }
-    private fun button(s:String,primary:Boolean=true,click:(View)->Unit)=MaterialButton(this).apply { text=s; isAllCaps=false; cornerRadius=dp(14); setTextColor(if(primary) Color.WHITE else fg()); backgroundTintList=ColorStateList.valueOf(if(primary) Color.rgb(22,140,255) else surface()); setOnClickListener { click(it) } }
-    private fun params(top:Int=0,height:Int=52)=LinearLayout.LayoutParams(-1,dp(height)).apply { topMargin=dp(top) }
-    private fun rounded(c:Int,r:Int)=GradientDrawable().apply { shape=GradientDrawable.RECTANGLE; setColor(c); cornerRadius=dp(r).toFloat() }
-    private fun dark()=getSharedPreferences("elxvro_scan",MODE_PRIVATE).getBoolean("dark",true)
-    private fun bg()=if(dark()) Color.rgb(7,17,31) else Color.rgb(245,248,252)
-    private fun surface()=if(dark()) Color.rgb(17,31,49) else Color.WHITE
-    private fun fg()=if(dark()) Color.WHITE else Color.rgb(20,30,43)
-    private fun muted()=if(dark()) Color.rgb(176,190,207) else Color.rgb(90,104,120)
-    private fun dp(v:Int)=(v*resources.displayMetrics.density).toInt()
-    private fun toast(s:String)=Toast.makeText(this,s,Toast.LENGTH_SHORT).show()
+    private fun share(v: String) {
+        startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, v)
+        }, "Paylaş"))
+    }
 
-    companion object { const val SCAN=1; const val CREATE=2; const val HISTORY=3; const val SETTINGS=4 }
+    private fun stopCamera() { provider?.unbindAll(); camera = null }
+
+    private fun semanticType(t: Int) = when (t) {
+        Barcode.TYPE_URL -> "URL"
+        Barcode.TYPE_PHONE -> "PHONE"
+        Barcode.TYPE_EMAIL -> "EMAIL"
+        Barcode.TYPE_WIFI -> "WIFI"
+        Barcode.TYPE_SMS -> "SMS"
+        Barcode.TYPE_GEO -> "GEO"
+        Barcode.TYPE_CONTACT_INFO -> "CONTACT"
+        Barcode.TYPE_PRODUCT, Barcode.TYPE_ISBN -> "PRODUCT"
+        else -> "TEXT"
+    }
+
+    private fun format(f: Int) = when (f) {
+        Barcode.FORMAT_QR_CODE -> "QR Code"
+        Barcode.FORMAT_EAN_13 -> "EAN-13"
+        Barcode.FORMAT_EAN_8 -> "EAN-8"
+        Barcode.FORMAT_UPC_A -> "UPC-A"
+        Barcode.FORMAT_UPC_E -> "UPC-E"
+        Barcode.FORMAT_CODE_128 -> "Code 128"
+        Barcode.FORMAT_CODE_39 -> "Code 39"
+        Barcode.FORMAT_DATA_MATRIX -> "Data Matrix"
+        Barcode.FORMAT_PDF417 -> "PDF417"
+        Barcode.FORMAT_AZTEC -> "Aztec"
+        Barcode.FORMAT_ITF -> "ITF"
+        Barcode.FORMAT_CODABAR -> "Codabar"
+        else -> "Barkod"
+    }
+
+    private fun type(t: Int) = when (t) {
+        Barcode.TYPE_URL -> "Web Sitesi"
+        Barcode.TYPE_PHONE -> "Telefon"
+        Barcode.TYPE_EMAIL -> "E-posta"
+        Barcode.TYPE_WIFI -> "Wi‑Fi"
+        Barcode.TYPE_SMS -> "SMS"
+        Barcode.TYPE_GEO -> "Konum"
+        Barcode.TYPE_CONTACT_INFO -> "Kişi"
+        Barcode.TYPE_PRODUCT, Barcode.TYPE_ISBN -> "Ürün Barkodu"
+        else -> "Tarama Sonucu"
+    }
+
+    private fun put(v: View) { content.removeAllViews(); content.addView(v, FrameLayout.LayoutParams(-1, -1)) }
+    private fun scroll(v: View) = ScrollView(this).apply { setBackgroundColor(bg()); addView(v) }
+    private fun column(gravityValue: Int = Gravity.TOP) = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        gravity = gravityValue
+        setPadding(dp(18), dp(18), dp(18), dp(24))
+        setBackgroundColor(bg())
+    }
+    private fun title(s: String) = TextView(this).apply { text = s; textSize = 24f; setTextColor(fg()) }
+    private fun note(s: String) = TextView(this).apply {
+        text = s; textSize = 14f; setTextColor(muted()); setPadding(0, dp(6), 0, dp(6)); setTextIsSelectable(true)
+    }
+    private fun input(h: String) = EditText(this).apply {
+        hint = h; setTextColor(fg()); setHintTextColor(muted()); inputType = InputType.TYPE_CLASS_TEXT; isSingleLine = true
+        setPadding(dp(14), dp(8), dp(14), dp(8)); background = rounded(surface(), 14)
+    }
+    private fun button(s: String, primary: Boolean = true, click: (View) -> Unit) = MaterialButton(this).apply {
+        text = s; isAllCaps = false; cornerRadius = dp(14); setTextColor(if (primary) Color.WHITE else fg())
+        backgroundTintList = ColorStateList.valueOf(if (primary) Color.rgb(22, 140, 255) else surface())
+        setOnClickListener { click(it) }
+    }
+    private fun params(top: Int = 0, height: Int = 52) = LinearLayout.LayoutParams(-1, dp(height)).apply { topMargin = dp(top) }
+    private fun rounded(c: Int, r: Int) = GradientDrawable().apply {
+        shape = GradientDrawable.RECTANGLE; setColor(c); cornerRadius = dp(r).toFloat()
+    }
+    private fun dark() = getSharedPreferences("elxvro_scan", MODE_PRIVATE).getBoolean("dark", true)
+    private fun bg() = if (dark()) Color.rgb(7, 17, 31) else Color.rgb(245, 248, 252)
+    private fun surface() = if (dark()) Color.rgb(17, 31, 49) else Color.WHITE
+    private fun fg() = if (dark()) Color.WHITE else Color.rgb(20, 30, 43)
+    private fun muted() = if (dark()) Color.rgb(176, 190, 207) else Color.rgb(90, 104, 120)
+    private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+    private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_SHORT).show()
+
+    companion object {
+        const val SCAN = 1
+        const val CREATE = 2
+        const val HISTORY = 3
+        const val SETTINGS = 4
+    }
 }
