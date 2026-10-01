@@ -14,6 +14,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.provider.ContactsContract
 import android.provider.Settings
 import android.text.InputType
 import android.view.Gravity
@@ -147,11 +148,14 @@ class MainActivity : AppCompatActivity() {
         runOnUiThread {
             dialogOpen = true; vibrate()
             val kind = if (code.format == Barcode.FORMAT_QR_CODE) "QR" else "Barkod"
-            val format = format(code.format); val item = store.add(raw, format, kind)
+            val format = format(code.format)
+            val item = store.add(raw, format, kind)
+            val smart = SmartActionResolver.resolve(raw, kind, semanticType(code.valueType))
             val box = column().apply { setPadding(dp(22),dp(18),dp(22),dp(8)) }
-            box.addView(title(type(code.valueType))); box.addView(note("$format\n$raw"))
+            box.addView(title(type(code.valueType)))
+            box.addView(note("$format\n$raw"))
             AlertDialog.Builder(this).setView(box)
-                .setPositiveButton(if(kind=="Barkod") "Web'de Ara" else "Aç") { _,_-> open(raw, kind) }
+                .setPositiveButton(smart.label) { _,_-> executeSmartAction(smart) }
                 .setNeutralButton("Kopyala") { _,_-> copy(raw) }
                 .setNegativeButton("Favori") { _,_-> store.toggleFavorite(item.id) }
                 .create().apply { setOnDismissListener { dialogOpen=false }; show() }
@@ -266,6 +270,7 @@ class MainActivity : AppCompatActivity() {
         if (visible.isEmpty()) {
             c.addView(note(if (historyFilter == HistoryFilter.FAVORITES) "Henüz favori kayıt yok." else "Bu bölümde kayıt yok."))
         } else visible.forEach { item ->
+            val smart = SmartActionResolver.resolve(item.value, item.kind)
             val card = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 setPadding(dp(14),dp(12),dp(14),dp(12))
@@ -274,13 +279,13 @@ class MainActivity : AppCompatActivity() {
             card.addView(TextView(this).apply {
                 text = "${if(item.favorite) "★ " else ""}${item.kind} • ${item.format}\n${item.value}\n${SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date(item.time))}"
                 textSize=15f; setTextColor(fg()); setTextIsSelectable(true)
-                setOnClickListener { open(item.value,item.kind) }
+                setOnClickListener { executeSmartAction(smart) }
             })
             val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0,dp(10),0,0) }
             actions.addView(button(if(item.favorite) "★ Favori" else "☆ Favori", false) {
                 store.toggleFavorite(item.id); showHistory(historyFilter)
             }, LinearLayout.LayoutParams(0,dp(42),1f).apply { marginEnd=dp(6) })
-            actions.addView(button("Aç", false) { open(item.value,item.kind) }, LinearLayout.LayoutParams(0,dp(42),1f).apply { marginEnd=dp(6) })
+            actions.addView(button(smart.label, false) { executeSmartAction(smart) }, LinearLayout.LayoutParams(0,dp(42),1f).apply { marginEnd=dp(6) })
             actions.addView(button("Sil", false) { confirmDelete(item) }, LinearLayout.LayoutParams(0,dp(42),1f))
             card.addView(actions)
             c.addView(card, LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(9) })
@@ -312,24 +317,65 @@ class MainActivity : AppCompatActivity() {
         r.addView(SwitchMaterial(this).apply { isChecked=checked; setOnCheckedChangeListener { _,v->on(v) } }); return r
     }
 
-    private fun open(value:String,kind:String) = runCatching {
-        when {
-            value.startsWith("http://",true)||value.startsWith("https://",true) -> startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(value)))
-            value.startsWith("tel:",true) -> startActivity(Intent(Intent.ACTION_DIAL,Uri.parse(value)))
-            value.startsWith("mailto:",true) -> startActivity(Intent(Intent.ACTION_SENDTO,Uri.parse(value)))
-            value.startsWith("WIFI:",true) -> startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
-            kind=="Barkod" -> startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://www.google.com/search?q=${Uri.encode(value)}")))
-            else -> share(value)
+    private fun open(value:String, kind:String) = executeSmartAction(SmartActionResolver.resolve(value, kind))
+
+    private fun executeSmartAction(action: SmartAction) {
+        runCatching {
+            when (action.type) {
+                SmartActionType.OPEN_URL -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(action.value)))
+                SmartActionType.DIAL -> startActivity(Intent(Intent.ACTION_DIAL, Uri.parse(action.value)))
+                SmartActionType.EMAIL -> startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse(action.value)))
+                SmartActionType.SMS -> startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse(action.value)))
+                SmartActionType.MAP -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(action.value)))
+                SmartActionType.WIFI -> startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
+                SmartActionType.CONTACT -> insertContact(action.value)
+                SmartActionType.SEARCH_PRODUCT -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=${Uri.encode(action.value)}")))
+                SmartActionType.SHARE_TEXT -> share(action.value)
+            }
+        }.onFailure { toast("İşlem açılamadı") }
+    }
+
+    private fun insertContact(raw: String) {
+        val name = contactField(raw, "FN") ?: contactField(raw, "N")
+        val phone = contactField(raw, "TEL")
+        val email = contactField(raw, "EMAIL")
+        if (name.isNullOrBlank() && phone.isNullOrBlank() && email.isNullOrBlank()) {
+            share(raw)
+            return
         }
-    }.onFailure { toast("İşlem açılamadı") }.let { Unit }
+        startActivity(Intent(Intent.ACTION_INSERT, ContactsContract.Contacts.CONTENT_URI).apply {
+            name?.takeIf { it.isNotBlank() }?.let { putExtra(ContactsContract.Intents.Insert.NAME, it) }
+            phone?.takeIf { it.isNotBlank() }?.let { putExtra(ContactsContract.Intents.Insert.PHONE, it) }
+            email?.takeIf { it.isNotBlank() }?.let { putExtra(ContactsContract.Intents.Insert.EMAIL, it) }
+        })
+    }
+
+    private fun contactField(raw: String, key: String): String? {
+        raw.lineSequence().firstOrNull { it.startsWith("$key:", true) }
+            ?.substringAfter(':')?.trim()?.takeIf { it.isNotBlank() }?.let { return it }
+        val pattern = Regex("(?:^|;)${Regex.escape(key)}:([^;]+)", RegexOption.IGNORE_CASE)
+        return pattern.find(raw)?.groupValues?.getOrNull(1)?.trim()?.takeIf { it.isNotBlank() }
+    }
 
     private fun copy(v:String){ (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("ELXVRO Scan",v)); toast("Kopyalandı") }
     private fun share(v:String){ startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type="text/plain"; putExtra(Intent.EXTRA_TEXT,v) },"Paylaş")) }
     private fun vibrate(){ if(getSharedPreferences("elxvro_scan",MODE_PRIVATE).getBoolean("vibrate",true)){ val v=getSystemService(Context.VIBRATOR_SERVICE) as Vibrator; if(android.os.Build.VERSION.SDK_INT>=26)v.vibrate(VibrationEffect.createOneShot(60,VibrationEffect.DEFAULT_AMPLITUDE)) else @Suppress("DEPRECATION") v.vibrate(60) } }
     private fun stopCamera(){ provider?.unbindAll(); camera=null }
 
+    private fun semanticType(t:Int)=when(t){
+        Barcode.TYPE_URL->"URL"
+        Barcode.TYPE_PHONE->"PHONE"
+        Barcode.TYPE_EMAIL->"EMAIL"
+        Barcode.TYPE_WIFI->"WIFI"
+        Barcode.TYPE_SMS->"SMS"
+        Barcode.TYPE_GEO->"GEO"
+        Barcode.TYPE_CONTACT_INFO->"CONTACT"
+        Barcode.TYPE_PRODUCT, Barcode.TYPE_ISBN->"PRODUCT"
+        else->"TEXT"
+    }
+
     private fun format(f:Int)=when(f){ Barcode.FORMAT_QR_CODE->"QR Code"; Barcode.FORMAT_EAN_13->"EAN-13"; Barcode.FORMAT_EAN_8->"EAN-8"; Barcode.FORMAT_UPC_A->"UPC-A"; Barcode.FORMAT_UPC_E->"UPC-E"; Barcode.FORMAT_CODE_128->"Code 128"; Barcode.FORMAT_CODE_39->"Code 39"; Barcode.FORMAT_DATA_MATRIX->"Data Matrix"; Barcode.FORMAT_PDF417->"PDF417"; Barcode.FORMAT_AZTEC->"Aztec"; else->"Barkod" }
-    private fun type(t:Int)=when(t){ Barcode.TYPE_URL->"Web Sitesi"; Barcode.TYPE_PHONE->"Telefon"; Barcode.TYPE_EMAIL->"E-posta"; Barcode.TYPE_WIFI->"Wi‑Fi"; Barcode.TYPE_SMS->"SMS"; Barcode.TYPE_GEO->"Konum"; Barcode.TYPE_CONTACT_INFO->"Kişi"; Barcode.TYPE_PRODUCT->"Ürün Barkodu"; else->"Tarama Sonucu" }
+    private fun type(t:Int)=when(t){ Barcode.TYPE_URL->"Web Sitesi"; Barcode.TYPE_PHONE->"Telefon"; Barcode.TYPE_EMAIL->"E-posta"; Barcode.TYPE_WIFI->"Wi‑Fi"; Barcode.TYPE_SMS->"SMS"; Barcode.TYPE_GEO->"Konum"; Barcode.TYPE_CONTACT_INFO->"Kişi"; Barcode.TYPE_PRODUCT, Barcode.TYPE_ISBN->"Ürün Barkodu"; else->"Tarama Sonucu" }
 
     private fun put(v:View){ content.removeAllViews(); content.addView(v,FrameLayout.LayoutParams(-1,-1)) }
     private fun scroll(v:View)=ScrollView(this).apply { setBackgroundColor(bg()); addView(v) }
