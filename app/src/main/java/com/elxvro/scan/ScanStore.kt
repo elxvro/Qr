@@ -44,10 +44,11 @@ class ScanStore(private val prefs: SharedPreferences) {
     }
 
     fun toggleFavorite(id: String) {
-        val items = list().map {
-            if (it.id == id) it.copy(favorite = !it.favorite) else it
-        }
-        save(items)
+        save(HistoryLogic.toggleFavorite(list(), id))
+    }
+
+    fun delete(id: String) {
+        save(HistoryLogic.delete(list(), id))
     }
 
     fun clear() = prefs.edit().remove(key).apply()

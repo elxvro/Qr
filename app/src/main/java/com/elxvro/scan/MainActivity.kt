@@ -47,6 +47,7 @@ class MainActivity : AppCompatActivity() {
     private var camera: Camera? = null
     private var busy = false
     private var dialogOpen = false
+    private var historyFilter = HistoryFilter.ALL
 
     private val permission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { showScan() }
     private val gallery = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -176,18 +177,63 @@ class MainActivity : AppCompatActivity() {
         put(scroll(c))
     }
 
-    private fun showHistory() {
-        stopCamera(); val c = column(); c.addView(title("Geçmiş"));
+    private fun showHistory(filter: HistoryFilter = historyFilter) {
+        historyFilter = filter
+        stopCamera()
+        val c = column()
+        c.addView(title("Geçmiş ve Favoriler"))
+        c.addView(note("Taradığınız kodları yönetin, favorileyin veya tek tek silin."))
+
+        val tabs = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        listOf(
+            "Tümü" to HistoryFilter.ALL,
+            "Favori" to HistoryFilter.FAVORITES,
+            "QR" to HistoryFilter.QR,
+            "Barkod" to HistoryFilter.BARCODE
+        ).forEachIndexed { index, pair ->
+            tabs.addView(
+                button(pair.first, pair.second == historyFilter) { showHistory(pair.second) },
+                LinearLayout.LayoutParams(0, dp(44), 1f).apply { if (index > 0) marginStart = dp(6) }
+            )
+        }
+        c.addView(tabs, params(12,44))
+
         val all = store.list()
-        if (all.isEmpty()) c.addView(note("Henüz tarama yok.")) else all.forEach { item ->
-            val row = TextView(this).apply {
-                text = "${if(item.favorite) "★ " else ""}${item.kind} • ${item.format}\n${item.value}\n${SimpleDateFormat("dd.MM HH:mm", Locale.getDefault()).format(Date(item.time))}"
-                textSize=15f; setTextColor(fg()); setPadding(dp(14),dp(12),dp(14),dp(12)); background=rounded(surface(),14)
-                setOnClickListener { open(item.value,item.kind) }; setOnLongClickListener { store.toggleFavorite(item.id); showHistory(); true }
+        val visible = HistoryLogic.filter(all, historyFilter)
+        c.addView(note("${visible.size} kayıt • ${all.count { it.favorite }} favori"))
+
+        if (visible.isEmpty()) {
+            c.addView(note(if (historyFilter == HistoryFilter.FAVORITES) "Henüz favori kayıt yok." else "Bu bölümde kayıt yok."))
+        } else visible.forEach { item ->
+            val card = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(14),dp(12),dp(14),dp(12))
+                background = rounded(surface(),14)
             }
-            c.addView(row, LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(9) })
+            card.addView(TextView(this).apply {
+                text = "${if(item.favorite) "★ " else ""}${item.kind} • ${item.format}\n${item.value}\n${SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date(item.time))}"
+                textSize=15f; setTextColor(fg()); setTextIsSelectable(true)
+                setOnClickListener { open(item.value,item.kind) }
+            })
+            val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0,dp(10),0,0) }
+            actions.addView(button(if(item.favorite) "★ Favori" else "☆ Favori", false) {
+                store.toggleFavorite(item.id); showHistory(historyFilter)
+            }, LinearLayout.LayoutParams(0,dp(42),1f).apply { marginEnd=dp(6) })
+            actions.addView(button("Aç", false) { open(item.value,item.kind) }, LinearLayout.LayoutParams(0,dp(42),1f).apply { marginEnd=dp(6) })
+            actions.addView(button("Sil", false) { confirmDelete(item) }, LinearLayout.LayoutParams(0,dp(42),1f))
+            card.addView(actions)
+            c.addView(card, LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(9) })
         }
         put(scroll(c))
+    }
+
+    private fun confirmDelete(item: ScanItem) {
+        AlertDialog.Builder(this)
+            .setTitle("Kaydı sil")
+            .setMessage("Bu tarama geçmişten silinsin mi?")
+            .setPositiveButton("Sil") { _, _ -> store.delete(item.id); showHistory(historyFilter) }
+            .setNegativeButton("Vazgeç", null)
+            .show()
     }
 
     private fun showSettings() {
