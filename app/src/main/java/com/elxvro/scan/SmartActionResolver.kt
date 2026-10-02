@@ -8,9 +8,12 @@ enum class SmartActionType {
     MAP,
     WIFI,
     CONTACT,
-    CALENDAR,
     SEARCH_PRODUCT,
-    SHARE_TEXT
+    SHARE_TEXT;
+
+    companion object {
+        val CALENDAR: SmartActionType = SHARE_TEXT
+    }
 }
 
 data class SmartAction(
