@@ -11,6 +11,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,19 +19,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Clear
-import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Email
-import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Link
@@ -93,9 +92,9 @@ fun HistoryScreen(store: ScanStore, onBack: () -> Unit) {
     var query by remember { mutableStateOf("") }
     var filter by remember { mutableStateOf(HistoryFilter.ALL) }
     var newestFirst by remember { mutableStateOf(true) }
-    var selectMode by remember { mutableStateOf(false) }
+    var selecting by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf(emptySet<String>()) }
-    var menuExpanded by remember { mutableStateOf(false) }
+    var menuOpen by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
 
     val all = remember(refresh) { store.list() }
@@ -103,51 +102,49 @@ fun HistoryScreen(store: ScanStore, onBack: () -> Unit) {
         HistoryLogic.searchAndFilter(all, filter, query, newestFirst)
     }
 
-    fun toast(message: String) = Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-    fun refreshList() { refresh++ }
-    fun clearSelection() {
+    fun reload() { refresh++ }
+    fun finishSelection() {
+        selecting = false
         selected = emptySet()
-        selectMode = false
+    }
+    fun toggle(id: String) {
+        selected = if (id in selected) selected - id else selected + id
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(ScanTokens.Ink)
-    ) {
+    Column(Modifier.fillMaxSize().background(ScanTokens.Ink)) {
         ReferenceHeader(
             title = "Geçmiş",
             onBack = onBack,
             trailing = {
                 Text(
-                    text = if (selectMode) "Bitti" else "Seç",
+                    text = if (selecting) "Bitti" else "Seç",
                     color = ScanTokens.BlueBright,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier
                         .combinedClickable(
                             onClick = {
-                                selectMode = !selectMode
-                                if (!selectMode) selected = emptySet()
+                                selecting = !selecting
+                                if (!selecting) selected = emptySet()
                             },
                             onLongClick = {}
                         )
                         .padding(horizontal = 8.dp, vertical = 10.dp)
                 )
                 Box {
-                    IconButton(onClick = { menuExpanded = true }) {
+                    IconButton(onClick = { menuOpen = true }) {
                         Icon(Icons.Outlined.MoreVert, contentDescription = "Diğer", tint = ScanTokens.TextOnDark)
                     }
                     DropdownMenu(
-                        expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false },
+                        expanded = menuOpen,
+                        onDismissRequest = { menuOpen = false },
                         containerColor = ScanTokens.Card
                     ) {
                         DropdownMenuItem(
                             text = { Text("CSV dışa aktar", color = ScanTokens.Text) },
                             leadingIcon = { Icon(Icons.Outlined.FileUpload, null, tint = ScanTokens.Blue) },
                             onClick = {
-                                menuExpanded = false
+                                menuOpen = false
                                 shareExport(context, "ELXVRO Scan Geçmiş.csv", HistoryExport.toCsv(all))
                             }
                         )
@@ -155,7 +152,7 @@ fun HistoryScreen(store: ScanStore, onBack: () -> Unit) {
                             text = { Text("JSON dışa aktar", color = ScanTokens.Text) },
                             leadingIcon = { Icon(Icons.Outlined.FileUpload, null, tint = ScanTokens.Blue) },
                             onClick = {
-                                menuExpanded = false
+                                menuOpen = false
                                 shareExport(context, "ELXVRO Scan Geçmiş.json", HistoryExport.toJson(all))
                             }
                         )
@@ -184,18 +181,13 @@ fun HistoryScreen(store: ScanStore, onBack: () -> Unit) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    ScanTokens.Paper,
-                    RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
-                )
+                .background(ScanTokens.Paper, RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
                 .padding(top = 12.dp)
         ) {
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 singleLine = true,
                 placeholder = { Text("Geçmişte ara", color = ScanTokens.Muted) },
                 leadingIcon = { Icon(Icons.Outlined.Search, null, tint = ScanTokens.Muted) },
@@ -219,9 +211,7 @@ fun HistoryScreen(store: ScanStore, onBack: () -> Unit) {
             )
 
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
@@ -234,10 +224,7 @@ fun HistoryScreen(store: ScanStore, onBack: () -> Unit) {
                     modifier = Modifier
                         .background(Color.White, RoundedCornerShape(10.dp))
                         .border(1.dp, ScanTokens.Divider, RoundedCornerShape(10.dp))
-                        .combinedClickable(
-                            onClick = { newestFirst = !newestFirst },
-                            onLongClick = {}
-                        )
+                        .combinedClickable(onClick = { newestFirst = !newestFirst }, onLongClick = {})
                         .padding(horizontal = 10.dp, vertical = 7.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -251,25 +238,25 @@ fun HistoryScreen(store: ScanStore, onBack: () -> Unit) {
                 }
             }
 
-            if (selectMode) {
+            if (selecting) {
                 SelectionToolbar(
                     count = selected.size,
                     onFavorite = {
                         store.setFavorite(selected, true)
-                        refreshList()
-                        clearSelection()
+                        reload()
+                        finishSelection()
                     },
                     onShare = {
                         val text = all.filter { it.id in selected }.joinToString("\n\n") { it.value }
                         if (text.isNotBlank()) SmartActionExecutor.share(context, text)
-                        clearSelection()
+                        finishSelection()
                     },
                     onDelete = { if (selected.isNotEmpty()) confirmDelete = true }
                 )
             }
 
             if (visible.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Outlined.QrCodeScanner, null, tint = ScanTokens.Muted, modifier = Modifier.size(38.dp))
                         Text(
@@ -283,30 +270,29 @@ fun HistoryScreen(store: ScanStore, onBack: () -> Unit) {
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 2.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
                     verticalArrangement = Arrangement.spacedBy(7.dp)
                 ) {
                     items(visible, key = { it.id }) { item ->
                         HistoryRow(
                             item = item,
                             selected = item.id in selected,
-                            selectMode = selectMode,
+                            selecting = selecting,
                             onClick = {
-                                if (selectMode) {
-                                    selected = toggle(selected, item.id)
-                                } else {
-                                    runCatching {
-                                        SmartActionExecutor.execute(context, SmartActionResolver.resolve(item.value, item.kind))
-                                    }.onFailure { toast("İşlem açılamadı") }
+                                if (selecting) toggle(item.id)
+                                else runCatching {
+                                    SmartActionExecutor.execute(context, SmartActionResolver.resolve(item.value, item.kind))
+                                }.onFailure {
+                                    Toast.makeText(context, "İşlem açılamadı", Toast.LENGTH_SHORT).show()
                                 }
                             },
                             onLongClick = {
-                                selectMode = true
-                                selected = toggle(selected, item.id)
+                                selecting = true
+                                toggle(item.id)
                             },
                             onFavorite = {
                                 store.toggleFavorite(item.id)
-                                refreshList()
+                                reload()
                             }
                         )
                     }
@@ -327,8 +313,8 @@ fun HistoryScreen(store: ScanStore, onBack: () -> Unit) {
                 TextButton(onClick = {
                     store.delete(selected)
                     confirmDelete = false
-                    refreshList()
-                    clearSelection()
+                    reload()
+                    finishSelection()
                 }) { Text("Sil", color = ScanTokens.Danger) }
             },
             dismissButton = {
@@ -339,7 +325,12 @@ fun HistoryScreen(store: ScanStore, onBack: () -> Unit) {
 }
 
 @Composable
-private fun SelectionToolbar(count: Int, onFavorite: () -> Unit, onShare: () -> Unit, onDelete: () -> Unit) {
+private fun SelectionToolbar(
+    count: Int,
+    onFavorite: () -> Unit,
+    onShare: () -> Unit,
+    onDelete: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -349,7 +340,13 @@ private fun SelectionToolbar(count: Int, onFavorite: () -> Unit, onShare: () -> 
             .padding(start = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("$count seçili", color = ScanTokens.Blue, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+        Text(
+            "$count seçili",
+            color = ScanTokens.Blue,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.weight(1f)
+        )
         IconButton(onClick = onFavorite, enabled = count > 0) { Icon(Icons.Outlined.Star, "Favorile", tint = ScanTokens.Warning) }
         IconButton(onClick = onShare, enabled = count > 0) { Icon(Icons.Outlined.Share, "Paylaş", tint = ScanTokens.Blue) }
         IconButton(onClick = onDelete, enabled = count > 0) { Icon(Icons.Outlined.DeleteOutline, "Sil", tint = ScanTokens.Danger) }
@@ -361,7 +358,7 @@ private fun SelectionToolbar(count: Int, onFavorite: () -> Unit, onShare: () -> 
 private fun HistoryRow(
     item: ScanItem,
     selected: Boolean,
-    selectMode: Boolean,
+    selecting: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onFavorite: () -> Unit
@@ -407,7 +404,7 @@ private fun HistoryRow(
                 maxLines = 1
             )
         }
-        if (!selectMode) {
+        if (!selecting) {
             IconButton(onClick = onFavorite, modifier = Modifier.size(40.dp)) {
                 Icon(
                     if (item.favorite) Icons.Outlined.Star else Icons.Outlined.StarBorder,
@@ -439,9 +436,8 @@ private fun colorFor(action: SmartAction): Color = when (action.type) {
     SmartActionType.SEARCH_PRODUCT, SmartActionType.SHARE_TEXT -> ScanTokens.Muted
 }
 
-private fun date(time: Long): String = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date(time))
-
-private fun toggle(current: Set<String>, id: String): Set<String> = if (id in current) current - id else current + id
+private fun date(time: Long): String =
+    SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date(time))
 
 private fun shareExport(context: Context, title: String, data: String) {
     val intent = Intent(Intent.ACTION_SEND).apply {
