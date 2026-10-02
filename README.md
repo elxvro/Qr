@@ -2,34 +2,29 @@
 
 Native Android QR & barcode scanner and QR generator.
 
-## v1.0.0
+## v2.0.0 — Reference UI redesign
 
-The roadmap is complete for the first production candidate:
+ELXVRO Scan 2.0 rebuilds the interface around one compact, consistent reference-driven design system:
 
-- QR and major barcode formats with portrait CameraX scanning
-- Gallery scanning
-- Flash control and keep-latest frame analysis
-- Duplicate-scan cooldown to prevent repeated dialogs/history spam
-- Local scan history with favorites
-- Case-insensitive history search, type filters and newest/oldest sorting
-- QR creation for URL, text, Wi-Fi, phone, e-mail and contact data
-- QR image save/share and payload copy
-- Smart result actions for URL, phone, e-mail, SMS, map, Wi-Fi, contact and product codes
-- Scan sound and vibration settings
-- Light/dark theme
-- First-run onboarding and privacy/data-use UX
-- Local/offline core scanning and QR generation; no INTERNET permission
-- Professional ELXVRO Scan launcher mark
+- Single ink / white / electric-blue visual system across every root screen
+- Jetpack Compose UI with one fixed Tara / Oluştur / Geçmiş / Ayarlar bottom navigation
+- Edge-to-edge layout with status/navigation safe-area handling
+- Reference-style camera screen, blue scan frame, 1x/2x zoom, tap-to-focus and pinch zoom
+- Flashlight and multiple-image gallery scanning
+- White scan-result bottom sheet with smart actions, URL domain preview, copy/share/favorite actions
+- Optional automatic copy and HTTP/HTTPS-only safe automatic opening
+- Expanded QR creator: URL, text, Wi-Fi, contact, phone, e-mail, SMS, location and calendar
+- WPA/WPA2, WEP and open Wi-Fi QR payloads
+- QR image color, size and quiet-zone controls plus save/share
+- Compact searchable/filterable history and favorites
+- Bulk favorite, share and delete actions
+- CSV and JSON history export
+- Calendar, URL, phone, e-mail, SMS, map, Wi-Fi, contact and product smart actions
+- Scan sound, vibration, default flashlight, quick-start and duplicate-scan delay settings
+- Existing v1 local history/favorites remain compatible through the original local storage format
+- Local/offline core scanning and QR generation; camera frames and history are not uploaded
+- Updated ELXVRO Scan launcher mark matching the v2 visual language
 
-## Release plan completed
+## Earlier milestone
 
-- v0.1.0 — Core camera scanner, QR/barcode detection, gallery scan
-- v0.2.0 — History and favorites
-- v0.3.0 — QR generator and sharing
-- v0.4.0 — Smart result actions
-- v0.5.0 — Search and filtering
-- v0.6.0 — Settings, sound, vibration and theme
-- v0.7.0 — Camera/performance refinements
-- v0.8.0 — Branding, onboarding and accessibility
-- v0.9.0 — Play Store readiness and privacy UX
-- v1.0.0 — Production hardening and final QA
+v1.0.0 completed the original scanner roadmap: core CameraX/ML Kit scanning, gallery input, history/favorites, QR generation, smart actions, search/filtering, sound/vibration, onboarding, privacy UX and production hardening.
