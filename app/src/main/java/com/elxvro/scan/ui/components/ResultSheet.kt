@@ -131,16 +131,20 @@ fun ResultSheet(
     }
 }
 
-private fun resultMetadata(result: ScanPresentation): String? = when (result.action.type) {
-    SmartActionType.OPEN_URL -> runCatching { Uri.parse(result.action.value).host }
-        .getOrNull()?.takeIf { !it.isNullOrBlank() }?.let { "Alan adı: $it" }
-    SmartActionType.SEARCH_PRODUCT -> "Ürün kodu • ${result.format}"
-    SmartActionType.WIFI -> "Wi-Fi bağlantı bilgisi"
-    SmartActionType.DIAL -> "Telefon numarası"
-    SmartActionType.EMAIL -> "E-posta adresi"
-    SmartActionType.SMS -> "SMS içeriği"
-    SmartActionType.MAP -> "Konum bilgisi"
-    SmartActionType.CONTACT -> "Kişi kartı"
-    SmartActionType.CALENDAR -> "Takvim etkinliği"
-    SmartActionType.SHARE_TEXT -> "Metin"
+private fun resultMetadata(result: ScanPresentation): String? {
+    if (result.action.label == "Takvime Ekle" || result.action.value.startsWith("BEGIN:VEVENT", ignoreCase = true)) {
+        return "Takvim etkinliği"
+    }
+    return when (result.action.type) {
+        SmartActionType.OPEN_URL -> runCatching { Uri.parse(result.action.value).host }
+            .getOrNull()?.takeIf { !it.isNullOrBlank() }?.let { "Alan adı: $it" }
+        SmartActionType.SEARCH_PRODUCT -> "Ürün kodu • ${result.format}"
+        SmartActionType.WIFI -> "Wi-Fi bağlantı bilgisi"
+        SmartActionType.DIAL -> "Telefon numarası"
+        SmartActionType.EMAIL -> "E-posta adresi"
+        SmartActionType.SMS -> "SMS içeriği"
+        SmartActionType.MAP -> "Konum bilgisi"
+        SmartActionType.CONTACT -> "Kişi kartı"
+        SmartActionType.SHARE_TEXT -> "Metin"
+    }
 }
