@@ -47,8 +47,18 @@ class ScanStore(private val prefs: SharedPreferences) {
         save(HistoryLogic.toggleFavorite(list(), id))
     }
 
+    fun setFavorite(ids: Set<String>, favorite: Boolean) {
+        if (ids.isEmpty()) return
+        save(list().map { item -> if (item.id in ids) item.copy(favorite = favorite) else item })
+    }
+
     fun delete(id: String) {
         save(HistoryLogic.delete(list(), id))
+    }
+
+    fun delete(ids: Set<String>) {
+        if (ids.isEmpty()) return
+        save(list().filterNot { it.id in ids })
     }
 
     fun clear() = prefs.edit().remove(key).apply()
