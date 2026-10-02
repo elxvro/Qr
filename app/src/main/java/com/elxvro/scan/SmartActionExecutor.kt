@@ -14,6 +14,10 @@ import java.util.TimeZone
 
 object SmartActionExecutor {
     fun execute(context: Context, action: SmartAction) {
+        if (action.label == "Takvime Ekle" || action.value.startsWith("BEGIN:VEVENT", ignoreCase = true)) {
+            insertCalendar(context, action.value)
+            return
+        }
         when (action.type) {
             SmartActionType.OPEN_URL -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(action.value)).newTask(context))
             SmartActionType.DIAL -> context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse(action.value)).newTask(context))
@@ -22,7 +26,6 @@ object SmartActionExecutor {
             SmartActionType.MAP -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(action.value)).newTask(context))
             SmartActionType.WIFI -> context.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS).newTask(context))
             SmartActionType.CONTACT -> insertContact(context, action.value)
-            SmartActionType.CALENDAR -> insertCalendar(context, action.value)
             SmartActionType.SEARCH_PRODUCT -> {
                 val uri = Uri.parse("https://www.google.com/search?q=${Uri.encode(action.value)}")
                 context.startActivity(Intent(Intent.ACTION_VIEW, uri).newTask(context))
