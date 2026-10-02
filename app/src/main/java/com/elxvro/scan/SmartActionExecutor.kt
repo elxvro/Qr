@@ -5,8 +5,12 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.provider.CalendarContract
 import android.provider.ContactsContract
 import android.provider.Settings
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 
 object SmartActionExecutor {
     fun execute(context: Context, action: SmartAction) {
@@ -18,6 +22,7 @@ object SmartActionExecutor {
             SmartActionType.MAP -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(action.value)).newTask(context))
             SmartActionType.WIFI -> context.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS).newTask(context))
             SmartActionType.CONTACT -> insertContact(context, action.value)
+            SmartActionType.CALENDAR -> insertCalendar(context, action.value)
             SmartActionType.SEARCH_PRODUCT -> {
                 val uri = Uri.parse("https://www.google.com/search?q=${Uri.encode(action.value)}")
                 context.startActivity(Intent(Intent.ACTION_VIEW, uri).newTask(context))
@@ -40,9 +45,9 @@ object SmartActionExecutor {
     }
 
     private fun insertContact(context: Context, raw: String) {
-        val name = contactField(raw, "FN") ?: contactField(raw, "N")
-        val phone = contactField(raw, "TEL")
-        val email = contactField(raw, "EMAIL")
+        val name = field(raw, "FN") ?: field(raw, "N")
+        val phone = field(raw, "TEL")
+        val email = field(raw, "EMAIL")
         if (name.isNullOrBlank() && phone.isNullOrBlank() && email.isNullOrBlank()) {
             share(context, raw)
             return
@@ -55,7 +60,34 @@ object SmartActionExecutor {
         context.startActivity(intent.newTask(context))
     }
 
-    private fun contactField(raw: String, key: String): String? {
+    private fun insertCalendar(context: Context, raw: String) {
+        val title = field(raw, "SUMMARY").orEmpty().ifBlank { "ELXVRO Scan Etkinliği" }
+        val start = field(raw, "DTSTART")?.let(::parseCalendarTime)
+        val end = field(raw, "DTEND")?.let(::parseCalendarTime)
+        val intent = Intent(Intent.ACTION_INSERT, CalendarContract.Events.CONTENT_URI).apply {
+            putExtra(CalendarContract.Events.TITLE, title)
+            putExtra(CalendarContract.Events.DESCRIPTION, raw)
+            start?.let { putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, it) }
+            end?.let { putExtra(CalendarContract.EXTRA_EVENT_END_TIME, it) }
+        }
+        context.startActivity(intent.newTask(context))
+    }
+
+    private fun parseCalendarTime(value: String): Long? {
+        val patterns = listOf("yyyyMMdd'T'HHmmss'Z'", "yyyyMMdd'T'HHmmss", "yyyyMMdd")
+        for (pattern in patterns) {
+            val parsed = runCatching {
+                SimpleDateFormat(pattern, Locale.US).apply {
+                    isLenient = false
+                    timeZone = if (value.endsWith("Z")) TimeZone.getTimeZone("UTC") else TimeZone.getDefault()
+                }.parse(value)?.time
+            }.getOrNull()
+            if (parsed != null) return parsed
+        }
+        return null
+    }
+
+    private fun field(raw: String, key: String): String? {
         raw.lineSequence().firstOrNull { it.startsWith("$key:", true) }
             ?.substringAfter(':')?.trim()?.takeIf { it.isNotBlank() }?.let { return it }
         val pattern = Regex("(?:^|;)${Regex.escape(key)}:([^;]+)", RegexOption.IGNORE_CASE)
