@@ -8,6 +8,7 @@ enum class SmartActionType {
     MAP,
     WIFI,
     CONTACT,
+    CALENDAR,
     SEARCH_PRODUCT,
     SHARE_TEXT
 }
@@ -39,10 +40,13 @@ object SmartActionResolver {
                 SmartAction(SmartActionType.MAP, "Haritada Aç", value)
 
             semantic == "WIFI" || value.startsWith("WIFI:", true) ->
-                SmartAction(SmartActionType.WIFI, "Wi‑Fi Ayarları", value)
+                SmartAction(SmartActionType.WIFI, "Wi-Fi Ayarları", value)
 
             semantic == "CONTACT" || value.startsWith("BEGIN:VCARD", true) || value.startsWith("MECARD:", true) ->
                 SmartAction(SmartActionType.CONTACT, "Kişilere Ekle", value)
+
+            semantic == "CALENDAR" || value.startsWith("BEGIN:VEVENT", true) ->
+                SmartAction(SmartActionType.CALENDAR, "Takvime Ekle", value)
 
             semantic == "PRODUCT" || kind.equals("Barkod", true) ->
                 SmartAction(SmartActionType.SEARCH_PRODUCT, "Ürünü Ara", value)
