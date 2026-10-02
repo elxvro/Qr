@@ -141,5 +141,6 @@ private fun resultMetadata(result: ScanPresentation): String? = when (result.act
     SmartActionType.SMS -> "SMS içeriği"
     SmartActionType.MAP -> "Konum bilgisi"
     SmartActionType.CONTACT -> "Kişi kartı"
+    SmartActionType.CALENDAR -> "Takvim etkinliği"
     SmartActionType.SHARE_TEXT -> "Metin"
 }
