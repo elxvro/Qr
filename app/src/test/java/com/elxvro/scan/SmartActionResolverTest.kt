@@ -40,6 +40,13 @@ class SmartActionResolverTest {
         assertEquals(SmartActionType.CONTACT, SmartActionResolver.resolve("BEGIN:VCARD\nFN:Emre\nTEL:+905551234567\nEND:VCARD", "QR", "CONTACT").type)
     }
 
+    @Test fun calendar_event_offers_calendar_insert() {
+        val raw = "BEGIN:VEVENT\nSUMMARY:Toplantı\nDTSTART:20261002T120000Z\nEND:VEVENT"
+        val action = SmartActionResolver.resolve(raw, "QR", "CALENDAR")
+        assertEquals(SmartActionType.CALENDAR, action.type)
+        assertEquals("Takvime Ekle", action.label)
+    }
+
     @Test fun product_barcode_searches_web() {
         assertEquals(SmartActionType.SEARCH_PRODUCT, SmartActionResolver.resolve("8691234567890", "Barkod", "PRODUCT").type)
     }
