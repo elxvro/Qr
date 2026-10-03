@@ -58,6 +58,10 @@ class BillingManager(
                     onPurchaseSnapshot(false, null)
                 }
             }
+
+            override fun onBillingServiceDisconnected() {
+                onPurchaseSnapshot(false, null)
+            }
         })
     }
 
