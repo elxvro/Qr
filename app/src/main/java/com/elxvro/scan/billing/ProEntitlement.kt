@@ -19,7 +19,8 @@ data class RawSubscriptionOffer(
     val offerToken: String,
     val formattedPrice: String,
     val priceAmountMicros: Long,
-    val priceCurrencyCode: String
+    val priceCurrencyCode: String,
+    val offerId: String? = null
 )
 
 data class SubscriptionOffer(
