@@ -2,6 +2,19 @@
 
 Native Android QR & barcode scanner and QR generator.
 
+## v2.2.0 — PRO + QR Card hardening
+
+ELXVRO Scan 2.2 tightens subscription and premium QR Card behavior without changing the free scanner/core QR experience:
+
+- Time-bounded offline PRO entitlement cache instead of an indefinitely trusted boolean flag
+- Restore Purchases now exposes a checking state while Google Play is queried
+- Failed billing-flow launches fall back safely instead of silently leaving stale state
+- Monthly/yearly offer mapping prefers the regular base-plan offer when promotional offers coexist
+- PRO, Pending, Unknown and billing-error states cannot start duplicate subscription purchases
+- QR Card validation rejects non-finite logo scales and unsafe/non-finite card aspect ratios before rendering
+- Added unit coverage for entitlement freshness, offer selection, paywall purchase policy and QR Card geometry
+- Version bumped to 2.2.0 / versionCode 22
+
 ## v2.0.0 — Reference UI redesign
 
 ELXVRO Scan 2.0 rebuilds the interface around one compact, consistent reference-driven design system:
