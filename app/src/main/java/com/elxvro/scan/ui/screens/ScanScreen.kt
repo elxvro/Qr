@@ -60,6 +60,7 @@ import com.elxvro.scan.ScanStore
 import com.elxvro.scan.SmartActionExecutor
 import com.elxvro.scan.SmartActionResolver
 import com.elxvro.scan.scanner.ScannerController
+import com.elxvro.scan.ui.components.LowLightHint
 import com.elxvro.scan.ui.components.ReferenceHeader
 import com.elxvro.scan.ui.components.ReferencePrimaryButton
 import com.elxvro.scan.ui.components.ResultSheet
@@ -92,6 +93,7 @@ fun ScanScreen(
     var previewView by remember { mutableStateOf<PreviewView?>(null) }
     var result by remember { mutableStateOf<ScanPresentation?>(null) }
     var resultFavorite by remember { mutableStateOf(false) }
+    var lowLight by remember { mutableStateOf(false) }
 
     fun toast(message: String) = Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
 
@@ -201,6 +203,7 @@ fun ScanScreen(
                                     initialTorch = torch,
                                     onResult = ::handleCode,
                                     onZoomChanged = { zoom = it },
+                                    onLowLightChanged = { lowLight = it },
                                     onError = { toast("Kamera başlatılamadı") }
                                 )
                             }
@@ -210,6 +213,20 @@ fun ScanScreen(
                 }
 
                 ScanOverlay()
+
+                if (lowLight && !torch) {
+                    LowLightHint(
+                        canUseTorch = controller.hasFlash(),
+                        onEnableTorch = {
+                            if (controller.hasFlash()) {
+                                torch = controller.setTorch(true)
+                            }
+                        },
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 14.dp)
+                    )
+                }
 
                 ZoomPill(
                     zoom = zoom,
