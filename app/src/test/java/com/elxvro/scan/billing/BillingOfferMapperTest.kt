@@ -32,6 +32,34 @@ class BillingOfferMapperTest {
     }
 
     @Test
+    fun basePlanOfferWinsOverPromotionalOfferForSamePlan() {
+        val mapped = BillingOfferMapper.mapOffers(
+            listOf(
+                RawSubscriptionOffer(
+                    basePlanId = "monthly",
+                    offerToken = "trial-token",
+                    formattedPrice = "₺0,00",
+                    priceAmountMicros = 0L,
+                    priceCurrencyCode = "TRY",
+                    offerId = "trial"
+                ),
+                RawSubscriptionOffer(
+                    basePlanId = "monthly",
+                    offerToken = "base-token",
+                    formattedPrice = "₺99,99",
+                    priceAmountMicros = 99_990_000L,
+                    priceCurrencyCode = "TRY",
+                    offerId = null
+                )
+            )
+        )
+
+        assertEquals(1, mapped.size)
+        assertEquals("base-token", mapped.single().offerToken)
+        assertEquals("₺99,99", mapped.single().formattedPrice)
+    }
+
+    @Test
     fun pendingPurchaseNeverGrantsPro() {
         val entitlement = BillingOfferMapper.mapEntitlement(
             hasConfiguredProduct = true,
