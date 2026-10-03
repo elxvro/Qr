@@ -39,5 +39,8 @@ object QrCardPreviewPolicy {
         QrCardTemplate.WIFI -> "Wi-Fi"
         QrCardTemplate.SOCIAL -> "Sosyal Medya"
         QrCardTemplate.EVENT -> "Etkinlik"
+        QrCardTemplate.BUSINESS -> "Business"
+        QrCardTemplate.PROMO -> "Kampanya"
+        QrCardTemplate.TICKET -> "Bilet"
     }
 }
