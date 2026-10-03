@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.elxvro.scan.ResultSheetPolicy
 import com.elxvro.scan.ScanPresentation
 import com.elxvro.scan.SmartActionType
 import com.elxvro.scan.ui.theme.ScanTokens
@@ -86,7 +87,7 @@ fun ResultSheet(
                             text = result.raw,
                             style = MaterialTheme.typography.bodyMedium,
                             color = ScanTokens.Text,
-                            maxLines = 4,
+                            maxLines = 6,
                             overflow = TextOverflow.Ellipsis
                         )
                         resultMetadata(result)?.let { metadata ->
@@ -99,13 +100,15 @@ fun ResultSheet(
                         }
                     }
                 }
-                ReferencePrimaryButton(
-                    text = result.action.label,
-                    onClick = onPrimary,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 12.dp)
-                )
+                if (ResultSheetPolicy.showPrimaryAction(result.action.type)) {
+                    ReferencePrimaryButton(
+                        text = result.action.label,
+                        onClick = onPrimary,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp)
+                    )
+                }
             }
             DividerLine()
             ReferenceActionRow(Icons.Outlined.ContentCopy, "Kopyala", onClick = onCopy)
