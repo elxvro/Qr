@@ -2,6 +2,22 @@
 
 Native Android QR & barcode scanner and QR generator.
 
+## v2.6.0 — Scanner ergonomics
+
+ELXVRO Scan 2.6 improves camera scanning ergonomics while preserving single-scan, batch-scan, history and creation flows:
+
+- Added lightweight camera-frame luminance sampling with throttling
+- Low-light detection uses hysteresis so the warning does not flicker on borderline frames
+- Single and batch scanning show an in-camera low-light hint
+- When the device has a flash, the low-light hint can enable the torch directly
+- Added an initial center autofocus assist after camera startup
+- If no code is detected for a short period, center autofocus retries at a controlled cadence
+- Manual tap-to-focus and 1x/2x zoom remain available
+- Plain text scan results no longer show a redundant primary Share button because Share already exists in the action list
+- Result text preview allows more visible lines before ellipsis
+- Added unit coverage for low-light transitions, luma sampling cadence, focus retry timing and result action policy
+- Version bumped to 2.6.0 / versionCode 27
+
 ## v2.5.0 — Batch scanning
 
 ELXVRO Scan 2.5 adds a dedicated batch scanning workflow without changing the normal single-scan result flow:
