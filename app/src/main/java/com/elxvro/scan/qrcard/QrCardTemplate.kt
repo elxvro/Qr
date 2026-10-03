@@ -5,7 +5,10 @@ enum class QrCardTemplate {
     CORPORATE,
     WIFI,
     SOCIAL,
-    EVENT;
+    EVENT,
+    BUSINESS,
+    PROMO,
+    TICKET;
 
     fun defaults(): QrCardDefaults = when (this) {
         MINIMAL -> QrCardDefaults(
@@ -52,6 +55,33 @@ enum class QrCardTemplate {
             qrBackgroundArgb = 0xFFFFFFFF.toInt(),
             qrPosition = QrPosition.BOTTOM,
             cardAspectRatio = 0.75f
+        )
+        BUSINESS -> QrCardDefaults(
+            cardBackgroundArgb = 0xFFF3F7FC.toInt(),
+            accentArgb = 0xFF1F4B99.toInt(),
+            textArgb = 0xFF122033.toInt(),
+            qrForegroundArgb = 0xFF122033.toInt(),
+            qrBackgroundArgb = 0xFFFFFFFF.toInt(),
+            qrPosition = QrPosition.CENTER,
+            cardAspectRatio = 1.586f
+        )
+        PROMO -> QrCardDefaults(
+            cardBackgroundArgb = 0xFFFFF4F8.toInt(),
+            accentArgb = 0xFFFF3D7F.toInt(),
+            textArgb = 0xFF2A1020.toInt(),
+            qrForegroundArgb = 0xFF221018.toInt(),
+            qrBackgroundArgb = 0xFFFFFFFF.toInt(),
+            qrPosition = QrPosition.CENTER,
+            cardAspectRatio = 1.0f
+        )
+        TICKET -> QrCardDefaults(
+            cardBackgroundArgb = 0xFF10131A.toInt(),
+            accentArgb = 0xFFFFD166.toInt(),
+            textArgb = 0xFFF8FAFC.toInt(),
+            qrForegroundArgb = 0xFF111820.toInt(),
+            qrBackgroundArgb = 0xFFFFFFFF.toInt(),
+            qrPosition = QrPosition.CENTER,
+            cardAspectRatio = 1.586f
         )
     }
 }
