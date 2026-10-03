@@ -21,9 +21,24 @@ jobs:
         with:
           gradle-version: '8.7'
       - name: Unit tests
-        run: gradle testDebugUnitTest --stacktrace
+        id: unit_tests
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          gradle testDebugUnitTest --stacktrace --console=plain 2>&1 | tee unit-test.log
+      - name: Upload unit test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ELXVRO-Scan-v2.1.0-test-log
+          path: unit-test.log
+          if-no-files-found: error
+      - name: Fail on unit test error
+        if: steps.unit_tests.outcome == 'failure'
+        run: exit 1
       - name: Build debug APK
-        run: gradle assembleDebug --stacktrace
+        run: gradle assembleDebug --stacktrace --console=plain
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
