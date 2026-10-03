@@ -187,16 +187,9 @@ fun QrCardEditorScreen(
     }
 
     val model = currentModel()
-    val preview = remember(model, customLogo, entitlement) {
+    val previewModel = remember(model) { QrCardPreviewPolicy.sanitize(model) }
+    val preview = remember(previewModel, customLogo, entitlement) {
         runCatching {
-            val previewModel = if (QrCardValidator.validate(model) is ValidationResult.Valid) model else model.copy(
-                payload = model.payload.ifBlank { "https://elxvro.com" },
-                title = model.title.ifBlank { "ELXVRO" },
-                wifiSsid = model.wifiSsid.ifBlank { "ELXVRO Wi-Fi" },
-                socialHandle = model.socialHandle.ifBlank { "@elxvro" },
-                eventDate = model.eventDate.ifBlank { "Etkinlik tarihi" },
-                eventLocation = model.eventLocation.ifBlank { "Etkinlik konumu" }
-            )
             renderCard(700, previewModel)
         }.getOrNull()
     }
@@ -244,7 +237,7 @@ fun QrCardEditorScreen(
                         contentDescription = "QR Kart önizlemesi",
                         modifier = Modifier
                             .fillMaxWidth()
-                            .aspectRatio(model.cardAspectRatio)
+                            .aspectRatio(previewModel.cardAspectRatio)
                     )
                 } ?: Text("Önizleme hazırlanamadı", color = ScanTokens.Muted)
             }
