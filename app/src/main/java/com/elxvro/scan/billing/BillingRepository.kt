@@ -2,6 +2,7 @@ package com.elxvro.scan.billing
 
 import android.app.Activity
 import android.content.Context
+import com.android.billingclient.api.BillingClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,15 +25,18 @@ class BillingRepository(context: Context) {
 
     fun refreshPurchases() = manager.refreshPurchases()
 
-    fun restorePurchases() = manager.refreshPurchases()
+    fun restorePurchases() {
+        _entitlement.value = ProEntitlement.Unknown
+        manager.refreshPurchases()
+    }
 
     fun launchPurchase(activity: Activity, offer: SubscriptionOffer) {
         val result = manager.launchPurchase(activity, offer)
-        if (result == null) {
+        if (result == null || result.responseCode != BillingClient.BillingResponseCode.OK) {
             _entitlement.value = EntitlementPolicy.resolve(
                 billingOk = false,
                 purchase = null,
-                cachedVerifiedPro = cache.hasVerifiedPro()
+                cachedVerifiedPro = cache.hasFreshVerifiedPro()
             )
         }
     }
@@ -43,7 +47,7 @@ class BillingRepository(context: Context) {
         val resolved = EntitlementPolicy.resolve(
             billingOk = billingOk,
             purchase = snapshot,
-            cachedVerifiedPro = cache.hasVerifiedPro()
+            cachedVerifiedPro = cache.hasFreshVerifiedPro()
         )
         if (billingOk) {
             val verified = resolved is ProEntitlement.Pro &&
