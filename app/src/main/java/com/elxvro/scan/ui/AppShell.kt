@@ -43,6 +43,7 @@ import com.elxvro.scan.ScanStore
 import com.elxvro.scan.billing.BillingProducts
 import com.elxvro.scan.billing.BillingRepository
 import com.elxvro.scan.ui.screens.BarcodeCreateScreen
+import com.elxvro.scan.ui.screens.BatchScanScreen
 import com.elxvro.scan.ui.screens.CreateScreen
 import com.elxvro.scan.ui.screens.HistoryScreen
 import com.elxvro.scan.ui.screens.ProPaywallScreen
@@ -72,6 +73,7 @@ fun ElxvroScanApp() {
     var tab by remember { mutableStateOf(AppTab.SCAN) }
     var showPaywall by remember { mutableStateOf(false) }
     var showBarcodeCreate by remember { mutableStateOf(false) }
+    var showBatchScan by remember { mutableStateOf(false) }
     var showQrCard by remember { mutableStateOf(false) }
     var qrCardPayload by remember { mutableStateOf("https://elxvro.com") }
 
@@ -89,7 +91,7 @@ fun ElxvroScanApp() {
         }
     }
 
-    val childScreenOpen = showPaywall || showQrCard || showBarcodeCreate
+    val childScreenOpen = showPaywall || showQrCard || showBarcodeCreate || showBatchScan
 
     Scaffold(
         containerColor = ScanTokens.Ink,
@@ -121,6 +123,11 @@ fun ElxvroScanApp() {
                     store = store,
                     onBack = { showBarcodeCreate = false }
                 )
+                showBatchScan -> BatchScanScreen(
+                    store = store,
+                    prefs = prefs,
+                    onBack = { showBatchScan = false }
+                )
                 showQrCard -> QrCardEditorScreen(
                     entitlement = entitlement,
                     initialPayload = qrCardPayload,
@@ -131,7 +138,8 @@ fun ElxvroScanApp() {
                     AppTab.SCAN -> ScanScreen(
                         store = store,
                         prefs = prefs,
-                        onOpenSettings = { tab = AppTab.SETTINGS }
+                        onOpenSettings = { tab = AppTab.SETTINGS },
+                        onOpenBatchScan = { showBatchScan = true }
                     )
                     AppTab.CREATE -> CreateScreen(
                         entitlement = entitlement,
