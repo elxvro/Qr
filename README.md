@@ -2,6 +2,22 @@
 
 Native Android QR & barcode scanner and QR generator.
 
+## v2.3.0 — QR Card visual quality
+
+ELXVRO Scan 2.3 improves the PRO QR Card creator and keeps the scanner/free QR flow unchanged:
+
+- Five QR Card templates now have distinct visual presentation signatures
+- Minimal uses the clean ELXVRO rail treatment
+- Corporate uses a stronger header band and framed QR treatment
+- Wi-Fi uses a network badge and elevated QR presentation
+- Social uses a centered profile-style layout with a highlighted QR ring
+- Event uses a dedicated event panel and accent band
+- Long titles, subtitles and detail fields wrap safely across multiple lines instead of collapsing into one truncated line
+- QR Card preview sanitizes temporary invalid editor state instead of disappearing
+- Preview, save and share continue through the same card renderer for consistent output
+- Added unit coverage for template presentation, multiline text and safe preview behavior
+- Version bumped to 2.3.0 / versionCode 24
+
 ## v2.2.1 — QR Card layout fix
 
 ELXVRO Scan 2.2.1 fixes the premium QR Card composition without changing the free scanner or core QR generator:
