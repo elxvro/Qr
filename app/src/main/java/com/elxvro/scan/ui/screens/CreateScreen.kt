@@ -77,6 +77,7 @@ fun CreateScreen(
     entitlement: ProEntitlement,
     onOpenPaywall: () -> Unit,
     onOpenQrCard: (String) -> Unit,
+    onOpenBarcodeCreate: () -> Unit,
     onBack: () -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -173,6 +174,37 @@ fun CreateScreen(
             .background(ScanTokens.Ink)
     ) {
         ReferenceHeader(title = "QR Kod Oluştur", onBack = onBack)
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp)
+                .background(ScanTokens.InkRaised, RoundedCornerShape(14.dp))
+                .border(1.dp, ScanTokens.Blue.copy(alpha = 0.34f), RoundedCornerShape(14.dp))
+                .clickable(onClick = onOpenBarcodeCreate)
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(
+                Icons.Outlined.QrCode2,
+                contentDescription = null,
+                tint = ScanTokens.Blue,
+                modifier = Modifier.size(30.dp)
+            )
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "Barkod Oluşturucu",
+                    color = ScanTokens.TextOnDark,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    "CODE 128 • EAN-13 • UPC-A",
+                    color = ScanTokens.TextOnDark.copy(alpha = 0.68f),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
 
         Row(
             modifier = Modifier
