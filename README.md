@@ -2,6 +2,22 @@
 
 Native Android QR & barcode scanner and QR generator.
 
+## v2.5.0 — Batch scanning
+
+ELXVRO Scan 2.5 adds a dedicated batch scanning workflow without changing the normal single-scan result flow:
+
+- Added Toplu Tarama entry directly from the scanner header
+- Continuous live-camera collection of QR codes and supported barcodes
+- Multiple gallery images can be processed into the same batch session
+- Duplicate value + format pairs are kept only once per batch session
+- Same value encoded in a different format remains a distinct result
+- Every accepted unique batch result is also stored in the normal local scan history
+- Multi-select, select-all, clear-selection and selected-item removal
+- CSV and JSON export uses selected items when a selection exists, otherwise the full batch
+- Batch mode intentionally disables single-result auto-open/auto-copy so scanning can continue uninterrupted
+- Added unit coverage for batch deduplication, selection, removal and CSV/JSON export
+- Version bumped to 2.5.0 / versionCode 26
+
 ## v2.4.0 — Barcode creator
 
 ELXVRO Scan 2.4 expands Create with native 1D barcode generation while keeping the existing QR and PRO QR Card flows intact:
