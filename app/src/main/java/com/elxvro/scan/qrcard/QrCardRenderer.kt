@@ -114,6 +114,48 @@ object QrCardRenderer {
                     paint
                 )
             }
+            QrCardAccentStyle.BRAND_STRIPE -> {
+                val stripe = max(10f, width * 0.012f)
+                canvas.drawRoundRect(
+                    RectF(outer, outer, outer + stripe, height - outer),
+                    stripe,
+                    stripe,
+                    paint
+                )
+                paint.color = withAlpha(model.accentArgb, 0.14f)
+                canvas.drawRoundRect(
+                    RectF(width * 0.56f, outer * 0.55f, width - outer, outer * 1.45f),
+                    outer * 0.32f,
+                    outer * 0.32f,
+                    paint
+                )
+            }
+            QrCardAccentStyle.PROMO_CORNER -> {
+                paint.color = withAlpha(model.accentArgb, 0.16f)
+                canvas.drawCircle(width * 0.10f, height * 0.12f, width * 0.14f, paint)
+                paint.color = model.accentArgb
+                canvas.drawRoundRect(
+                    RectF(width * 0.72f, height * 0.04f, width * 0.94f, height * 0.085f),
+                    height * 0.022f,
+                    height * 0.022f,
+                    paint
+                )
+            }
+            QrCardAccentStyle.TICKET_STUB -> {
+                val rail = max(10f, width * 0.012f)
+                canvas.drawRect(0f, 0f, rail, height, paint)
+                paint.color = withAlpha(model.accentArgb, 0.18f)
+                canvas.drawRoundRect(
+                    RectF(outer, height - outer * 1.55f, width - outer, height - outer * 0.55f),
+                    outer * 0.22f,
+                    outer * 0.22f,
+                    paint
+                )
+                paint.color = model.cardBackgroundArgb
+                val notch = max(14f, width * 0.018f)
+                canvas.drawCircle(width * 0.53f, 0f, notch, paint)
+                canvas.drawCircle(width * 0.53f, height, notch, paint)
+            }
         }
     }
 
@@ -176,14 +218,19 @@ object QrCardRenderer {
         qrRect: RectF,
         logoScaleFraction: Float
     ) {
-        val side = qrRect.width() * logoScaleFraction.coerceAtMost(QrCardValidator.MAX_LOGO_SCALE)
-        val backing = side * 1.24f
+        val side = qrRect.width() * QrLogoPresentationPolicy.safeScale(logoScaleFraction)
+        val backing = side * QrLogoPresentationPolicy.BACKING_FACTOR
         val cx = qrRect.centerX()
         val cy = qrRect.centerY()
         val backingRect = RectF(cx - backing / 2f, cy - backing / 2f, cx + backing / 2f, cy + backing / 2f)
         paint.style = Paint.Style.FILL
         paint.color = 0xFFFFFFFF.toInt()
-        canvas.drawRoundRect(backingRect, backing * 0.18f, backing * 0.18f, paint)
+        canvas.drawRoundRect(
+            backingRect,
+            backing * QrLogoPresentationPolicy.CORNER_FACTOR,
+            backing * QrLogoPresentationPolicy.CORNER_FACTOR,
+            paint
+        )
         val logoRect = RectF(cx - side / 2f, cy - side / 2f, cx + side / 2f, cy + side / 2f)
         canvas.drawBitmap(logo, null, logoRect, paint)
     }
@@ -246,6 +293,9 @@ object QrCardRenderer {
             )
             QrCardTemplate.SOCIAL -> listOf(model.socialHandle, model.contactLine)
             QrCardTemplate.EVENT -> listOf(model.eventDate, model.eventLocation)
+            QrCardTemplate.BUSINESS -> listOf(model.contactLine)
+            QrCardTemplate.PROMO -> listOf(model.contactLine)
+            QrCardTemplate.TICKET -> listOf(model.eventDate, model.eventLocation)
         }.filter { it.isNotBlank() }
 
         var remainingBodyLines = presentation.bodyMaxLines
@@ -253,7 +303,10 @@ object QrCardRenderer {
         detailLines.forEachIndexed { index, line ->
             if (remainingBodyLines <= 0 || y + lineHeight >= textRect.bottom) return@forEachIndexed
             y += base * 0.18f
-            paint.color = if (model.template == QrCardTemplate.EVENT && index == 0) {
+            paint.color = if (
+                (model.template == QrCardTemplate.EVENT || model.template == QrCardTemplate.TICKET) &&
+                index == 0
+            ) {
                 model.accentArgb
             } else {
                 withAlpha(model.textArgb, 0.78f)
@@ -301,6 +354,9 @@ object QrCardRenderer {
         QrCardTemplate.WIFI -> "Wi-Fi"
         QrCardTemplate.SOCIAL -> "Sosyal Medya"
         QrCardTemplate.EVENT -> "Etkinlik"
+        QrCardTemplate.BUSINESS -> "Business"
+        QrCardTemplate.PROMO -> "Kampanya"
+        QrCardTemplate.TICKET -> "Bilet"
     }
 
     private fun expand(rect: RectF, amount: Float): RectF = RectF(
