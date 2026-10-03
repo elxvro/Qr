@@ -9,6 +9,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -119,6 +120,7 @@ fun QrCardScreen(
             }
         }.onFailure { toast("Logo okunamadı") }.getOrNull()
         if (customLogo != null) logoMode = LogoMode.CUSTOM
+        preview = null
     }
 
     Column(Modifier.fillMaxSize().background(ScanTokens.Ink)) {
@@ -161,15 +163,19 @@ fun QrCardScreen(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                 listOf("ELXVRO" to LogoMode.ELXVRO, "Kendi Logom" to LogoMode.CUSTOM, "Logosuz" to LogoMode.NONE).forEach { (label, mode) ->
                     LightChoice(label, logoMode == mode, Modifier.weight(1f)) {
-                        if (mode == LogoMode.CUSTOM && customLogo == null) logoPicker.launch("image/*")
-                        else logoMode = mode
+                        if (mode == LogoMode.CUSTOM && customLogo == null) logoPicker.launch("image/*") else logoMode = mode
                         preview = null
                     }
                 }
             }
             if (logoMode == LogoMode.CUSTOM) {
                 Row(
-                    Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(12.dp)).border(1.dp, ScanTokens.Divider, RoundedCornerShape(12.dp)).padding(12.dp),
+                    Modifier
+                        .fillMaxWidth()
+                        .background(Color.White, RoundedCornerShape(12.dp))
+                        .border(1.dp, ScanTokens.Divider, RoundedCornerShape(12.dp))
+                        .clickable { logoPicker.launch("image/*") }
+                        .padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(Icons.Outlined.Image, null, tint = ScanTokens.Blue)
@@ -204,6 +210,7 @@ fun QrCardScreen(
                             .size(38.dp)
                             .background(Color(androidColor), RoundedCornerShape(11.dp))
                             .border(if (accent == androidColor) 3.dp else 1.dp, if (accent == androidColor) ScanTokens.Text else ScanTokens.Divider, RoundedCornerShape(11.dp))
+                            .clickable { accent = androidColor; preview = null }
                             .padding(2.dp)
                     )
                 }
@@ -267,7 +274,7 @@ private fun LightChoice(text: String, selected: Boolean, modifier: Modifier, onC
             .height(42.dp)
             .background(if (selected) ScanTokens.Blue.copy(alpha = 0.10f) else Color.White, RoundedCornerShape(10.dp))
             .border(1.dp, if (selected) ScanTokens.Blue else ScanTokens.Divider, RoundedCornerShape(10.dp))
-            .then(androidx.compose.ui.Modifier)
+            .clickable(onClick = onClick)
             .padding(horizontal = 5.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -282,6 +289,7 @@ private fun CardAction(icon: androidx.compose.ui.graphics.vector.ImageVector, te
             .height(52.dp)
             .background(Color.White, RoundedCornerShape(12.dp))
             .border(1.dp, ScanTokens.Divider, RoundedCornerShape(12.dp))
+            .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
