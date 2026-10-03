@@ -13,6 +13,7 @@ ELXVRO Scan 2.5 adds a dedicated batch scanning workflow without changing the no
 - Same value encoded in a different format remains a distinct result
 - Every accepted unique batch result is also stored in the normal local scan history
 - Multi-select, select-all, clear-selection and selected-item removal
+- Batch selection is session-local; accepted scans remain safely stored in normal local history
 - CSV and JSON export uses selected items when a selection exists, otherwise the full batch
 - Batch mode intentionally disables single-result auto-open/auto-copy so scanning can continue uninterrupted
 - Added unit coverage for batch deduplication, selection, removal and CSV/JSON export
