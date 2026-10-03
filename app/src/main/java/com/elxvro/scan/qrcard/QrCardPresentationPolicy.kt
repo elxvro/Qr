@@ -5,7 +5,10 @@ enum class QrCardAccentStyle {
     HEADER_BAND,
     NETWORK_BADGE,
     PROFILE_RING,
-    EVENT_BAND
+    EVENT_BAND,
+    BRAND_STRIPE,
+    PROMO_CORNER,
+    TICKET_STUB
 }
 
 enum class QrCardTextAlignment {
@@ -32,39 +35,28 @@ data class QrCardPresentation(
 object QrCardPresentationPolicy {
     fun forTemplate(template: QrCardTemplate): QrCardPresentation = when (template) {
         QrCardTemplate.MINIMAL -> QrCardPresentation(
-            accentStyle = QrCardAccentStyle.RAIL,
-            titleAlignment = QrCardTextAlignment.START,
-            qrFrameStyle = QrCardQrFrameStyle.PLAIN,
-            titleMaxLines = 2,
-            bodyMaxLines = 2
+            QrCardAccentStyle.RAIL, QrCardTextAlignment.START, QrCardQrFrameStyle.PLAIN, 2, 2
         )
         QrCardTemplate.CORPORATE -> QrCardPresentation(
-            accentStyle = QrCardAccentStyle.HEADER_BAND,
-            titleAlignment = QrCardTextAlignment.START,
-            qrFrameStyle = QrCardQrFrameStyle.BORDERED,
-            titleMaxLines = 2,
-            bodyMaxLines = 2
+            QrCardAccentStyle.HEADER_BAND, QrCardTextAlignment.START, QrCardQrFrameStyle.BORDERED, 2, 2
         )
         QrCardTemplate.WIFI -> QrCardPresentation(
-            accentStyle = QrCardAccentStyle.NETWORK_BADGE,
-            titleAlignment = QrCardTextAlignment.START,
-            qrFrameStyle = QrCardQrFrameStyle.ELEVATED,
-            titleMaxLines = 2,
-            bodyMaxLines = 3
+            QrCardAccentStyle.NETWORK_BADGE, QrCardTextAlignment.START, QrCardQrFrameStyle.ELEVATED, 2, 3
         )
         QrCardTemplate.SOCIAL -> QrCardPresentation(
-            accentStyle = QrCardAccentStyle.PROFILE_RING,
-            titleAlignment = QrCardTextAlignment.CENTER,
-            qrFrameStyle = QrCardQrFrameStyle.RING,
-            titleMaxLines = 2,
-            bodyMaxLines = 3
+            QrCardAccentStyle.PROFILE_RING, QrCardTextAlignment.CENTER, QrCardQrFrameStyle.RING, 2, 3
         )
         QrCardTemplate.EVENT -> QrCardPresentation(
-            accentStyle = QrCardAccentStyle.EVENT_BAND,
-            titleAlignment = QrCardTextAlignment.START,
-            qrFrameStyle = QrCardQrFrameStyle.EVENT,
-            titleMaxLines = 2,
-            bodyMaxLines = 3
+            QrCardAccentStyle.EVENT_BAND, QrCardTextAlignment.START, QrCardQrFrameStyle.EVENT, 2, 3
+        )
+        QrCardTemplate.BUSINESS -> QrCardPresentation(
+            QrCardAccentStyle.BRAND_STRIPE, QrCardTextAlignment.START, QrCardQrFrameStyle.BORDERED, 2, 3
+        )
+        QrCardTemplate.PROMO -> QrCardPresentation(
+            QrCardAccentStyle.PROMO_CORNER, QrCardTextAlignment.CENTER, QrCardQrFrameStyle.RING, 2, 3
+        )
+        QrCardTemplate.TICKET -> QrCardPresentation(
+            QrCardAccentStyle.TICKET_STUB, QrCardTextAlignment.START, QrCardQrFrameStyle.EVENT, 2, 3
         )
     }
 }
