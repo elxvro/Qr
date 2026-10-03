@@ -57,6 +57,7 @@ import com.elxvro.scan.qrcard.ElxvroBrandLogo
 import com.elxvro.scan.qrcard.LogoMode
 import com.elxvro.scan.qrcard.QrCardExport
 import com.elxvro.scan.qrcard.QrCardModel
+import com.elxvro.scan.qrcard.QrCardPreviewPolicy
 import com.elxvro.scan.qrcard.QrCardRenderer
 import com.elxvro.scan.qrcard.QrCardTemplate
 import com.elxvro.scan.qrcard.QrCardValidator
