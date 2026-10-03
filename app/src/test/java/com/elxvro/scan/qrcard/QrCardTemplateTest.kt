@@ -13,7 +13,10 @@ class QrCardTemplateTest {
                 QrCardTemplate.CORPORATE,
                 QrCardTemplate.WIFI,
                 QrCardTemplate.SOCIAL,
-                QrCardTemplate.EVENT
+                QrCardTemplate.EVENT,
+                QrCardTemplate.BUSINESS,
+                QrCardTemplate.PROMO,
+                QrCardTemplate.TICKET
             ),
             QrCardTemplate.entries
         )
