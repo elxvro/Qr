@@ -260,6 +260,7 @@ fun BatchScanScreen(
         }
 
         BatchResultPanel(
+            modifier = Modifier.weight(0.46f),
             session = session,
             onToggle = { session = session.toggleSelection(it) },
             onSelectAll = {
@@ -291,6 +292,7 @@ fun BatchScanScreen(
 
 @Composable
 private fun BatchResultPanel(
+    modifier: Modifier = Modifier,
     session: BatchScanSession,
     onToggle: (String) -> Unit,
     onSelectAll: () -> Unit,
@@ -300,9 +302,8 @@ private fun BatchResultPanel(
     onJson: () -> Unit
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .weight(0.46f)
             .background(
                 ScanTokens.Paper,
                 RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
