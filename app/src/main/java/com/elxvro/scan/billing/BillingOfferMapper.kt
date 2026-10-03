@@ -10,7 +10,12 @@ object BillingOfferMapper {
         return rawOffers
             .asSequence()
             .filter { it.basePlanId in supportedPlanIds }
-            .distinctBy { it.basePlanId }
+            .groupBy { it.basePlanId }
+            .values
+            .asSequence()
+            .mapNotNull { offers ->
+                offers.minByOrNull { if (it.offerId == null) 0 else 1 }
+            }
             .map {
                 SubscriptionOffer(
                     basePlanId = it.basePlanId,
