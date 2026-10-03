@@ -2,6 +2,21 @@
 
 Native Android QR & barcode scanner and QR generator.
 
+## v2.7.0 — PRO QR Card expansion
+
+ELXVRO Scan 2.7 expands the PRO QR Card editor without changing normal QR generation, scanning, batch scanning or billing behavior:
+
+- Added Business, Promo and Ticket QR Card templates alongside the existing five templates
+- Each new template has a distinct visual accent system while preserving safe QR/text separation
+- Added card aspect presets: template default, square 1:1, wide 16:9, classic card 1.586:1 and portrait 4:5
+- Layout tests cover every template across every supported aspect preset
+- Custom/ELXVRO logo composition now uses a larger backing plate with a subtle boundary while retaining the 20% safe QR coverage limit
+- QR Card export adds 3072 px and 4096 px premium options
+- The 4096 px ceiling is scoped to QR Card export; the normal QR generator remains capped at its existing 2048 px PRO limit
+- High-resolution QR Card export renders the card at the selected size while limiting the embedded QR source bitmap to 2048 px for memory efficiency
+- Added unit coverage for new template catalog, presentation identity, aspect ratios, logo safety and premium QR Card export sizes
+- Version bumped to 2.7.0 / versionCode 28
+
 ## v2.6.0 — Scanner ergonomics
 
 ELXVRO Scan 2.6 improves camera scanning ergonomics while preserving single-scan, batch-scan, history and creation flows:
