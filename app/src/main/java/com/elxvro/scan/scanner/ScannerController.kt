@@ -39,6 +39,10 @@ class ScannerController(
     private var busy = false
     private var closed = false
     private var torchEnabled = false
+    private var lowLightState = LowLightState()
+    private var lastLumaSampleAtMs = Long.MIN_VALUE
+    private var lastDetectionAtMs = 0L
+    private var lastFocusAtMs = 0L
 
     fun start(
         owner: LifecycleOwner,
@@ -46,9 +50,16 @@ class ScannerController(
         initialTorch: Boolean = false,
         onResult: (Barcode) -> Unit,
         onZoomChanged: (Float) -> Unit = {},
+        onLowLightChanged: (Boolean) -> Unit = {},
         onError: (Throwable) -> Unit = {}
     ) {
         if (closed) return
+        val startedAt = SystemClock.elapsedRealtime()
+        lastDetectionAtMs = startedAt
+        lastFocusAtMs = startedAt
+        lowLightState = LowLightState()
+        lastLumaSampleAtMs = Long.MIN_VALUE
+
         val future = ProcessCameraProvider.getInstance(context)
         future.addListener({
             runCatching {
@@ -62,7 +73,14 @@ class ScannerController(
                 val analysis = ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .build()
-                analysis.setAnalyzer(executor) { proxy -> analyze(proxy, onResult) }
+                analysis.setAnalyzer(executor) { proxy ->
+                    analyze(
+                        proxy = proxy,
+                        previewView = previewView,
+                        onResult = onResult,
+                        onLowLightChanged = onLowLightChanged
+                    )
+                }
 
                 camera = cameraProvider.bindToLifecycle(
                     owner,
@@ -73,19 +91,34 @@ class ScannerController(
                 attachGestures(previewView, onZoomChanged)
                 if (initialTorch && hasFlash()) setTorch(true)
                 onZoomChanged(currentZoom())
+                previewView.postDelayed({
+                    if (!closed && previewView.width > 0 && previewView.height > 0) {
+                        focusAt(previewView, previewView.width / 2f, previewView.height / 2f)
+                    }
+                }, INITIAL_FOCUS_DELAY_MS)
             }.onFailure(onError)
         }, mainExecutor)
     }
 
-    private fun analyze(proxy: ImageProxy, onResult: (Barcode) -> Unit) {
+    private fun analyze(
+        proxy: ImageProxy,
+        previewView: PreviewView,
+        onResult: (Barcode) -> Unit,
+        onLowLightChanged: (Boolean) -> Unit
+    ) {
         if (busy || closed) {
             proxy.close()
             return
         }
+
         val media = proxy.image ?: run {
             proxy.close()
             return
         }
+
+        val now = SystemClock.elapsedRealtime()
+        sampleLowLight(proxy, now, onLowLightChanged)
+
         busy = true
         val image = InputImage.fromMediaImage(media, proxy.imageInfo.rotationDegrees)
         scanner.process(image)
@@ -94,12 +127,69 @@ class ScannerController(
                     val raw = code.rawValue?.trim().orEmpty()
                     raw.isNotBlank() && deduplicator.shouldAccept(raw, SystemClock.elapsedRealtime())
                 }
-                if (accepted != null) onResult(accepted)
+
+                val completedAt = SystemClock.elapsedRealtime()
+                if (accepted != null) {
+                    lastDetectionAtMs = completedAt
+                    onResult(accepted)
+                } else if (
+                    FocusAssistPolicy.shouldRefocus(
+                        nowMs = completedAt,
+                        lastDetectionAtMs = lastDetectionAtMs,
+                        lastFocusAtMs = lastFocusAtMs
+                    )
+                ) {
+                    focusAt(previewView, previewView.width / 2f, previewView.height / 2f)
+                }
             }
             .addOnCompleteListener {
                 busy = false
                 proxy.close()
             }
+    }
+
+    private fun sampleLowLight(
+        proxy: ImageProxy,
+        nowMs: Long,
+        onLowLightChanged: (Boolean) -> Unit
+    ) {
+        if (nowMs - lastLumaSampleAtMs < LUMA_SAMPLE_INTERVAL_MS) return
+        lastLumaSampleAtMs = nowMs
+
+        val luma = estimateLuma(proxy)
+        val previous = lowLightState
+        val next = LowLightPolicy.update(previous, luma)
+        lowLightState = next
+        if (next.isLowLight != previous.isLowLight) {
+            mainExecutor.execute { onLowLightChanged(next.isLowLight) }
+        }
+    }
+
+    private fun estimateLuma(proxy: ImageProxy): Int {
+        val plane = proxy.planes.firstOrNull() ?: return 255
+        val buffer = plane.buffer
+        val rowStride = plane.rowStride
+        val pixelStride = plane.pixelStride.coerceAtLeast(1)
+        val stepX = max(1, proxy.width / LUMA_SAMPLE_COLUMNS)
+        val stepY = max(1, proxy.height / LUMA_SAMPLE_ROWS)
+
+        var total = 0L
+        var samples = 0
+        var y = 0
+        while (y < proxy.height) {
+            val rowOffset = y * rowStride
+            var x = 0
+            while (x < proxy.width) {
+                val index = rowOffset + x * pixelStride
+                if (index in 0 until buffer.limit()) {
+                    total += buffer.get(index).toInt() and 0xFF
+                    samples += 1
+                }
+                x += stepX
+            }
+            y += stepY
+        }
+        return if (samples == 0) 255 else (total / samples).toInt()
     }
 
     fun scanUri(
@@ -142,11 +232,13 @@ class ScannerController(
 
     fun focusAt(previewView: PreviewView, x: Float, y: Float) {
         val current = camera ?: return
+        if (previewView.width <= 0 || previewView.height <= 0) return
         val point = previewView.meteringPointFactory.createPoint(x, y)
         val action = FocusMeteringAction.Builder(point, FocusMeteringAction.FLAG_AF)
             .setAutoCancelDuration(3, TimeUnit.SECONDS)
             .build()
         current.cameraControl.startFocusAndMetering(action)
+        lastFocusAtMs = SystemClock.elapsedRealtime()
     }
 
     private fun attachGestures(previewView: PreviewView, onZoomChanged: (Float) -> Unit) {
@@ -182,6 +274,7 @@ class ScannerController(
         camera = null
         torchEnabled = false
         busy = false
+        lowLightState = LowLightState()
     }
 
     override fun close() {
@@ -190,5 +283,12 @@ class ScannerController(
         stop()
         scanner.close()
         executor.shutdown()
+    }
+
+    private companion object {
+        const val LUMA_SAMPLE_INTERVAL_MS = 450L
+        const val LUMA_SAMPLE_COLUMNS = 24
+        const val LUMA_SAMPLE_ROWS = 18
+        const val INITIAL_FOCUS_DELAY_MS = 350L
     }
 }
