@@ -25,32 +25,148 @@ object QrCardRenderer {
         val output = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+        val layout = QrCardLayoutPolicy.resolve(width, height, model.qrPosition)
+        val presentation = QrCardPresentationPolicy.forTemplate(model.template)
+        val qrRect = layout.qrRect.toRectF()
 
         canvas.drawColor(model.cardBackgroundArgb)
+        drawTemplateChrome(canvas, paint, model, presentation, width.toFloat(), height.toFloat(), qrRect)
+        drawQrFrame(canvas, paint, model, presentation, qrRect, width.toFloat())
 
-        val outer = width * 0.055f
-        val accentWidth = max(8f, width * 0.008f)
-        paint.color = model.accentArgb
-        canvas.drawRoundRect(
-            RectF(outer, outer, outer + accentWidth, height - outer),
-            accentWidth,
-            accentWidth,
-            paint
-        )
-
-        val layout = QrCardLayoutPolicy.resolve(width, height, model.qrPosition)
-        val qrRect = layout.qrRect.toRectF()
-        paint.color = model.qrBackgroundArgb
-        canvas.drawRoundRect(qrRect, width * 0.018f, width * 0.018f, paint)
+        paint.style = Paint.Style.FILL
         canvas.drawBitmap(qrBitmap, null, qrRect, paint)
 
         if (logoBitmap != null && model.logoMode != LogoMode.NONE) {
             drawQrLogo(canvas, paint, logoBitmap, qrRect, model.logoScaleFraction)
         }
 
-        drawCardText(canvas, paint, model, layout.textRect)
-
+        drawCardText(canvas, paint, model, presentation, layout.textRect)
         return output
+    }
+
+    private fun drawTemplateChrome(
+        canvas: Canvas,
+        paint: Paint,
+        model: QrCardModel,
+        presentation: QrCardPresentation,
+        width: Float,
+        height: Float,
+        qrRect: RectF
+    ) {
+        val outer = width * 0.055f
+        paint.style = Paint.Style.FILL
+        paint.color = model.accentArgb
+
+        when (presentation.accentStyle) {
+            QrCardAccentStyle.RAIL -> {
+                val railWidth = max(8f, width * 0.008f)
+                canvas.drawRoundRect(
+                    RectF(outer, outer, outer + railWidth, height - outer),
+                    railWidth,
+                    railWidth,
+                    paint
+                )
+            }
+            QrCardAccentStyle.HEADER_BAND -> {
+                val bandHeight = max(10f, height * 0.025f)
+                canvas.drawRect(0f, 0f, width, bandHeight, paint)
+            }
+            QrCardAccentStyle.NETWORK_BADGE -> {
+                val badgeWidth = width * 0.18f
+                val badgeHeight = max(28f, height * 0.052f)
+                val badge = RectF(
+                    outer,
+                    outer * 0.58f,
+                    outer + badgeWidth,
+                    outer * 0.58f + badgeHeight
+                )
+                paint.color = withAlpha(model.accentArgb, 0.14f)
+                canvas.drawRoundRect(badge, badgeHeight / 2f, badgeHeight / 2f, paint)
+                paint.color = model.accentArgb
+                paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                paint.textSize = badgeHeight * 0.45f
+                paint.textAlign = Paint.Align.CENTER
+                val baseline = badge.centerY() - (paint.ascent() + paint.descent()) / 2f
+                canvas.drawText("WI-FI", badge.centerX(), baseline, paint)
+                paint.textAlign = Paint.Align.LEFT
+            }
+            QrCardAccentStyle.PROFILE_RING -> {
+                paint.style = Paint.Style.STROKE
+                paint.strokeWidth = max(5f, width * 0.007f)
+                paint.color = withAlpha(model.accentArgb, 0.75f)
+                val inset = width * 0.025f
+                canvas.drawRoundRect(
+                    RectF(inset, inset, width - inset, height - inset),
+                    width * 0.045f,
+                    width * 0.045f,
+                    paint
+                )
+                paint.style = Paint.Style.FILL
+            }
+            QrCardAccentStyle.EVENT_BAND -> {
+                val bandHeight = max(12f, height * 0.028f)
+                canvas.drawRect(0f, height - bandHeight, width, height, paint)
+                paint.color = withAlpha(model.accentArgb, 0.10f)
+                canvas.drawRoundRect(
+                    RectF(outer, outer, width - outer, qrRect.top - outer * 0.35f),
+                    width * 0.025f,
+                    width * 0.025f,
+                    paint
+                )
+            }
+        }
+    }
+
+    private fun drawQrFrame(
+        canvas: Canvas,
+        paint: Paint,
+        model: QrCardModel,
+        presentation: QrCardPresentation,
+        qrRect: RectF,
+        width: Float
+    ) {
+        val radius = width * 0.018f
+        val frame = width * 0.012f
+        paint.style = Paint.Style.FILL
+
+        when (presentation.qrFrameStyle) {
+            QrCardQrFrameStyle.PLAIN -> {
+                paint.color = model.qrBackgroundArgb
+                canvas.drawRoundRect(qrRect, radius, radius, paint)
+            }
+            QrCardQrFrameStyle.BORDERED -> {
+                paint.color = withAlpha(model.accentArgb, 0.78f)
+                canvas.drawRoundRect(expand(qrRect, frame), radius * 1.25f, radius * 1.25f, paint)
+                paint.color = model.qrBackgroundArgb
+                canvas.drawRoundRect(qrRect, radius, radius, paint)
+            }
+            QrCardQrFrameStyle.ELEVATED -> {
+                paint.color = 0x24000000
+                canvas.drawRoundRect(
+                    RectF(qrRect.left + frame, qrRect.top + frame, qrRect.right + frame, qrRect.bottom + frame),
+                    radius,
+                    radius,
+                    paint
+                )
+                paint.color = model.qrBackgroundArgb
+                canvas.drawRoundRect(qrRect, radius, radius, paint)
+            }
+            QrCardQrFrameStyle.RING -> {
+                paint.color = model.accentArgb
+                canvas.drawRoundRect(expand(qrRect, frame * 1.45f), radius * 1.35f, radius * 1.35f, paint)
+                paint.color = model.qrBackgroundArgb
+                canvas.drawRoundRect(qrRect, radius, radius, paint)
+            }
+            QrCardQrFrameStyle.EVENT -> {
+                paint.style = Paint.Style.STROKE
+                paint.strokeWidth = max(5f, width * 0.006f)
+                paint.color = model.accentArgb
+                canvas.drawRoundRect(expand(qrRect, frame * 0.72f), radius * 1.2f, radius * 1.2f, paint)
+                paint.style = Paint.Style.FILL
+                paint.color = model.qrBackgroundArgb
+                canvas.drawRoundRect(qrRect, radius, radius, paint)
+            }
+        }
     }
 
     private fun drawQrLogo(
@@ -65,6 +181,7 @@ object QrCardRenderer {
         val cx = qrRect.centerX()
         val cy = qrRect.centerY()
         val backingRect = RectF(cx - backing / 2f, cy - backing / 2f, cx + backing / 2f, cy + backing / 2f)
+        paint.style = Paint.Style.FILL
         paint.color = 0xFFFFFFFF.toInt()
         canvas.drawRoundRect(backingRect, backing * 0.18f, backing * 0.18f, paint)
         val logoRect = RectF(cx - side / 2f, cy - side / 2f, cx + side / 2f, cy + side / 2f)
@@ -75,32 +192,52 @@ object QrCardRenderer {
         canvas: Canvas,
         paint: Paint,
         model: QrCardModel,
+        presentation: QrCardPresentation,
         textRect: LayoutRect
     ) {
         val base = max(24f, min(textRect.width * 0.055f, textRect.height * 0.18f))
+        val lineHeight = base * 1.08f
+        val center = presentation.titleAlignment == QrCardTextAlignment.CENTER
+        val x = if (center) (textRect.left + textRect.right) / 2f else textRect.left
         var y = textRect.top + base * 1.15f
 
+        paint.textAlign = if (center) Paint.Align.CENTER else Paint.Align.LEFT
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         paint.color = model.textArgb
-        paint.textSize = base * 1.25f
-        y = drawEllipsized(
+        paint.textSize = base * 1.22f
+
+        y = drawWrapped(
             canvas = canvas,
             paint = paint,
             text = model.title.ifBlank { defaultTitle(model.template) },
-            x = textRect.left,
-            baseline = y,
-            maxWidth = textRect.width
+            x = x,
+            startBaseline = y,
+            maxWidth = textRect.width,
+            maxLines = presentation.titleMaxLines,
+            lineHeight = lineHeight,
+            bottom = textRect.bottom
         )
 
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
         paint.color = withAlpha(model.textArgb, 0.72f)
-        paint.textSize = base * 0.72f
-        if (model.subtitle.isNotBlank() && y + base * 0.9f < textRect.bottom) {
-            y += base * 0.9f
-            y = drawEllipsized(canvas, paint, model.subtitle, textRect.left, y, textRect.width)
+        paint.textSize = base * 0.70f
+
+        if (model.subtitle.isNotBlank() && y + lineHeight < textRect.bottom) {
+            y += base * 0.25f
+            y = drawWrapped(
+                canvas,
+                paint,
+                model.subtitle,
+                x,
+                y + lineHeight,
+                textRect.width,
+                maxLines = 2,
+                lineHeight = lineHeight * 0.88f,
+                bottom = textRect.bottom
+            )
         }
 
-        val lines = when (model.template) {
+        val detailLines = when (model.template) {
             QrCardTemplate.MINIMAL -> listOf(model.contactLine)
             QrCardTemplate.CORPORATE -> listOf(model.contactLine)
             QrCardTemplate.WIFI -> listOf(
@@ -111,33 +248,51 @@ object QrCardRenderer {
             QrCardTemplate.EVENT -> listOf(model.eventDate, model.eventLocation)
         }.filter { it.isNotBlank() }
 
+        var remainingBodyLines = presentation.bodyMaxLines
         paint.textSize = base * 0.66f
-        lines.forEach { line ->
-            if (y + base * 1.05f < textRect.bottom) {
-                y += base * 1.05f
-                y = drawEllipsized(canvas, paint, line, textRect.left, y, textRect.width)
+        detailLines.forEachIndexed { index, line ->
+            if (remainingBodyLines <= 0 || y + lineHeight >= textRect.bottom) return@forEachIndexed
+            y += base * 0.18f
+            paint.color = if (model.template == QrCardTemplate.EVENT && index == 0) {
+                model.accentArgb
+            } else {
+                withAlpha(model.textArgb, 0.78f)
+            }
+            val wrapped = QrCardTextLayout.wrap(
+                text = line,
+                maxWidth = textRect.width,
+                maxLines = remainingBodyLines,
+                measure = paint::measureText
+            )
+            wrapped.forEach { value ->
+                if (y + lineHeight < textRect.bottom) {
+                    y += lineHeight
+                    canvas.drawText(value, x, y, paint)
+                    remainingBodyLines -= 1
+                }
             }
         }
+        paint.textAlign = Paint.Align.LEFT
     }
 
-    private fun drawEllipsized(
+    private fun drawWrapped(
         canvas: Canvas,
         paint: Paint,
         text: String,
         x: Float,
-        baseline: Float,
-        maxWidth: Float
+        startBaseline: Float,
+        maxWidth: Float,
+        maxLines: Int,
+        lineHeight: Float,
+        bottom: Float
     ): Float {
-        if (text.isBlank()) return baseline
-        var value = text
-        if (paint.measureText(value) > maxWidth) {
-            while (value.length > 1 && paint.measureText("$value…") > maxWidth) {
-                value = value.dropLast(1)
-            }
-            value += "…"
+        var y = startBaseline
+        val lines = QrCardTextLayout.wrap(text, maxWidth, maxLines, paint::measureText)
+        lines.forEachIndexed { index, line ->
+            if (index > 0) y += lineHeight
+            if (y <= bottom) canvas.drawText(line, x, y, paint)
         }
-        canvas.drawText(value, x, baseline, paint)
-        return baseline
+        return y
     }
 
     private fun defaultTitle(template: QrCardTemplate): String = when (template) {
@@ -147,6 +302,13 @@ object QrCardRenderer {
         QrCardTemplate.SOCIAL -> "Sosyal Medya"
         QrCardTemplate.EVENT -> "Etkinlik"
     }
+
+    private fun expand(rect: RectF, amount: Float): RectF = RectF(
+        rect.left - amount,
+        rect.top - amount,
+        rect.right + amount,
+        rect.bottom + amount
+    )
 
     private fun withAlpha(color: Int, alpha: Float): Int {
         val a = (255 * alpha.coerceIn(0f, 1f)).toInt()
