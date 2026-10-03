@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.elxvro.scan.billing.BillingProducts
 import com.elxvro.scan.billing.ProEntitlement
 import com.elxvro.scan.billing.SubscriptionOffer
+import com.elxvro.scan.pro.ProPaywallPolicy
 import com.elxvro.scan.ui.components.ReferenceHeader
 import com.elxvro.scan.ui.components.ReferencePrimaryButton
 import com.elxvro.scan.ui.theme.ScanTokens
@@ -43,6 +44,8 @@ fun ProPaywallScreen(
     onManageSubscription: () -> Unit,
     onClose: () -> Unit
 ) {
+    val canStartPurchase = ProPaywallPolicy.canStartPurchase(entitlement)
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -94,20 +97,22 @@ fun ProPaywallScreen(
                 ProEntitlement.Free -> Unit
             }
 
-            offers.forEach { offer ->
-                val title = when (offer.basePlanId) {
-                    BillingProducts.MONTHLY_BASE_PLAN_ID -> "Aylık PRO"
-                    BillingProducts.YEARLY_BASE_PLAN_ID -> "Yıllık PRO"
-                    else -> return@forEach
+            if (canStartPurchase) {
+                offers.forEach { offer ->
+                    val title = when (offer.basePlanId) {
+                        BillingProducts.MONTHLY_BASE_PLAN_ID -> "Aylık PRO"
+                        BillingProducts.YEARLY_BASE_PLAN_ID -> "Yıllık PRO"
+                        else -> return@forEach
+                    }
+                    PlanCard(
+                        title = title,
+                        price = offer.formattedPrice,
+                        onClick = { onPurchase(offer) }
+                    )
                 }
-                PlanCard(
-                    title = title,
-                    price = offer.formattedPrice,
-                    onClick = { onPurchase(offer) }
-                )
             }
 
-            if (offers.isEmpty() && entitlement !is ProEntitlement.Pro) {
+            if (canStartPurchase && offers.isEmpty()) {
                 Text(
                     text = "Abonelik seçenekleri Google Play'den yüklenemedi. Tarama ve ücretsiz QR özellikleri kullanılmaya devam eder.",
                     color = ScanTokens.Muted,
