@@ -38,23 +38,8 @@ object QrCardRenderer {
             paint
         )
 
-        val qrSize = when {
-            model.cardAspectRatio < 0.9f -> min(width * 0.68f, height * 0.42f)
-            model.cardAspectRatio < 1.15f -> min(width * 0.58f, height * 0.58f)
-            else -> min(width * 0.39f, height * 0.72f)
-        }.toInt().coerceAtLeast(256)
-
-        val qrLeft = when {
-            model.cardAspectRatio > 1.15f -> width - outer - qrSize
-            else -> (width - qrSize) / 2f
-        }
-        val qrTop = when (model.qrPosition) {
-            QrPosition.TOP -> outer + width * 0.04f
-            QrPosition.CENTER -> (height - qrSize) / 2f
-            QrPosition.BOTTOM -> height - outer - qrSize
-        }.coerceIn(outer, height - outer - qrSize)
-
-        val qrRect = RectF(qrLeft, qrTop, qrLeft + qrSize, qrTop + qrSize)
+        val layout = QrCardLayoutPolicy.resolve(width, height, model.qrPosition)
+        val qrRect = layout.qrRect.toRectF()
         paint.color = model.qrBackgroundArgb
         canvas.drawRoundRect(qrRect, width * 0.018f, width * 0.018f, paint)
         canvas.drawBitmap(qrBitmap, null, qrRect, paint)
@@ -63,10 +48,7 @@ object QrCardRenderer {
             drawQrLogo(canvas, paint, logoBitmap, qrRect, model.logoScaleFraction)
         }
 
-        val contentLeft = outer + accentWidth + width * 0.035f
-        val contentRight = if (model.cardAspectRatio > 1.15f) qrLeft - width * 0.04f else width - outer
-        val contentWidth = (contentRight - contentLeft).coerceAtLeast(width * 0.4f)
-        drawCardText(canvas, paint, model, contentLeft, contentWidth, outer, height.toFloat())
+        drawCardText(canvas, paint, model, layout.textRect)
 
         return output
     }
@@ -93,25 +75,29 @@ object QrCardRenderer {
         canvas: Canvas,
         paint: Paint,
         model: QrCardModel,
-        left: Float,
-        availableWidth: Float,
-        outer: Float,
-        cardHeight: Float
+        textRect: LayoutRect
     ) {
-        val base = max(28f, availableWidth * 0.055f)
-        var y = outer + base * 1.6f
+        val base = max(24f, min(textRect.width * 0.055f, textRect.height * 0.18f))
+        var y = textRect.top + base * 1.15f
 
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         paint.color = model.textArgb
         paint.textSize = base * 1.25f
-        y = drawEllipsized(canvas, paint, model.title.ifBlank { defaultTitle(model.template) }, left, y, availableWidth)
+        y = drawEllipsized(
+            canvas = canvas,
+            paint = paint,
+            text = model.title.ifBlank { defaultTitle(model.template) },
+            x = textRect.left,
+            baseline = y,
+            maxWidth = textRect.width
+        )
 
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
         paint.color = withAlpha(model.textArgb, 0.72f)
         paint.textSize = base * 0.72f
-        if (model.subtitle.isNotBlank()) {
-            y += base * 0.45f
-            y = drawEllipsized(canvas, paint, model.subtitle, left, y, availableWidth)
+        if (model.subtitle.isNotBlank() && y + base * 0.9f < textRect.bottom) {
+            y += base * 0.9f
+            y = drawEllipsized(canvas, paint, model.subtitle, textRect.left, y, textRect.width)
         }
 
         val lines = when (model.template) {
@@ -127,9 +113,9 @@ object QrCardRenderer {
 
         paint.textSize = base * 0.66f
         lines.forEach { line ->
-            if (y < cardHeight - outer - base) {
+            if (y + base * 1.05f < textRect.bottom) {
                 y += base * 1.05f
-                y = drawEllipsized(canvas, paint, line, left, y, availableWidth)
+                y = drawEllipsized(canvas, paint, line, textRect.left, y, textRect.width)
             }
         }
     }
@@ -166,4 +152,6 @@ object QrCardRenderer {
         val a = (255 * alpha.coerceIn(0f, 1f)).toInt()
         return (color and 0x00FFFFFF) or (a shl 24)
     }
+
+    private fun LayoutRect.toRectF(): RectF = RectF(left, top, right, bottom)
 }
