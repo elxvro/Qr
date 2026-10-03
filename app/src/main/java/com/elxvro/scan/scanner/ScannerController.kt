@@ -153,7 +153,7 @@ class ScannerController(
         nowMs: Long,
         onLowLightChanged: (Boolean) -> Unit
     ) {
-        if (nowMs - lastLumaSampleAtMs < LUMA_SAMPLE_INTERVAL_MS) return
+        if (!LumaSamplingPolicy.shouldSample(nowMs, lastLumaSampleAtMs)) return
         lastLumaSampleAtMs = nowMs
 
         val luma = estimateLuma(proxy)
@@ -286,7 +286,6 @@ class ScannerController(
     }
 
     private companion object {
-        const val LUMA_SAMPLE_INTERVAL_MS = 450L
         const val LUMA_SAMPLE_COLUMNS = 24
         const val LUMA_SAMPLE_ROWS = 18
         const val INITIAL_FOCUS_DELAY_MS = 350L
