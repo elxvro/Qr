@@ -331,7 +331,7 @@ fun QrCardEditorScreen(
                     SectionTitle("Çözünürlük")
                     ResolutionSelector(
                         selected = exportSize,
-                        sizes = QrPremiumPolicy.allowedQrExportSizes(entitlement),
+                        sizes = QrPremiumPolicy.allowedQrCardExportSizes(entitlement),
                         enabled = isPro,
                         onLocked = onOpenPaywall
                     ) { exportSize = it }
@@ -351,7 +351,7 @@ fun QrCardEditorScreen(
                         when (val validation = QrCardValidator.validate(currentModel())) {
                             is ValidationResult.Invalid -> toast(validationMessage(validation))
                             is ValidationResult.Valid -> runCatching {
-                                val safeSize = exportSize.coerceIn(512, QrPremiumPolicy.maxQrExportSize(entitlement))
+                                val safeSize = exportSize.coerceIn(512, QrPremiumPolicy.maxQrCardExportSize(entitlement))
                                 QrCardExport.save(context, renderCard(safeSize, validation.model))
                             }.onSuccess(::toast).onFailure { toast("QR Kart kaydedilemedi") }
                         }
@@ -364,7 +364,7 @@ fun QrCardEditorScreen(
                         when (val validation = QrCardValidator.validate(currentModel())) {
                             is ValidationResult.Invalid -> toast(validationMessage(validation))
                             is ValidationResult.Valid -> runCatching {
-                                QrCardExport.share(context, renderCard(exportSize.coerceIn(512, QrPremiumPolicy.maxQrExportSize(entitlement)), validation.model))
+                                QrCardExport.share(context, renderCard(exportSize.coerceIn(512, QrPremiumPolicy.maxQrCardExportSize(entitlement)), validation.model))
                             }.onFailure { toast("QR Kart paylaşılamadı") }
                         }
                     }
