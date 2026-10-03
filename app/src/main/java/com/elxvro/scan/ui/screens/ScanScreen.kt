@@ -27,6 +27,7 @@ import androidx.compose.material.icons.outlined.CenterFocusStrong
 import androidx.compose.material.icons.outlined.FlashlightOff
 import androidx.compose.material.icons.outlined.FlashlightOn
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.PlaylistAddCheck
 import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -70,7 +71,8 @@ import com.google.mlkit.vision.barcode.common.Barcode
 fun ScanScreen(
     store: ScanStore,
     prefs: AppPrefs,
-    onOpenSettings: () -> Unit
+    onOpenSettings: () -> Unit,
+    onOpenBatchScan: () -> Unit
 ) {
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
@@ -156,12 +158,21 @@ fun ScanScreen(
             brand = true,
             onMenu = onOpenSettings,
             trailing = {
-                IconButton(onClick = onOpenSettings) {
-                    Icon(
-                        Icons.Outlined.WorkspacePremium,
-                        contentDescription = "Uygulama bilgisi",
-                        tint = ScanTokens.Warning
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onOpenBatchScan) {
+                        Icon(
+                            Icons.Outlined.PlaylistAddCheck,
+                            contentDescription = "Toplu Tarama",
+                            tint = ScanTokens.Blue
+                        )
+                    }
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(
+                            Icons.Outlined.WorkspacePremium,
+                            contentDescription = "Uygulama bilgisi",
+                            tint = ScanTokens.Warning
+                        )
+                    }
                 }
             }
         )
