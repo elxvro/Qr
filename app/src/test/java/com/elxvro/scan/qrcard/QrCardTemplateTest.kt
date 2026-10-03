@@ -35,7 +35,7 @@ class QrCardTemplateTest {
 
         assertEquals(0xFF090E15.toInt(), defaults.cardBackgroundArgb)
         assertEquals(0xFFF8FAFC.toInt(), defaults.textArgb)
-        assertEquals(0xFF0068F8.toInt(), defaults.accentArgb)
+        assertEquals(0xFF00A3FF.toInt(), defaults.accentArgb)
     }
 
     @Test
