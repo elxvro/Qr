@@ -142,7 +142,8 @@ class BillingManager(
                             offerToken = offer.offerToken,
                             formattedPrice = phase.formattedPrice,
                             priceAmountMicros = phase.priceAmountMicros,
-                            priceCurrencyCode = phase.priceCurrencyCode
+                            priceCurrencyCode = phase.priceCurrencyCode,
+                            offerId = offer.offerId
                         )
                     }
                     onOffers(BillingOfferMapper.mapOffers(rawOffers))
