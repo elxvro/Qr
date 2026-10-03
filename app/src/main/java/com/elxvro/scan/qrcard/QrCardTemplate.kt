@@ -19,7 +19,7 @@ enum class QrCardTemplate {
         )
         CORPORATE -> QrCardDefaults(
             cardBackgroundArgb = 0xFF090E15.toInt(),
-            accentArgb = 0xFF0068F8.toInt(),
+            accentArgb = 0xFF00A3FF.toInt(),
             textArgb = 0xFFF8FAFC.toInt(),
             qrForegroundArgb = 0xFF111820.toInt(),
             qrBackgroundArgb = 0xFFFFFFFF.toInt(),
@@ -28,7 +28,7 @@ enum class QrCardTemplate {
         )
         WIFI -> QrCardDefaults(
             cardBackgroundArgb = 0xFFF7F8F9.toInt(),
-            accentArgb = 0xFF0068F8.toInt(),
+            accentArgb = 0xFF00A86B.toInt(),
             textArgb = 0xFF111820.toInt(),
             qrForegroundArgb = 0xFF111820.toInt(),
             qrBackgroundArgb = 0xFFFFFFFF.toInt(),
@@ -37,7 +37,7 @@ enum class QrCardTemplate {
         )
         SOCIAL -> QrCardDefaults(
             cardBackgroundArgb = 0xFF111821.toInt(),
-            accentArgb = 0xFF0070F8.toInt(),
+            accentArgb = 0xFF8B5CF6.toInt(),
             textArgb = 0xFFF8FAFC.toInt(),
             qrForegroundArgb = 0xFF111820.toInt(),
             qrBackgroundArgb = 0xFFFFFFFF.toInt(),
@@ -46,7 +46,7 @@ enum class QrCardTemplate {
         )
         EVENT -> QrCardDefaults(
             cardBackgroundArgb = 0xFFFFFFFF.toInt(),
-            accentArgb = 0xFF0068F8.toInt(),
+            accentArgb = 0xFFFF7A00.toInt(),
             textArgb = 0xFF111820.toInt(),
             qrForegroundArgb = 0xFF111820.toInt(),
             qrBackgroundArgb = 0xFFFFFFFF.toInt(),
