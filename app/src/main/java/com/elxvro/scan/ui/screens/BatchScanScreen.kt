@@ -60,6 +60,7 @@ import com.elxvro.scan.batch.BatchScanEntry
 import com.elxvro.scan.batch.BatchScanExport
 import com.elxvro.scan.batch.BatchScanSession
 import com.elxvro.scan.scanner.ScannerController
+import com.elxvro.scan.ui.components.LowLightHint
 import com.elxvro.scan.ui.components.ReferenceHeader
 import com.elxvro.scan.ui.components.ScanOverlay
 import com.elxvro.scan.ui.theme.ScanTokens
@@ -89,6 +90,7 @@ fun BatchScanScreen(
     var zoom by remember { mutableFloatStateOf(1f) }
     var previewView by remember { mutableStateOf<PreviewView?>(null) }
     var session by remember { mutableStateOf(BatchScanSession()) }
+    var lowLight by remember { mutableStateOf(false) }
 
     fun toast(message: String) = Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
 
@@ -200,6 +202,7 @@ fun BatchScanScreen(
                                     initialTorch = torch,
                                     onResult = ::handleCode,
                                     onZoomChanged = { zoom = it },
+                                    onLowLightChanged = { lowLight = it },
                                     onError = { toast("Kamera başlatılamadı") }
                                 )
                             }
@@ -209,6 +212,20 @@ fun BatchScanScreen(
                 }
 
                 ScanOverlay()
+
+                if (lowLight && !torch) {
+                    LowLightHint(
+                        canUseTorch = controller.hasFlash(),
+                        onEnableTorch = {
+                            if (controller.hasFlash()) {
+                                torch = controller.setTorch(true)
+                            }
+                        },
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 56.dp)
+                    )
+                }
 
                 Row(
                     modifier = Modifier
