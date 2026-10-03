@@ -8,13 +8,24 @@ class EntitlementCache(context: Context) {
         Context.MODE_PRIVATE
     )
 
-    fun hasVerifiedPro(): Boolean = prefs.getBoolean(KEY_VERIFIED_PRO, false)
+    fun hasFreshVerifiedPro(nowEpochMillis: Long = System.currentTimeMillis()): Boolean {
+        return EntitlementFreshness.isFresh(
+            verified = prefs.getBoolean(KEY_VERIFIED_PRO, false),
+            verifiedAtEpochMillis = prefs.getLong(KEY_VERIFIED_AT, 0L),
+            nowEpochMillis = nowEpochMillis
+        )
+    }
 
-    fun setVerifiedPro(value: Boolean) {
-        prefs.edit().putBoolean(KEY_VERIFIED_PRO, value).apply()
+    fun setVerifiedPro(value: Boolean, nowEpochMillis: Long = System.currentTimeMillis()) {
+        prefs.edit().apply {
+            putBoolean(KEY_VERIFIED_PRO, value)
+            if (value) putLong(KEY_VERIFIED_AT, nowEpochMillis)
+            else remove(KEY_VERIFIED_AT)
+        }.apply()
     }
 
     private companion object {
         const val KEY_VERIFIED_PRO = "verified_pro"
+        const val KEY_VERIFIED_AT = "verified_at_epoch_ms"
     }
 }
