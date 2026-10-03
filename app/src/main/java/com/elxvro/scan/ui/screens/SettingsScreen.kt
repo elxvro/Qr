@@ -23,17 +23,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.DeleteSweep
-import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.FlashlightOn
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.ManageAccounts
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.PrivacyTip
 import androidx.compose.material.icons.outlined.QrCode2
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.Vibration
+import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -57,7 +59,10 @@ import com.elxvro.scan.AppPrefs
 import com.elxvro.scan.HistoryExport
 import com.elxvro.scan.ScanSettings
 import com.elxvro.scan.ScanStore
+import com.elxvro.scan.billing.ProEntitlement
+import com.elxvro.scan.pro.ProSettingsPresentation
 import com.elxvro.scan.ui.components.DividerLine
+import com.elxvro.scan.ui.components.ProBadge
 import com.elxvro.scan.ui.components.ReferenceHeader
 import com.elxvro.scan.ui.theme.ScanTokens
 
@@ -65,6 +70,11 @@ import com.elxvro.scan.ui.theme.ScanTokens
 fun SettingsScreen(
     store: ScanStore,
     prefs: AppPrefs,
+    entitlement: ProEntitlement,
+    onUpgradePro: () -> Unit,
+    onManageSubscription: () -> Unit,
+    onRestorePurchases: () -> Unit,
+    onRetryBilling: () -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -73,6 +83,7 @@ fun SettingsScreen(
     var privacyOpen by remember { mutableStateOf(false) }
     var supportOpen by remember { mutableStateOf(false) }
     var aboutOpen by remember { mutableStateOf(false) }
+    val proState = ProSettingsPresentation.from(entitlement)
 
     fun update(block: (ScanSettings) -> ScanSettings) {
         settings = block(settings)
@@ -88,6 +99,47 @@ fun SettingsScreen(
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            SettingsGroup("ELXVRO Scan PRO") {
+                ProStatusRow(proState.statusLabel, entitlement is ProEntitlement.Pro)
+                if (proState.showUpgrade) {
+                    DividerLine()
+                    LinkSettingRow(
+                        icon = Icons.Outlined.WorkspacePremium,
+                        title = "PRO'ya Geç",
+                        subtitle = "Kendi logo, QR Kart ve yüksek çözünürlük",
+                        iconColor = ScanTokens.Warning,
+                        onClick = onUpgradePro
+                    )
+                }
+                if (proState.showManage) {
+                    DividerLine()
+                    LinkSettingRow(
+                        icon = Icons.Outlined.ManageAccounts,
+                        title = "Aboneliği Yönet",
+                        subtitle = "Google Play abonelik ayarlarını aç",
+                        onClick = onManageSubscription
+                    )
+                }
+                if (proState.showRestore) {
+                    DividerLine()
+                    LinkSettingRow(
+                        icon = Icons.Outlined.Restore,
+                        title = "Satın Alımları Geri Yükle",
+                        subtitle = "Google Play hesabındaki PRO erişimini yenile",
+                        onClick = onRestorePurchases
+                    )
+                }
+                if (proState.showRetry) {
+                    DividerLine()
+                    LinkSettingRow(
+                        icon = Icons.Outlined.Refresh,
+                        title = "Google Play'i Yeniden Dene",
+                        subtitle = "Abonelik durumunu tekrar kontrol et",
+                        onClick = onRetryBilling
+                    )
+                }
+            }
+
             SettingsGroup("Tarama") {
                 SwitchSettingRow(
                     icon = Icons.Outlined.NotificationsActive,
@@ -201,7 +253,7 @@ fun SettingsScreen(
                 LinkSettingRow(
                     icon = Icons.Outlined.Info,
                     title = "ELXVRO Scan",
-                    subtitle = "Sürüm 2.0.0",
+                    subtitle = "Sürüm 2.1.0",
                     onClick = { aboutOpen = true }
                 )
             }
@@ -246,10 +298,25 @@ fun SettingsScreen(
     }
     if (aboutOpen) {
         InfoDialog(
-            title = "ELXVRO Scan 2.0.0",
-            text = "Hızlı, yerel ve kompakt QR / barkod tarayıcı. Kamera tarama, galeriden okuma, QR oluşturma, favoriler, gelişmiş geçmiş ve akıllı sonuç işlemleri tek tasarım sistemi altında çalışır.",
+            title = "ELXVRO Scan 2.1.0",
+            text = "Hızlı, yerel ve kompakt QR / barkod tarayıcı. PRO ile özel logo, yüksek çözünürlük ve tasarımlı QR Kart özellikleri eklenmiştir.",
             onDismiss = { aboutOpen = false }
         )
+    }
+}
+
+@Composable
+private fun ProStatusRow(label: String, isPro: Boolean) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        SettingIcon(Icons.Outlined.WorkspacePremium, if (isPro) ScanTokens.Warning else ScanTokens.Blue)
+        Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
+            Text("Plan", color = ScanTokens.Text, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+            Text(label, color = if (isPro) ScanTokens.Success else ScanTokens.Muted, style = MaterialTheme.typography.bodySmall)
+        }
+        if (isPro) ProBadge()
     }
 }
 
@@ -268,9 +335,7 @@ private fun SettingsGroup(title: String, content: @Composable () -> Unit) {
                 .fillMaxWidth()
                 .background(Color.White, RoundedCornerShape(ScanTokens.RadiusCard))
                 .border(1.dp, ScanTokens.Divider, RoundedCornerShape(ScanTokens.RadiusCard))
-        ) {
-            content()
-        }
+        ) { content() }
     }
 }
 
