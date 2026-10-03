@@ -2,6 +2,18 @@
 
 Native Android QR & barcode scanner and QR generator.
 
+## v2.2.1 — QR Card layout fix
+
+ELXVRO Scan 2.2.1 fixes the premium QR Card composition without changing the free scanner or core QR generator:
+
+- Landscape cards keep text and QR in separate left/right regions
+- Square Social cards reserve a dedicated text block above the QR
+- Portrait Event cards keep event details above the bottom QR area
+- Top/center/bottom QR placement now recalculates a safe non-overlapping text region
+- Text sizing adapts to the available card region instead of the full card width
+- Added layout tests across every built-in QR Card template
+- Version bumped to 2.2.1 / versionCode 23
+
 ## v2.2.0 — PRO + QR Card hardening
 
 ELXVRO Scan 2.2 tightens subscription and premium QR Card behavior without changing the free scanner/core QR experience:
