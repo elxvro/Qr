@@ -2,6 +2,21 @@
 
 Native Android QR & barcode scanner and QR generator.
 
+## v2.4.0 — Barcode creator
+
+ELXVRO Scan 2.4 expands Create with native 1D barcode generation while keeping the existing QR and PRO QR Card flows intact:
+
+- Added dedicated barcode creator entry under Oluştur
+- CODE 128 generation for printable text, stock, order and custom identifiers
+- EAN-13 generation with 12-digit automatic check-digit completion or 13-digit validation
+- UPC-A generation with 11-digit automatic check-digit completion or 12-digit validation
+- High-resolution wide PNG barcode rendering with human-readable value below the bars
+- Generated barcodes can be saved to the gallery or shared as PNG
+- Successful barcode creation is saved to local history as BARCODE with its exact format
+- Existing history barcode filter continues to work with generated CODE_128, EAN_13 and UPC_A items
+- Added unit coverage for barcode validation, check digits, format mapping and render canvas policy
+- Version bumped to 2.4.0 / versionCode 25
+
 ## v2.3.0 — QR Card visual quality
 
 ELXVRO Scan 2.3 improves the PRO QR Card creator and keeps the scanner/free QR flow unchanged:
