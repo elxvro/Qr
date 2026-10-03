@@ -53,8 +53,10 @@ import androidx.compose.ui.unit.dp
 import com.elxvro.scan.QrCodeUtil
 import com.elxvro.scan.billing.ProEntitlement
 import com.elxvro.scan.pro.QrGenerationPolicy
+import com.elxvro.scan.pro.QrPremiumPolicy
 import com.elxvro.scan.qrcard.ElxvroBrandLogo
 import com.elxvro.scan.qrcard.LogoMode
+import com.elxvro.scan.qrcard.QrCardAspectPreset
 import com.elxvro.scan.qrcard.QrCardExport
 import com.elxvro.scan.qrcard.QrCardModel
 import com.elxvro.scan.qrcard.QrCardPreviewPolicy
@@ -100,6 +102,7 @@ fun QrCardEditorScreen(
     var customLogo by remember { mutableStateOf<Bitmap?>(null) }
     var logoScale by remember { mutableFloatStateOf(0.18f) }
     var exportSize by remember { mutableIntStateOf(1200) }
+    var aspectPreset by remember { mutableStateOf(QrCardAspectPreset.DEFAULT) }
     var qrPosition by remember { mutableStateOf(QrPosition.CENTER) }
     var cardBackground by remember { mutableIntStateOf(QrCardTemplate.MINIMAL.defaults().cardBackgroundArgb) }
     var accent by remember { mutableIntStateOf(QrCardTemplate.MINIMAL.defaults().accentArgb) }
@@ -154,7 +157,7 @@ fun QrCardEditorScreen(
         logoScaleFraction = logoScale,
         quietZoneModules = 4,
         qrPosition = qrPosition,
-        cardAspectRatio = template.defaults().cardAspectRatio
+        cardAspectRatio = aspectPreset.resolve(template)
     )
 
     fun logoBitmap(mode: LogoMode): Bitmap? = when (mode) {
@@ -165,7 +168,7 @@ fun QrCardEditorScreen(
 
     fun renderCard(size: Int, model: QrCardModel): Bitmap {
         val options = QrGenerationPolicy.resolve(
-            requestedSize = minOf(size, 900),
+            requestedSize = minOf(size, 2048),
             requestedMargin = 4,
             logoMode = model.logoMode,
             entitlement = entitlement
@@ -274,16 +277,25 @@ fun QrCardEditorScreen(
                         enabled = isPro,
                         onLocked = onOpenPaywall
                     ) { qrPosition = it }
+                    SectionTitle("Kart oranı")
+                    AspectRatioSelector(
+                        selected = aspectPreset,
+                        enabled = isPro,
+                        onLocked = onOpenPaywall
+                    ) { aspectPreset = it }
                 }
                 QrCardEditorTab.CONTENT -> {
                     EditorField("QR içeriği", payload, isPro, onOpenPaywall) { payload = it }
                     EditorField("Başlık", title, isPro, onOpenPaywall) { title = it }
                     EditorField("Alt açıklama", subtitle, isPro, onOpenPaywall) { subtitle = it }
                     when (template) {
-                        QrCardTemplate.MINIMAL, QrCardTemplate.CORPORATE -> EditorField("İletişim / kısa bilgi", contactLine, isPro, onOpenPaywall) { contactLine = it }
+                        QrCardTemplate.MINIMAL,
+                        QrCardTemplate.CORPORATE,
+                        QrCardTemplate.BUSINESS,
+                        QrCardTemplate.PROMO -> EditorField("İletişim / kısa bilgi", contactLine, isPro, onOpenPaywall) { contactLine = it }
                         QrCardTemplate.WIFI -> EditorField("Wi-Fi adı (SSID)", wifiSsid, isPro, onOpenPaywall) { wifiSsid = it }
                         QrCardTemplate.SOCIAL -> EditorField("Sosyal medya hesabı", socialHandle, isPro, onOpenPaywall) { socialHandle = it }
-                        QrCardTemplate.EVENT -> {
+                        QrCardTemplate.EVENT, QrCardTemplate.TICKET -> {
                             EditorField("Tarih", eventDate, isPro, onOpenPaywall) { eventDate = it }
                             EditorField("Konum", eventLocation, isPro, onOpenPaywall) { eventLocation = it }
                         }
@@ -317,7 +329,12 @@ fun QrCardEditorScreen(
                         enabled = isPro && logoMode != LogoMode.NONE
                     )
                     SectionTitle("Çözünürlük")
-                    ResolutionSelector(exportSize, isPro, onOpenPaywall) { exportSize = it }
+                    ResolutionSelector(
+                        selected = exportSize,
+                        sizes = QrPremiumPolicy.allowedQrExportSizes(entitlement),
+                        enabled = isPro,
+                        onLocked = onOpenPaywall
+                    ) { exportSize = it }
                 }
             }
 
@@ -334,7 +351,7 @@ fun QrCardEditorScreen(
                         when (val validation = QrCardValidator.validate(currentModel())) {
                             is ValidationResult.Invalid -> toast(validationMessage(validation))
                             is ValidationResult.Valid -> runCatching {
-                                val safeSize = exportSize.coerceIn(512, 2048)
+                                val safeSize = exportSize.coerceIn(512, QrPremiumPolicy.maxQrExportSize(entitlement))
                                 QrCardExport.save(context, renderCard(safeSize, validation.model))
                             }.onSuccess(::toast).onFailure { toast("QR Kart kaydedilemedi") }
                         }
@@ -347,7 +364,7 @@ fun QrCardEditorScreen(
                         when (val validation = QrCardValidator.validate(currentModel())) {
                             is ValidationResult.Invalid -> toast(validationMessage(validation))
                             is ValidationResult.Valid -> runCatching {
-                                QrCardExport.share(context, renderCard(exportSize.coerceIn(512, 2048), validation.model))
+                                QrCardExport.share(context, renderCard(exportSize.coerceIn(512, QrPremiumPolicy.maxQrExportSize(entitlement)), validation.model))
                             }.onFailure { toast("QR Kart paylaşılamadı") }
                         }
                     }
@@ -373,6 +390,9 @@ private fun TemplateSelector(selected: QrCardTemplate, onSelect: (QrCardTemplate
                 QrCardTemplate.WIFI -> "Wi-Fi"
                 QrCardTemplate.SOCIAL -> "Sosyal"
                 QrCardTemplate.EVENT -> "Etkinlik"
+                QrCardTemplate.BUSINESS -> "Business"
+                QrCardTemplate.PROMO -> "Promo"
+                QrCardTemplate.TICKET -> "Ticket"
             }
             ReferenceChip(label, selected == template) { onSelect(template) }
         }
@@ -442,7 +462,10 @@ private fun CardColorSwatches(selected: Int, enabled: Boolean, onLocked: () -> U
         Color(0xFF0068F8),
         Color(0xFF7539E8),
         Color(0xFF0D9F55),
-        Color(0xFFCF24E8)
+        Color(0xFFCF24E8),
+        Color(0xFF1F4B99),
+        Color(0xFFFF3D7F),
+        Color(0xFFFFD166)
     )
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         colors.forEach { color ->
@@ -487,14 +510,20 @@ private fun LogoModeRow(selected: LogoMode, enabled: Boolean, onLocked: () -> Un
 }
 
 @Composable
-private fun ResolutionSelector(selected: Int, enabled: Boolean, onLocked: () -> Unit, onSelect: (Int) -> Unit) {
+private fun ResolutionSelector(
+    selected: Int,
+    sizes: List<Int>,
+    enabled: Boolean,
+    onLocked: () -> Unit,
+    onSelect: (Int) -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        listOf(512, 900, 1200, 2048).forEach { size ->
+        sizes.forEach { size ->
             Box(
                 modifier = Modifier
                     .height(40.dp)
@@ -508,6 +537,31 @@ private fun ResolutionSelector(selected: Int, enabled: Boolean, onLocked: () -> 
             ) {
                 Text("$size px", color = if (selected == size) ScanTokens.Blue else ScanTokens.Text, style = MaterialTheme.typography.bodySmall)
             }
+        }
+    }
+}
+
+@Composable
+private fun AspectRatioSelector(
+    selected: QrCardAspectPreset,
+    enabled: Boolean,
+    onLocked: () -> Unit,
+    onSelect: (QrCardAspectPreset) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        QrCardAspectPreset.entries.forEach { preset ->
+            ReferenceChip(
+                text = preset.label,
+                selected = selected == preset,
+                onClick = {
+                    if (enabled) onSelect(preset) else onLocked()
+                }
+            )
         }
     }
 }
