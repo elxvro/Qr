@@ -2,7 +2,7 @@ name: Android APK
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, feature/pro-qr-card-2.1.0 ]
   workflow_dispatch:
 
 permissions:
