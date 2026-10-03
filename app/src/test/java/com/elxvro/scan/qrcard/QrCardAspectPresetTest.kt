@@ -23,16 +23,22 @@ class QrCardAspectPresetTest {
     }
 
     @Test
-    fun everyPresetKeepsQrAndTextSeparated() {
+    fun everyTemplateAndPresetKeepsQrAndTextSeparated() {
         val width = 1600
-        QrCardAspectPreset.entries.forEach { preset ->
-            val ratio = preset.resolve(QrCardTemplate.MINIMAL)
-            val height = (width / ratio).toInt()
-            val layout = QrCardLayoutPolicy.resolve(width, height, QrPosition.CENTER)
+        QrCardTemplate.entries.forEach { template ->
+            QrCardAspectPreset.entries.forEach { preset ->
+                val ratio = preset.resolve(template)
+                val height = (width / ratio).toInt()
+                val position = template.defaults().qrPosition
+                val layout = QrCardLayoutPolicy.resolve(width, height, position)
 
-            assertFalse("${preset.name} overlap", layout.textRect.overlaps(layout.qrRect))
-            assertTrue(layout.textRect.width > 0f)
-            assertTrue(layout.textRect.height > 0f)
+                assertFalse(
+                    "${template.name}/${preset.name} overlap",
+                    layout.textRect.overlaps(layout.qrRect)
+                )
+                assertTrue(layout.textRect.width > 0f)
+                assertTrue(layout.textRect.height > 0f)
+            }
         }
     }
 }
