@@ -6,6 +6,7 @@ enum class ValidationError {
     LOGO_SIZE_INVALID,
     QUIET_ZONE_TOO_SMALL,
     QR_CONTRAST_TOO_LOW,
+    CARD_ASPECT_RATIO_INVALID,
     TITLE_REQUIRED,
     WIFI_SSID_REQUIRED,
     SOCIAL_HANDLE_REQUIRED,
@@ -21,15 +22,24 @@ sealed interface ValidationResult {
 object QrCardValidator {
     const val MAX_LOGO_SCALE = 0.20f
     const val MIN_QUIET_ZONE_MODULES = 4
+    const val MIN_CARD_ASPECT_RATIO = 0.50f
+    const val MAX_CARD_ASPECT_RATIO = 2.00f
 
     fun validate(model: QrCardModel): ValidationResult {
         val errors = linkedSetOf<ValidationError>()
 
         if (model.payload.isBlank()) errors += ValidationError.PAYLOAD_REQUIRED
-        if (model.logoMode != LogoMode.NONE && model.logoScaleFraction <= 0f) {
+        if (
+            model.logoMode != LogoMode.NONE &&
+            (!model.logoScaleFraction.isFinite() || model.logoScaleFraction <= 0f)
+        ) {
             errors += ValidationError.LOGO_SIZE_INVALID
         }
-        if (model.logoMode != LogoMode.NONE && model.logoScaleFraction > MAX_LOGO_SCALE) {
+        if (
+            model.logoMode != LogoMode.NONE &&
+            model.logoScaleFraction.isFinite() &&
+            model.logoScaleFraction > MAX_LOGO_SCALE
+        ) {
             errors += ValidationError.LOGO_TOO_LARGE
         }
         if (model.quietZoneModules < MIN_QUIET_ZONE_MODULES) {
@@ -37,6 +47,13 @@ object QrCardValidator {
         }
         if (!QrContrastPolicy.isReadable(model.qrForegroundArgb, model.qrBackgroundArgb)) {
             errors += ValidationError.QR_CONTRAST_TOO_LOW
+        }
+        if (
+            !model.cardAspectRatio.isFinite() ||
+            model.cardAspectRatio < MIN_CARD_ASPECT_RATIO ||
+            model.cardAspectRatio > MAX_CARD_ASPECT_RATIO
+        ) {
+            errors += ValidationError.CARD_ASPECT_RATIO_INVALID
         }
 
         when (model.template) {
