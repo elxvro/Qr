@@ -9,15 +9,18 @@ import com.android.billingclient.api.BillingFlowParams
 import com.android.billingclient.api.BillingResult
 import com.android.billingclient.api.PendingPurchasesParams
 import com.android.billingclient.api.ProductDetails
+import com.android.billingclient.api.ProductDetailsResponseListener
 import com.android.billingclient.api.Purchase
+import com.android.billingclient.api.PurchasesResponseListener
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
+import com.android.billingclient.api.QueryProductDetailsResult
 import com.android.billingclient.api.QueryPurchasesParams
 
 class BillingManager(
     context: Context,
     private val onOffers: (List<SubscriptionOffer>) -> Unit,
-    private val onPurchaseSnapshot: (billingOk: Boolean, PurchaseSnapshot?) -> Unit
+    private val onPurchaseSnapshot: (Boolean, PurchaseSnapshot?) -> Unit
 ) {
     private var productDetails: ProductDetails? = null
 
@@ -55,10 +58,6 @@ class BillingManager(
                     onPurchaseSnapshot(false, null)
                 }
             }
-
-            override fun onBillingServiceDisconnected() {
-                onPurchaseSnapshot(false, null)
-            }
         })
     }
 
@@ -70,13 +69,21 @@ class BillingManager(
         val params = QueryPurchasesParams.newBuilder()
             .setProductType(BillingClient.ProductType.SUBS)
             .build()
-        billingClient.queryPurchasesAsync(params) { billingResult, purchases ->
-            if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                processPurchases(purchases)
-            } else {
-                onPurchaseSnapshot(false, null)
+        billingClient.queryPurchasesAsync(
+            params,
+            object : PurchasesResponseListener {
+                override fun onQueryPurchasesResponse(
+                    billingResult: BillingResult,
+                    purchases: List<Purchase>
+                ) {
+                    if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                        processPurchases(purchases)
+                    } else {
+                        onPurchaseSnapshot(false, null)
+                    }
+                }
             }
-        }
+        )
     }
 
     fun launchPurchase(activity: Activity, offer: SubscriptionOffer): BillingResult? {
@@ -107,28 +114,37 @@ class BillingManager(
             .setProductList(listOf(product))
             .build()
 
-        billingClient.queryProductDetailsAsync(params) { billingResult, result ->
-            if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
-                productDetails = null
-                onOffers(emptyList())
-                return@queryProductDetailsAsync
+        billingClient.queryProductDetailsAsync(
+            params,
+            object : ProductDetailsResponseListener {
+                override fun onProductDetailsResponse(
+                    billingResult: BillingResult,
+                    result: QueryProductDetailsResult
+                ) {
+                    if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
+                        productDetails = null
+                        onOffers(emptyList())
+                        return
+                    }
+                    val details = result.productDetailsList.firstOrNull {
+                        it.productId == BillingProducts.PRODUCT_ID
+                    }
+                    productDetails = details
+                    val rawOffers = details?.subscriptionOfferDetails.orEmpty().mapNotNull { offer ->
+                        val phase = offer.pricingPhases.pricingPhaseList.lastOrNull()
+                            ?: return@mapNotNull null
+                        RawSubscriptionOffer(
+                            basePlanId = offer.basePlanId,
+                            offerToken = offer.offerToken,
+                            formattedPrice = phase.formattedPrice,
+                            priceAmountMicros = phase.priceAmountMicros,
+                            priceCurrencyCode = phase.priceCurrencyCode
+                        )
+                    }
+                    onOffers(BillingOfferMapper.mapOffers(rawOffers))
+                }
             }
-            val details = result.productDetailsList.firstOrNull {
-                it.productId == BillingProducts.PRODUCT_ID
-            }
-            productDetails = details
-            val rawOffers = details?.subscriptionOfferDetails.orEmpty().mapNotNull { offer ->
-                val phase = offer.pricingPhases.pricingPhaseList.lastOrNull() ?: return@mapNotNull null
-                RawSubscriptionOffer(
-                    basePlanId = offer.basePlanId,
-                    offerToken = offer.offerToken,
-                    formattedPrice = phase.formattedPrice,
-                    priceAmountMicros = phase.priceAmountMicros,
-                    priceCurrencyCode = phase.priceCurrencyCode
-                )
-            }
-            onOffers(BillingOfferMapper.mapOffers(rawOffers))
-        }
+        )
     }
 
     private fun processPurchases(purchases: List<Purchase>) {
