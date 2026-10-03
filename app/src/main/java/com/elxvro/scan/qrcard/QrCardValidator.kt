@@ -64,10 +64,13 @@ object QrCardValidator {
                 if (model.title.isBlank()) errors += ValidationError.TITLE_REQUIRED
                 if (model.socialHandle.isBlank()) errors += ValidationError.SOCIAL_HANDLE_REQUIRED
             }
-            QrCardTemplate.EVENT -> {
+            QrCardTemplate.EVENT, QrCardTemplate.TICKET -> {
                 if (model.title.isBlank()) errors += ValidationError.TITLE_REQUIRED
                 if (model.eventDate.isBlank()) errors += ValidationError.EVENT_DATE_REQUIRED
                 if (model.eventLocation.isBlank()) errors += ValidationError.EVENT_LOCATION_REQUIRED
+            }
+            QrCardTemplate.BUSINESS, QrCardTemplate.PROMO -> {
+                if (model.title.isBlank()) errors += ValidationError.TITLE_REQUIRED
             }
         }
 
