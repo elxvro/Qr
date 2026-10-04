@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -48,12 +49,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.elxvro.scan.FreeQrBrandPreset
+import com.elxvro.scan.FreeQrBrandPresetCatalog
 import com.elxvro.scan.QrCodeUtil
 import com.elxvro.scan.QrImageActions
 import com.elxvro.scan.QrPayloadBuilder
@@ -63,6 +67,13 @@ import com.elxvro.scan.pro.QrGenerationPolicy
 import com.elxvro.scan.pro.QrPremiumPolicy
 import com.elxvro.scan.qrcard.ElxvroBrandLogo
 import com.elxvro.scan.qrcard.LogoMode
+import com.elxvro.scan.qrcard.PremiumFixedBackgroundCatalog
+import com.elxvro.scan.qrcard.QrCardAspectPreset
+import com.elxvro.scan.qrcard.QrCardBackgroundMode
+import com.elxvro.scan.qrcard.QrCardDesignCatalog
+import com.elxvro.scan.qrcard.QrCardModel
+import com.elxvro.scan.qrcard.QrCardRenderer
+import com.elxvro.scan.qrcard.QrCardTemplate
 import com.elxvro.scan.qrcard.QrLogoComposer
 import com.elxvro.scan.ui.components.ProBadge
 import com.elxvro.scan.ui.components.ReferenceChip
@@ -96,6 +107,8 @@ fun CreateScreen(
     var logoMode by remember { mutableStateOf(QrPremiumPolicy.defaultLogoMode(entitlement)) }
     var logoScale by remember { mutableFloatStateOf(0.18f) }
     var customLogo by remember { mutableStateOf<Bitmap?>(null) }
+    var selectedBrandPresetId by remember { mutableStateOf(FreeQrBrandPresetCatalog.default.id) }
+    var usePlainQr by remember { mutableStateOf(false) }
 
     fun toast(message: String) = Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
 
@@ -139,7 +152,32 @@ fun CreateScreen(
             highErrorCorrection = options.highErrorCorrection
         )
         val logo = selectedLogoBitmap()
-        return if (logo != null) QrLogoComposer.compose(raw, logo, logoScale) else raw
+        val composed = if (logo != null) QrLogoComposer.compose(raw, logo, logoScale) else raw
+        if (usePlainQr && isPro) return composed
+
+        val brandPreset = FreeQrBrandPresetCatalog.find(selectedBrandPresetId)
+        val cardModel = QrCardModel(
+            template = QrCardTemplate.MINIMAL,
+            designPreset = QrCardDesignCatalog.defaultFor(
+                QrCardAspectPreset.SQUARE,
+                QrCardBackgroundMode.FIXED_BACKGROUND
+            ),
+            backgroundPresetId = brandPreset.backgroundPresetId,
+            payload = text,
+            brandText = brandPreset.brand,
+            title = brandPreset.title,
+            descriptionText = brandPreset.description,
+            ctaText = brandPreset.cta,
+            logoMode = LogoMode.NONE,
+            qrForegroundArgb = AndroidColor.BLACK,
+            qrBackgroundArgb = AndroidColor.WHITE,
+            cardAspectRatio = 1f
+        )
+        return QrCardRenderer.render(
+            model = cardModel,
+            qrBitmap = composed,
+            outputWidth = options.size.coerceIn(512, 4096)
+        )
     }
 
     fun buildQr() {
@@ -277,6 +315,29 @@ fun CreateScreen(
                     }
                 }
             }
+
+            Text(
+                "Hazır ELXVRO kartları • Ücretsiz",
+                color = ScanTokens.Muted,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 14.dp, bottom = 7.dp)
+            )
+            FreeBrandPresetSelector(
+                selectedId = selectedBrandPresetId,
+                usePlainQr = usePlainQr,
+                isPro = isPro,
+                onSelect = { preset ->
+                    selectedBrandPresetId = preset.id
+                    usePlainQr = false
+                    rebuildGenerated()
+                },
+                onPlain = {
+                    usePlainQr = true
+                    rebuildGenerated()
+                }
+            )
 
             generated?.let { bitmap ->
                 Box(
@@ -435,6 +496,116 @@ fun CreateScreen(
                 }
             }
             Spacer(Modifier.height(18.dp))
+        }
+    }
+}
+
+@Composable
+private fun FreeBrandPresetSelector(
+    selectedId: String,
+    usePlainQr: Boolean,
+    isPro: Boolean,
+    onSelect: (FreeQrBrandPreset) -> Unit,
+    onPlain: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(9.dp)
+    ) {
+        FreeQrBrandPresetCatalog.all.forEach { preset ->
+            val backgroundPreset = PremiumFixedBackgroundCatalog.find(preset.backgroundPresetId)
+            val selected = !usePlainQr && selectedId == preset.id
+            Column(
+                modifier = Modifier
+                    .width(116.dp)
+                    .clickable { onSelect(preset) },
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(72.dp)
+                        .background(
+                            brush = Brush.linearGradient(
+                                listOf(
+                                    Color(backgroundPreset.startArgb),
+                                    Color(backgroundPreset.endArgb)
+                                )
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        .border(
+                            if (selected) 2.dp else 1.dp,
+                            if (selected) ScanTokens.Blue else Color(backgroundPreset.accentArgb).copy(alpha = 0.70f),
+                            RoundedCornerShape(12.dp)
+                        )
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        "ELXVRO",
+                        color = Color(backgroundPreset.accentArgb),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.align(Alignment.TopStart)
+                    )
+                    Text(
+                        preset.cta,
+                        color = Color(backgroundPreset.ctaTextArgb),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .background(
+                                Color(backgroundPreset.accentArgb),
+                                RoundedCornerShape(99.dp)
+                            )
+                            .padding(horizontal = 7.dp, vertical = 3.dp)
+                    )
+                }
+                Text(
+                    preset.label,
+                    color = if (selected) ScanTokens.Blue else ScanTokens.Text,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 2,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+        }
+        if (isPro) {
+            Column(
+                modifier = Modifier
+                    .width(96.dp)
+                    .clickable(onClick = onPlain),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(72.dp)
+                        .background(Color.White, RoundedCornerShape(12.dp))
+                        .border(
+                            if (usePlainQr) 2.dp else 1.dp,
+                            if (usePlainQr) ScanTokens.Blue else ScanTokens.Divider,
+                            RoundedCornerShape(12.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Outlined.QrCode2,
+                        contentDescription = null,
+                        tint = ScanTokens.Text,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+                Text(
+                    "Sade QR",
+                    color = if (usePlainQr) ScanTokens.Blue else ScanTokens.Text,
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
         }
     }
 }
