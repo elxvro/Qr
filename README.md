@@ -2,6 +2,26 @@
 
 Native Android QR & barcode scanner and QR generator.
 
+## v3.5.0-test — 100 Unique Cards, Live QR Picker & New ELXVRO Identity
+
+- Rebuilt fixed-card selection as two separate libraries: 50 Free ELXVRO cards + 50 PRO fixed cards.
+- All 100 cards use unique visual fingerprints; Free and PRO libraries do not reuse the same card design.
+- Added 10 adaptive card-layout variants so QR, brand, copy and CTA positions vary instead of only recoloring one layout.
+- Added 10 decorative pattern systems and 20 separate Free/PRO palette families.
+- Card pickers now use lazy scrolling and show real rendered QR cards while browsing.
+- Both pickers show selected card number and name, e.g. 17/50.
+- Free QR generator now offers 50 ELXVRO-branded ready cards with real QR previews.
+- PRO fixed-card editor now offers 50 separate premium fixed designs with real QR previews.
+- Fixed PRO cards preserve their designed palette; users edit copy and logo instead of accidentally breaking the background design.
+- Full-background PRO cards now use a continuous HSV color card instead of a short list of preset swatches.
+- Color editing is section-based: background/photo tint, button/accent, brand, title, description, CTA text, QR and QR background.
+- Full-photo background tint now follows the selected background color.
+- Replaced the old scanner-style application icon with a professional ELXVRO X monogram framed by QR corner marks.
+- The same ELXVRO mark is reused by the launcher, branded in-app header, settings identity card and ELXVRO QR logo.
+- Existing safe back-navigation behavior from v3.4 remains intact.
+- Added unit coverage for 50+50 catalogs, unique design fingerprints, 10 safe layouts, HSV conversion and QR-thumbnail policy.
+- Version 3.5.0-test / versionCode 37.
+
 ## v3.4.0-test — Navigation, Premium Card Library & ELXVRO Brand
 
 - Added system-back navigation handling so child screens close first instead of unexpectedly closing the app.
