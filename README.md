@@ -2,6 +2,23 @@
 
 Native Android QR & barcode scanner and QR generator.
 
+## v3.4.0-test — Navigation, Premium Card Library & ELXVRO Brand
+
+- Added system-back navigation handling so child screens close first instead of unexpectedly closing the app.
+- Create, History and Settings system-back now return to Scanner before the normal root exit behavior.
+- Added 48 selectable fixed-background PRO card designs: 8 premium color families × 6 visual patterns.
+- Fixed-background cards lock their design palette; users choose the card and customize text / logo rather than rebuilding the background.
+- Full-background photo cards remain available as the second PRO card mode.
+- Added six ready ELXVRO promotional cards to standard QR creation, including elxvro.com, ELXVRO Scan and signature brand copy.
+- Standard free QR output uses a selected ELXVRO branded card; PRO can additionally choose plain QR output.
+- Redesigned the Settings version/about area as an ELXVRO brand card with tagline, version and elxvro.com.
+- Rewrote Privacy and Data Usage copy around local processing and user control.
+- Added a dedicated Usage Terms section with responsible-use language.
+- Expanded Supported Content into code formats, smart QR types, actions and creation capabilities.
+- Long information dialogs are now scrollable on smaller screens.
+- Added unit coverage for back navigation, 48-card catalog, free brand cards and brand/privacy/support copy.
+- Version 3.4.0-test / versionCode 36.
+
 ## v3.3.0-test — Reference Card Redesign
 
 - Replaced the previous v3 QR Card renderer with a new renderer built from the approved reference layout.
