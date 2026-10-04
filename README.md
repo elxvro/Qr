@@ -2,6 +2,24 @@
 
 Native Android QR & barcode scanner and QR generator.
 
+## v3.2.0-test — Fully Custom Common QR Card
+
+The PRO QR Card editor now uses one simple shared card structure across both background modes and every ratio:
+
+- Removed the visible content-type/template selector from the professional card editor
+- Every professional card now uses the same core copy structure: brand/name, title, description, CTA and QR
+- “ELXVRO” is no longer forced in PRO cards; brand/name is editable and may be left blank to hide it completely
+- Title, description and CTA/button text are independently editable
+- Empty professional text fields remain empty instead of falling back to legacy ELXVRO copy
+- Brand, title, description and CTA text colors can be selected independently
+- Accent/button background, card background and QR foreground remain separately editable
+- Fixed-background and changing-background card modes remain available across 1:1, 16:9, 1.586:1, 4:5 and 9:16
+- Existing custom QR logo / ELXVRO logo / no-logo options remain available; PRO users can remove or replace the QR logo
+- Professional renderer no longer contains hard-coded “ELXVRO” or “Scan to explore” text
+- PRO test mode remains enabled in debuggable builds for pre-release validation
+- Added unit coverage for editable copy, blank-brand behavior, legacy preview compatibility and independent text colors
+- Version bumped to 3.2.0-test / versionCode 34
+
 ## v3.1.0-test — Two QR Card Types
 
 QR Card Studio is simplified into two consistent card systems across every supported ratio:
