@@ -2,7 +2,9 @@ package com.elxvro.scan.ui.components
 
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -21,6 +23,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -28,6 +31,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.elxvro.scan.ResultSheetPolicy
 import com.elxvro.scan.ScanPresentation
+import com.elxvro.scan.StructuredResultCard
+import com.elxvro.scan.StructuredResultParser
 import com.elxvro.scan.SmartActionType
 import com.elxvro.scan.UrlRiskLevel
 import com.elxvro.scan.UrlSafetyPolicy
@@ -46,6 +51,15 @@ fun ResultSheet(
     onFavorite: () -> Unit
 ) {
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val structured = remember(result.raw, result.semanticType, result.kind, result.format) {
+        StructuredResultParser.parse(
+            raw = result.raw,
+            semanticType = result.semanticType,
+            kind = result.kind,
+            format = result.format
+        )
+    }
+    val showSensitive = remember(result.raw) { mutableStateOf(false) }
     val urlSafety = remember(result.action.type, result.action.value) {
         if (result.action.type == SmartActionType.OPEN_URL) {
             UrlSafetyPolicy.analyze(result.action.value)
@@ -86,11 +100,22 @@ fun ResultSheet(
                     color = ScanTokens.Muted,
                     modifier = Modifier.padding(top = 2.dp)
                 )
+                structured?.let { card ->
+                    StructuredResultCardView(
+                        card = card,
+                        showSensitive = showSensitive.value,
+                        onToggleSensitive = { showSensitive.value = !showSensitive.value },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp)
+                    )
+                }
+
                 SelectionContainer {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 12.dp)
+                            .padding(top = if (structured == null) 12.dp else 8.dp)
                             .background(ScanTokens.Paper, RoundedCornerShape(12.dp))
                             .padding(horizontal = 14.dp, vertical = 12.dp)
                     ) {
@@ -158,6 +183,58 @@ fun ResultSheet(
                 showChevron = false,
                 iconColor = ScanTokens.Muted,
                 onClick = {}
+            )
+        }
+    }
+}
+
+@Composable
+private fun StructuredResultCardView(
+    card: StructuredResultCard,
+    showSensitive: Boolean,
+    onToggleSensitive: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val hasSensitive = card.fields.any { it.sensitive }
+    Column(
+        modifier = modifier
+            .background(ScanTokens.Blue.copy(alpha = 0.06f), RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+    ) {
+        Text(
+            text = card.title,
+            color = ScanTokens.Blue,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold
+        )
+        card.fields.forEach { field ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 7.dp)
+            ) {
+                Text(
+                    text = field.label,
+                    color = ScanTokens.Muted,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.fillMaxWidth(0.34f)
+                )
+                Text(
+                    text = if (field.sensitive && !showSensitive) "••••••••" else field.value,
+                    color = ScanTokens.Text,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+        if (hasSensitive) {
+            Text(
+                text = if (showSensitive) "Şifreyi gizle" else "Şifreyi göster",
+                color = ScanTokens.Blue,
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .clickable(onClick = onToggleSensitive)
             )
         }
     }
