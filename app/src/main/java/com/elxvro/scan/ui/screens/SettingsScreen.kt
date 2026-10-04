@@ -201,7 +201,7 @@ fun SettingsScreen(
                 SwitchSettingRow(
                     icon = Icons.Outlined.OpenInNew,
                     title = "Güvenli Hızlı Aç",
-                    subtitle = "Yalnız HTTP/HTTPS bağlantıları otomatik aç",
+                    subtitle = "Yalnız düşük riskli HTTPS bağlantılarını otomatik aç",
                     checked = settings.safeAutoOpen,
                     onChecked = {
                         prefs.setSafeAutoOpen(it)
