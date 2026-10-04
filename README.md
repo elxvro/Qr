@@ -2,6 +2,25 @@
 
 Native Android QR & barcode scanner and QR generator.
 
+## v2.9.0 — Smart result cards
+
+ELXVRO Scan 2.9 makes structured QR and barcode results easier to read while keeping the original raw payload available:
+
+- Wi-Fi results show SSID, security type, hidden-network state and password
+- Wi-Fi passwords are hidden by default and require an explicit reveal action
+- vCard and MECARD contact results show name, phone and e-mail fields
+- Calendar/VEVENT results show event title, start, end and location when available
+- mailto results show recipient, subject and message body
+- SMS results show phone number and message body
+- geo results show validated latitude and longitude
+- Product barcodes show the product code and exact barcode format prominently
+- Malformed or incomplete structured payloads fall back to the existing raw-result presentation instead of failing
+- Raw scanned content remains visible, selectable, copyable and shareable
+- Settings/About now reads the installed app version dynamically instead of showing the old hard-coded 2.1.0 value
+- All parsing remains local/offline and does not send scanned content to a server
+- Added unit coverage for Wi-Fi, vCard, MECARD, VEVENT, mailto, SMS, geo, product and malformed-data fallback parsing
+- Version bumped to 2.9.0 / versionCode 30
+
 ## v2.8.0 — Local URL safety
 
 ELXVRO Scan 2.8 adds an offline URL safety layer to scanned web links without uploading URLs or scan history:
