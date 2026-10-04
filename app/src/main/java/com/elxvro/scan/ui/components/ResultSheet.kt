@@ -21,6 +21,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -28,6 +29,9 @@ import androidx.compose.ui.unit.dp
 import com.elxvro.scan.ResultSheetPolicy
 import com.elxvro.scan.ScanPresentation
 import com.elxvro.scan.SmartActionType
+import com.elxvro.scan.UrlRiskLevel
+import com.elxvro.scan.UrlSafetyPolicy
+import com.elxvro.scan.UrlSafetyPresentation
 import com.elxvro.scan.ui.theme.ScanTokens
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,6 +46,13 @@ fun ResultSheet(
     onFavorite: () -> Unit
 ) {
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val urlSafety = remember(result.action.type, result.action.value) {
+        if (result.action.type == SmartActionType.OPEN_URL) {
+            UrlSafetyPolicy.analyze(result.action.value)
+        } else {
+            null
+        }
+    }
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = state,
@@ -100,9 +111,27 @@ fun ResultSheet(
                         }
                     }
                 }
+
+                urlSafety?.let { report ->
+                    UrlSafetyCard(
+                        level = report.level,
+                        host = report.host,
+                        reasons = report.reasons.map(UrlSafetyPresentation::reasonText),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 10.dp)
+                    )
+                }
+
                 if (ResultSheetPolicy.showPrimaryAction(result.action.type)) {
                     ReferencePrimaryButton(
-                        text = result.action.label,
+                        text = if (
+                            urlSafety != null && urlSafety.level != UrlRiskLevel.LOW
+                        ) {
+                            "Siteyi Yine de Aç"
+                        } else {
+                            result.action.label
+                        },
                         onClick = onPrimary,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -130,6 +159,57 @@ fun ResultSheet(
                 iconColor = ScanTokens.Muted,
                 onClick = {}
             )
+        }
+    }
+}
+
+@Composable
+private fun UrlSafetyCard(
+    level: UrlRiskLevel,
+    host: String?,
+    reasons: List<String>,
+    modifier: Modifier = Modifier
+) {
+    val accent = when (level) {
+        UrlRiskLevel.LOW -> ScanTokens.Blue
+        UrlRiskLevel.MEDIUM -> ScanTokens.Warning
+        UrlRiskLevel.HIGH -> androidx.compose.ui.graphics.Color(0xFFD13B3B)
+    }
+    Column(
+        modifier = modifier
+            .background(accent.copy(alpha = 0.08f), RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+    ) {
+        Text(
+            text = UrlSafetyPresentation.label(level),
+            color = accent,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold
+        )
+        if (!host.isNullOrBlank()) {
+            Text(
+                text = "Hedef: $host",
+                color = ScanTokens.Text,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 3.dp)
+            )
+        }
+        if (reasons.isEmpty()) {
+            Text(
+                text = "HTTPS bağlantısı yerel kontrolde ek risk işareti göstermedi.",
+                color = ScanTokens.Muted,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 3.dp)
+            )
+        } else {
+            reasons.take(3).forEach { reason ->
+                Text(
+                    text = "• $reason",
+                    color = ScanTokens.Muted,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 3.dp)
+                )
+            }
         }
     }
 }
