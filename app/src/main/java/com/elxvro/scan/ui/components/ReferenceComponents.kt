@@ -18,7 +18,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Menu
-import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -30,9 +29,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.elxvro.scan.R
 import com.elxvro.scan.ui.theme.ScanTokens
 
 @Composable
@@ -63,12 +64,12 @@ fun ReferenceHeader(
         }
         if (brand) {
             Icon(
-                Icons.Outlined.QrCodeScanner,
-                contentDescription = null,
-                tint = ScanTokens.Blue,
-                modifier = Modifier.size(23.dp)
+                painter = painterResource(R.drawable.ic_launcher),
+                contentDescription = "ELXVRO",
+                tint = Color.Unspecified,
+                modifier = Modifier.size(28.dp)
             )
-            Spacer(Modifier.size(7.dp))
+            Spacer(Modifier.size(8.dp))
         }
         Text(
             text = title,
