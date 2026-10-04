@@ -11,7 +11,7 @@ class QrCardReferenceBackgroundPolicyTest {
         val policy = QrCardReferenceBackgroundPolicy.resolve(QrCardBackgroundMode.FIXED_BACKGROUND)
         assertFalse(policy.useUserPhoto)
         assertTrue(policy.useFixedDarkGold)
-        assertEquals(0.0f, policy.photoOverlayAlpha)
+        assertEquals(0f, policy.photoOverlayAlpha, 0.0001f)
     }
 
     @Test
