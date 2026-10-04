@@ -22,7 +22,8 @@ object QrCardReferenceRenderer {
         val preset = requireNotNull(model.designPreset)
         val aspect = preset.aspectPreset
         val mode = preset.backgroundMode
-        val theme = QrCardDesignColorPolicy.resolve(
+        val fixedPreset = PremiumFixedBackgroundCatalog.find(model.backgroundPresetId)
+        val editableTheme = QrCardDesignColorPolicy.resolve(
             preset = preset,
             cardBackgroundArgb = model.cardBackgroundArgb,
             accentArgb = model.accentArgb,
@@ -30,14 +31,36 @@ object QrCardReferenceRenderer {
             qrForegroundArgb = model.qrForegroundArgb,
             qrBackgroundArgb = model.qrBackgroundArgb
         )
+        val theme = if (mode == QrCardBackgroundMode.FIXED_BACKGROUND) {
+            QrCardDesignTheme(
+                backgroundArgb = fixedPreset.startArgb,
+                accentArgb = fixedPreset.accentArgb,
+                titleArgb = fixedPreset.titleArgb,
+                bodyArgb = fixedPreset.bodyArgb,
+                qrForegroundArgb = 0xFF0A0D12.toInt(),
+                qrBackgroundArgb = 0xFFFFFFFF.toInt(),
+                photoOverlayAlpha = 0f
+            )
+        } else {
+            editableTheme
+        }
         val copy = QrCardCopyPolicy.resolve(model)
-        val textColors = QrCardTextColorPolicy.resolve(
-            theme = theme,
-            brandTextArgb = model.brandTextArgb,
-            titleTextArgb = model.textArgb,
-            bodyTextArgb = model.bodyTextArgb,
-            ctaTextArgb = model.ctaTextArgb
-        )
+        val textColors = if (mode == QrCardBackgroundMode.FIXED_BACKGROUND) {
+            QrCardTextColors(
+                brandArgb = fixedPreset.accentArgb,
+                titleArgb = fixedPreset.titleArgb,
+                bodyArgb = fixedPreset.bodyArgb,
+                ctaArgb = fixedPreset.ctaTextArgb
+            )
+        } else {
+            QrCardTextColorPolicy.resolve(
+                theme = theme,
+                brandTextArgb = model.brandTextArgb,
+                titleTextArgb = model.textArgb,
+                bodyTextArgb = model.bodyTextArgb,
+                ctaTextArgb = model.ctaTextArgb
+            )
+        }
         val size = QrCardOutputSizePolicy.resolve(requestedLongEdge, model.cardAspectRatio)
         val output = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
@@ -51,6 +74,7 @@ object QrCardReferenceRenderer {
             paint = paint,
             theme = theme,
             background = background,
+            fixedPreset = fixedPreset,
             heroBitmap = heroBitmap,
             width = size.width.toFloat(),
             height = size.height.toFloat(),
@@ -68,11 +92,35 @@ object QrCardReferenceRenderer {
         paint: Paint,
         theme: QrCardDesignTheme,
         background: QrCardReferenceBackground,
+        fixedPreset: PremiumFixedBackgroundPreset,
         heroBitmap: Bitmap?,
         width: Float,
         height: Float,
         short: Float
     ) {
+        if (background.useFixedDarkGold) {
+            paint.shader = LinearGradient(
+                0f,
+                0f,
+                width,
+                height,
+                fixedPreset.startArgb,
+                fixedPreset.endArgb,
+                Shader.TileMode.CLAMP
+            )
+            canvas.drawRect(0f, 0f, width, height, paint)
+            paint.shader = null
+            drawPremiumPattern(
+                canvas = canvas,
+                paint = paint,
+                preset = fixedPreset,
+                width = width,
+                height = height,
+                short = short
+            )
+            return
+        }
+
         if (background.useUserPhoto && heroBitmap != null) {
             drawBitmapCenterCrop(canvas, paint, heroBitmap, RectF(0f, 0f, width, height))
             paint.shader = LinearGradient(
@@ -105,61 +153,110 @@ object QrCardReferenceRenderer {
         canvas.drawRect(0f, 0f, width, height, paint)
         paint.shader = null
 
-        if (background.useFixedDarkGold) {
-            drawFixedGoldLines(canvas, paint, theme.accentArgb, width, height, short)
-        } else {
-            paint.color = withAlpha(theme.accentArgb, 0.07f)
-            canvas.drawCircle(width * 0.90f, height * 0.08f, short * 0.18f, paint)
-            canvas.drawCircle(width * 0.10f, height * 0.92f, short * 0.22f, paint)
-        }
+        paint.color = withAlpha(theme.accentArgb, 0.07f)
+        canvas.drawCircle(width * 0.90f, height * 0.08f, short * 0.18f, paint)
+        canvas.drawCircle(width * 0.10f, height * 0.92f, short * 0.22f, paint)
     }
 
-    private fun drawFixedGoldLines(
+    private fun drawPremiumPattern(
         canvas: Canvas,
         paint: Paint,
-        accent: Int,
+        preset: PremiumFixedBackgroundPreset,
         width: Float,
         height: Float,
         short: Float
     ) {
         paint.style = Paint.Style.STROKE
         paint.strokeCap = Paint.Cap.ROUND
+        paint.color = withAlpha(preset.accentArgb, 0.72f)
 
-        val top = Path().apply {
-            moveTo(-short * 0.15f, height * 0.26f)
-            cubicTo(
-                width * 0.12f, height * 0.20f,
-                width * 0.20f, height * 0.02f,
-                width * 0.34f, -short * 0.05f
-            )
+        when (preset.pattern) {
+            PremiumFixedPattern.SWEEP -> {
+                paint.strokeWidth = max(2f, short * 0.010f)
+                val p1 = Path().apply {
+                    moveTo(-short * 0.10f, height * 0.30f)
+                    cubicTo(width * 0.22f, height * 0.08f, width * 0.55f, height * 0.18f, width + short * 0.08f, height * 0.02f)
+                }
+                canvas.drawPath(p1, paint)
+                paint.color = withAlpha(preset.accentArgb, 0.34f)
+                val p2 = Path().apply {
+                    moveTo(width * 0.18f, height + short * 0.04f)
+                    cubicTo(width * 0.48f, height * 0.70f, width * 0.76f, height * 0.96f, width + short * 0.08f, height * 0.62f)
+                }
+                canvas.drawPath(p2, paint)
+            }
+            PremiumFixedPattern.RINGS -> {
+                paint.strokeWidth = max(2f, short * 0.008f)
+                listOf(0.20f, 0.31f, 0.44f).forEachIndexed { index, radius ->
+                    paint.color = withAlpha(preset.accentArgb, 0.18f + index * 0.14f)
+                    canvas.drawCircle(width * 0.84f, height * 0.18f, short * radius, paint)
+                }
+                listOf(0.17f, 0.28f).forEachIndexed { index, radius ->
+                    paint.color = withAlpha(preset.accentArgb, 0.18f + index * 0.12f)
+                    canvas.drawCircle(width * 0.12f, height * 0.88f, short * radius, paint)
+                }
+            }
+            PremiumFixedPattern.DIAGONAL -> {
+                paint.strokeWidth = max(2f, short * 0.007f)
+                var offset = -height
+                var index = 0
+                while (offset < width + height) {
+                    paint.color = withAlpha(preset.accentArgb, if (index % 3 == 0) 0.34f else 0.12f)
+                    canvas.drawLine(offset, height, offset + height, 0f, paint)
+                    offset += short * 0.15f
+                    index++
+                }
+            }
+            PremiumFixedPattern.FRAME -> {
+                paint.strokeWidth = max(2f, short * 0.010f)
+                val inset = short * 0.055f
+                canvas.drawRoundRect(
+                    RectF(inset, inset, width - inset, height - inset),
+                    short * 0.05f,
+                    short * 0.05f,
+                    paint
+                )
+                paint.color = withAlpha(preset.accentArgb, 0.28f)
+                val inset2 = inset + short * 0.035f
+                canvas.drawRoundRect(
+                    RectF(inset2, inset2, width - inset2, height - inset2),
+                    short * 0.04f,
+                    short * 0.04f,
+                    paint
+                )
+            }
+            PremiumFixedPattern.HORIZON -> {
+                paint.strokeWidth = max(2f, short * 0.008f)
+                val baseY = height * 0.72f
+                repeat(5) { index ->
+                    paint.color = withAlpha(preset.accentArgb, 0.12f + index * 0.09f)
+                    val y = baseY + index * short * 0.045f
+                    canvas.drawLine(0f, y, width, y - short * 0.12f, paint)
+                }
+                paint.color = withAlpha(preset.accentArgb, 0.56f)
+                canvas.drawLine(0f, baseY, width, baseY - short * 0.12f, paint)
+            }
+            PremiumFixedPattern.FACETS -> {
+                paint.strokeWidth = max(2f, short * 0.007f)
+                val points = listOf(
+                    0f to height * 0.18f,
+                    width * 0.24f to 0f,
+                    width * 0.58f to height * 0.25f,
+                    width to height * 0.06f,
+                    width * 0.80f to height * 0.62f,
+                    width to height,
+                    width * 0.45f to height * 0.82f,
+                    0f to height
+                )
+                for (i in 0 until points.lastIndex) {
+                    paint.color = withAlpha(preset.accentArgb, if (i % 2 == 0) 0.30f else 0.14f)
+                    canvas.drawLine(points[i].first, points[i].second, points[i + 1].first, points[i + 1].second, paint)
+                }
+                paint.color = withAlpha(preset.accentArgb, 0.18f)
+                canvas.drawLine(points[1].first, points[1].second, points[6].first, points[6].second, paint)
+                canvas.drawLine(points[2].first, points[2].second, points[4].first, points[4].second, paint)
+            }
         }
-        paint.strokeWidth = max(2f, short * 0.012f)
-        paint.color = withAlpha(accent, 0.92f)
-        canvas.drawPath(top, paint)
-
-        val bottom = Path().apply {
-            moveTo(width * 0.30f, height + short * 0.04f)
-            cubicTo(
-                width * 0.52f, height * 0.80f,
-                width * 0.72f, height * 0.98f,
-                width + short * 0.10f, height * 0.70f
-            )
-        }
-        paint.strokeWidth = max(3f, short * 0.018f)
-        paint.color = withAlpha(accent, 0.78f)
-        canvas.drawPath(bottom, paint)
-
-        val bottomFine = Path().apply {
-            moveTo(width * 0.22f, height + short * 0.02f)
-            cubicTo(
-                width * 0.50f, height * 0.73f,
-                width * 0.74f, height * 0.92f,
-                width + short * 0.08f, height * 0.62f
-            )
-        }
-        paint.strokeWidth = max(1.5f, short * 0.006f)
-        paint.color = withAlpha(accent, 0.42f)
-        canvas.drawPath(bottomFine, paint)
 
         paint.style = Paint.Style.FILL
     }
