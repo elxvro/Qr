@@ -56,6 +56,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.elxvro.scan.AppPrefs
+import com.elxvro.scan.BuildConfig
 import com.elxvro.scan.HistoryExport
 import com.elxvro.scan.ScanSettings
 import com.elxvro.scan.ScanStore
@@ -253,7 +254,7 @@ fun SettingsScreen(
                 LinkSettingRow(
                     icon = Icons.Outlined.Info,
                     title = "ELXVRO Scan",
-                    subtitle = "Sürüm 2.1.0",
+                    subtitle = "Sürüm ${BuildConfig.VERSION_NAME}",
                     onClick = { aboutOpen = true }
                 )
             }
@@ -298,7 +299,7 @@ fun SettingsScreen(
     }
     if (aboutOpen) {
         InfoDialog(
-            title = "ELXVRO Scan 2.1.0",
+            title = "ELXVRO Scan ${BuildConfig.VERSION_NAME}",
             text = "Hızlı, yerel ve kompakt QR / barkod tarayıcı. PRO ile özel logo, yüksek çözünürlük ve tasarımlı QR Kart özellikleri eklenmiştir.",
             onDismiss = { aboutOpen = false }
         )
