@@ -266,17 +266,6 @@ object QrCardReferenceRenderer {
                 canvas.drawLine(points[1].first, points[1].second, points[6].first, points[6].second, paint)
                 canvas.drawLine(points[2].first, points[2].second, points[4].first, points[4].second, paint)
             }
-            FixedCardPattern.ARC -> {
-                paint.strokeWidth = max(2f, short * 0.010f)
-                repeat(4) { index ->
-                    val inset = short * (0.06f + index * 0.055f)
-                    paint.color = withAlpha(preset.accentArgb, 0.34f - index * 0.05f)
-                    canvas.drawArc(
-                        RectF(width - short * 0.70f - inset, -short * 0.20f + inset, width + short * 0.10f - inset, short * 0.60f - inset),
-                        105f, 165f, false, paint
-                    )
-                }
-            }
             FixedCardPattern.GRID -> {
                 paint.strokeWidth = max(1.5f, short * 0.004f)
                 val step = short * 0.12f
