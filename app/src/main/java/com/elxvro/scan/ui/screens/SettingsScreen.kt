@@ -71,6 +71,7 @@ fun SettingsScreen(
     store: ScanStore,
     prefs: AppPrefs,
     entitlement: ProEntitlement,
+    proTestMode: Boolean = false,
     onUpgradePro: () -> Unit,
     onManageSubscription: () -> Unit,
     onRestorePurchases: () -> Unit,
@@ -88,7 +89,7 @@ fun SettingsScreen(
     var privacyOpen by remember { mutableStateOf(false) }
     var supportOpen by remember { mutableStateOf(false) }
     var aboutOpen by remember { mutableStateOf(false) }
-    val proState = ProSettingsPresentation.from(entitlement)
+    val proState = ProSettingsPresentation.from(entitlement, proTestMode)
 
     fun update(block: (ScanSettings) -> ScanSettings) {
         settings = block(settings)
