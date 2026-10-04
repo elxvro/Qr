@@ -2,6 +2,25 @@
 
 Native Android QR & barcode scanner and QR generator.
 
+## v2.8.0 — Local URL safety
+
+ELXVRO Scan 2.8 adds an offline URL safety layer to scanned web links without uploading URLs or scan history:
+
+- Every scanned HTTP/HTTPS link is classified locally as low, medium or high risk
+- Normal HTTPS links without structural warning signals are shown as low risk
+- Plain HTTP links are marked as medium risk because transport is not encrypted
+- Direct IPv4/IPv6 destinations are flagged because the destination is less transparent than a named host
+- URLs containing user-info / @ target masking are marked high risk
+- Punycode and Unicode IDN hostnames are normalized and flagged for lookalike-domain awareness
+- Known URL-shortener hosts are flagged because the final destination is hidden
+- Malformed or hostless web URLs are marked high risk
+- The scan result sheet shows the resolved host and local risk reasons before manual opening
+- Medium/high-risk links use an explicit “Siteyi Yine de Aç” action
+- Safe Auto Open now allows only low-risk HTTPS links; HTTP, shorteners, IDN/Punycode, IP hosts and high-risk structures never auto-open
+- The existing scanner, batch scan, history, QR creation and PRO flows are unchanged
+- Added unit coverage for URL classification, IDN normalization, shorteners, target masking and auto-open policy
+- Version bumped to 2.8.0 / versionCode 29
+
 ## v2.7.0 — PRO QR Card expansion
 
 ELXVRO Scan 2.7 expands the PRO QR Card editor without changing normal QR generation, scanning, batch scanning or billing behavior:
