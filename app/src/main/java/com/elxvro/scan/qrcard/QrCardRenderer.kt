@@ -22,7 +22,7 @@ object QrCardRenderer {
         require(outputWidth in 512..4096) { "Unsupported output width" }
 
         if (model.designPreset != null) {
-            return QrCardV3Renderer.render(
+            return QrCardReferenceRenderer.render(
                 model = model,
                 qrBitmap = qrBitmap,
                 heroBitmap = heroBitmap,
