@@ -20,7 +20,14 @@ object QrCardV3Renderer {
         requestedLongEdge: Int
     ): Bitmap {
         val preset = requireNotNull(model.designPreset)
-        val theme = preset.theme()
+        val theme = QrCardDesignColorPolicy.resolve(
+            preset = preset,
+            cardBackgroundArgb = model.cardBackgroundArgb,
+            accentArgb = model.accentArgb,
+            textArgb = model.textArgb,
+            qrForegroundArgb = model.qrForegroundArgb,
+            qrBackgroundArgb = model.qrBackgroundArgb
+        )
         val size = QrCardOutputSizePolicy.resolve(requestedLongEdge, model.cardAspectRatio)
         val output = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
