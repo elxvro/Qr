@@ -54,10 +54,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.elxvro.scan.AppPrefs
+import com.elxvro.scan.R
 import com.elxvro.scan.ElxvroBrandContent
 import com.elxvro.scan.HistoryExport
 import com.elxvro.scan.ScanSettings
@@ -349,15 +351,15 @@ private fun BrandVersionRow(
     ) {
         Box(
             modifier = Modifier
-                .size(42.dp)
-                .background(ScanTokens.Blue.copy(alpha = 0.16f), RoundedCornerShape(12.dp)),
+                .size(46.dp)
+                .background(ScanTokens.InkRaised, RoundedCornerShape(13.dp)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                Icons.Outlined.AutoAwesome,
-                contentDescription = null,
-                tint = ScanTokens.Blue,
-                modifier = Modifier.size(22.dp)
+                painter = painterResource(R.drawable.ic_launcher),
+                contentDescription = "ELXVRO",
+                tint = Color.Unspecified,
+                modifier = Modifier.size(40.dp)
             )
         }
         Column(
