@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -45,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
@@ -69,6 +71,8 @@ import com.elxvro.scan.qrcard.QrCardTemplate
 import com.elxvro.scan.qrcard.QrCardTextColorPolicy
 import com.elxvro.scan.qrcard.QrCardValidator
 import com.elxvro.scan.qrcard.QrLogoComposer
+import com.elxvro.scan.qrcard.PremiumFixedBackgroundCatalog
+import com.elxvro.scan.qrcard.PremiumFixedBackgroundPreset
 import com.elxvro.scan.qrcard.QrPosition
 import com.elxvro.scan.qrcard.ValidationResult
 import com.elxvro.scan.ui.components.ProBadge
@@ -112,6 +116,7 @@ fun QrCardEditorScreen(
     var logoScale by remember { mutableFloatStateOf(0.18f) }
     var exportSize by remember { mutableIntStateOf(1200) }
     var backgroundMode by remember { mutableStateOf(QrCardBackgroundMode.FIXED_BACKGROUND) }
+    var backgroundPresetId by remember { mutableStateOf(PremiumFixedBackgroundCatalog.default.id) }
     var aspectPreset by remember { mutableStateOf(QrCardAspectPreset.CARD) }
     var designPreset by remember { mutableStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE) }
     var qrPosition by remember { mutableStateOf(QrPosition.CENTER) }
@@ -188,6 +193,7 @@ fun QrCardEditorScreen(
     fun currentModel(): QrCardModel = QrCardModel(
         template = QrCardTemplate.MINIMAL,
         designPreset = designPreset,
+        backgroundPresetId = backgroundPresetId,
         payload = payload.trim(),
         brandText = brandText,
         title = title,
@@ -361,6 +367,17 @@ fun QrCardEditorScreen(
                         applyDesign(QrCardDesignCatalog.defaultFor(selectedAspect, backgroundMode))
                     }
 
+                    if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
+                        SectionTitle("Premium sabit kartlar • 48 tasarım")
+                        PremiumFixedBackgroundSelector(
+                            selectedId = backgroundPresetId,
+                            enabled = isPro,
+                            onLocked = onOpenPaywall
+                        ) { preset ->
+                            backgroundPresetId = preset.id
+                        }
+                    }
+
                     if (backgroundMode == QrCardBackgroundMode.FULL_BACKGROUND) {
                         SectionTitle("Tam arka plan görseli")
                         ReferencePrimaryButton(
@@ -407,20 +424,33 @@ fun QrCardEditorScreen(
                     )
                 }
                 QrCardEditorTab.STYLE -> {
-                    SectionTitle("Kart rengi")
-                    CardColorSwatches(cardBackground, isPro, onOpenPaywall) { cardBackground = it }
-                    SectionTitle("Vurgu / buton rengi")
-                    CardColorSwatches(accent, isPro, onOpenPaywall) { accent = it }
-                    SectionTitle("Marka yazı rengi")
-                    CardColorSwatches(brandTextColor, isPro, onOpenPaywall) { brandTextColor = it }
-                    SectionTitle("Başlık rengi")
-                    CardColorSwatches(textColor, isPro, onOpenPaywall) { textColor = it }
-                    SectionTitle("Açıklama rengi")
-                    CardColorSwatches(bodyTextColor, isPro, onOpenPaywall) { bodyTextColor = it }
-                    SectionTitle("Buton yazı rengi")
-                    CardColorSwatches(ctaTextColor, isPro, onOpenPaywall) { ctaTextColor = it }
-                    SectionTitle("QR rengi")
-                    CardColorSwatches(qrForeground, isPro, onOpenPaywall) { qrForeground = it }
+                    if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
+                        Text(
+                            text = "Sabit premium kartlarda arka plan, vurgu, QR ve yazı renkleri seçilen tasarıma bağlıdır. Bu kartlarda yalnız metinler ve logo özelleştirilir.",
+                            color = ScanTokens.Muted,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color.White, RoundedCornerShape(12.dp))
+                                .border(1.dp, ScanTokens.Divider, RoundedCornerShape(12.dp))
+                                .padding(14.dp)
+                        )
+                    } else {
+                        SectionTitle("Kart rengi")
+                        CardColorSwatches(cardBackground, isPro, onOpenPaywall) { cardBackground = it }
+                        SectionTitle("Vurgu / buton rengi")
+                        CardColorSwatches(accent, isPro, onOpenPaywall) { accent = it }
+                        SectionTitle("Marka yazı rengi")
+                        CardColorSwatches(brandTextColor, isPro, onOpenPaywall) { brandTextColor = it }
+                        SectionTitle("Başlık rengi")
+                        CardColorSwatches(textColor, isPro, onOpenPaywall) { textColor = it }
+                        SectionTitle("Açıklama rengi")
+                        CardColorSwatches(bodyTextColor, isPro, onOpenPaywall) { bodyTextColor = it }
+                        SectionTitle("Buton yazı rengi")
+                        CardColorSwatches(ctaTextColor, isPro, onOpenPaywall) { ctaTextColor = it }
+                        SectionTitle("QR rengi")
+                        CardColorSwatches(qrForeground, isPro, onOpenPaywall) { qrForeground = it }
+                    }
                 }
                 QrCardEditorTab.ADVANCED -> {
                     SectionTitle("Logo")
@@ -649,6 +679,78 @@ private fun ResolutionSelector(
                 contentAlignment = Alignment.Center
             ) {
                 Text("$size px", color = if (selected == size) ScanTokens.Blue else ScanTokens.Text, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PremiumFixedBackgroundSelector(
+    selectedId: String,
+    enabled: Boolean,
+    onLocked: () -> Unit,
+    onSelect: (PremiumFixedBackgroundPreset) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        PremiumFixedBackgroundCatalog.all.chunked(8).forEach { rowItems ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                rowItems.forEach { preset ->
+                    val selected = preset.id == selectedId
+                    Column(
+                        modifier = Modifier
+                            .width(106.dp)
+                            .clickable {
+                                if (enabled) onSelect(preset) else onLocked()
+                            },
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(60.dp)
+                                .background(
+                                    brush = Brush.linearGradient(
+                                        listOf(
+                                            Color(preset.startArgb),
+                                            Color(preset.endArgb)
+                                        )
+                                    ),
+                                    shape = RoundedCornerShape(11.dp)
+                                )
+                                .border(
+                                    if (selected) 2.dp else 1.dp,
+                                    if (selected) ScanTokens.Blue else Color(preset.accentArgb).copy(alpha = 0.72f),
+                                    RoundedCornerShape(11.dp)
+                                )
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .fillMaxWidth(0.70f)
+                                    .height(3.dp)
+                                    .background(
+                                        Color(preset.accentArgb),
+                                        RoundedCornerShape(99.dp)
+                                    )
+                            )
+                        }
+                        Text(
+                            text = preset.label,
+                            color = if (selected) ScanTokens.Blue else ScanTokens.Text,
+                            style = MaterialTheme.typography.labelSmall,
+                            maxLines = 2,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                }
             }
         }
     }
