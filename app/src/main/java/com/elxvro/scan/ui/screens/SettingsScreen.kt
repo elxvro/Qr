@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -534,7 +535,16 @@ private fun InfoDialog(
         containerColor = ScanTokens.Card,
         shape = RoundedCornerShape(18.dp),
         title = { Text(title, color = ScanTokens.Text) },
-        text = { Text(text, color = ScanTokens.Muted, style = MaterialTheme.typography.bodyMedium) },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text(text, color = ScanTokens.Muted, style = MaterialTheme.typography.bodyMedium)
+            }
+        },
         confirmButton = {
             TextButton(onClick = { onConfirm?.invoke() ?: onDismiss() }) {
                 Text(confirm, color = confirmColor)
