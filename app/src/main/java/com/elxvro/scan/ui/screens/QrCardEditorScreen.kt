@@ -60,6 +60,7 @@ import com.elxvro.scan.qrcard.QrCardAspectPreset
 import com.elxvro.scan.qrcard.QrCardDesignCatalog
 import com.elxvro.scan.qrcard.QrCardDesignPreset
 import com.elxvro.scan.qrcard.QrCardExport
+import com.elxvro.scan.qrcard.QrCardImageSamplePolicy
 import com.elxvro.scan.qrcard.QrCardModel
 import com.elxvro.scan.qrcard.QrCardPreviewPolicy
 import com.elxvro.scan.qrcard.QrCardRenderer
@@ -133,8 +134,16 @@ fun QrCardEditorScreen(
     val heroPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
             runCatching {
-                context.contentResolver.openInputStream(uri)?.use(BitmapFactory::decodeStream)
-                    ?: error("Görsel okunamadı")
+                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                context.contentResolver.openInputStream(uri)?.use { stream ->
+                    BitmapFactory.decodeStream(stream, null, bounds)
+                }
+                val options = BitmapFactory.Options().apply {
+                    inSampleSize = QrCardImageSamplePolicy.inSampleSize(bounds.outWidth, bounds.outHeight)
+                }
+                context.contentResolver.openInputStream(uri)?.use { stream ->
+                    BitmapFactory.decodeStream(stream, null, options)
+                } ?: error("Görsel okunamadı")
             }.onSuccess {
                 heroImage = it
             }.onFailure {
