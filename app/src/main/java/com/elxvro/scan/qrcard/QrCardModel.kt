@@ -15,6 +15,7 @@ enum class QrPosition {
 data class QrCardModel(
     val template: QrCardTemplate = QrCardTemplate.MINIMAL,
     val designPreset: QrCardDesignPreset? = null,
+    val backgroundPresetId: String = PremiumFixedBackgroundCatalog.default.id,
     val payload: String,
     val brandText: String = "ELXVRO",
     val title: String = "",
