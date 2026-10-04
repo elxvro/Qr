@@ -76,13 +76,13 @@ object QrCardV3LayoutPolicy {
                 ctaRect = rect(0.52f, 0.78f, 0.92f, 0.88f)
             )
             QrCardDesignPreset.STORY_EDITORIAL -> QrCardV3Layout(
-                qrRect = square(0.50f, 0.70f, 0.58f),
+                qrRect = square(0.50f, 0.68f, 0.58f),
                 textRect = rect(0.07f, 0.07f, 0.82f, 0.31f),
                 imageRect = rect(0f, 0f, 1f, 0.57f),
                 ctaRect = rect(0.14f, 0.86f, 0.86f, 0.92f)
             )
             QrCardDesignPreset.STORY_LUXURY -> QrCardV3Layout(
-                qrRect = square(0.50f, 0.72f, 0.54f),
+                qrRect = square(0.50f, 0.70f, 0.54f),
                 textRect = rect(0.07f, 0.08f, 0.90f, 0.29f),
                 imageRect = rect(0f, 0f, 1f, 1f),
                 ctaRect = rect(0.17f, 0.87f, 0.83f, 0.93f)
