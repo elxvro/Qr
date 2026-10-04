@@ -55,5 +55,5 @@ class QrCardReferenceLayoutPolicyTest {
     }
 
     private fun LayoutRect.isInside(width: Int, height: Int): Boolean =
-        left >= 0f && top >= 0f && right <= width && bottom <= height && width > 0f && height > 0f
+        left >= 0f && top >= 0f && right <= width && bottom <= height && this.width > 0f && this.height > 0f
 }
