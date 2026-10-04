@@ -15,6 +15,7 @@ class QrCardV30LayoutPolicyTest {
             val layout = QrCardV3LayoutPolicy.resolve(width, height, preset)
 
             assertFalse("${preset.name}: qr/text overlap", layout.qrRect.overlaps(layout.textRect))
+            assertFalse("${preset.name}: qr/cta overlap", layout.qrRect.overlaps(layout.ctaRect))
             assertTrue("${preset.name}: qr invalid", layout.qrRect.width > 0 && layout.qrRect.height > 0)
             assertTrue("${preset.name}: text invalid", layout.textRect.width > 0 && layout.textRect.height > 0)
             assertTrue("${preset.name}: image invalid", layout.imageRect.width > 0 && layout.imageRect.height > 0)
