@@ -15,6 +15,7 @@ ELXVRO Scan 2.8 adds an offline URL safety layer to scanned web links without up
 - Known URL-shortener hosts are flagged because the final destination is hidden
 - Malformed or hostless web URLs are marked high risk
 - The scan result sheet shows the resolved host and local risk reasons before manual opening
+- Opening a medium/high-risk URL from History requires an explicit local warning confirmation
 - Medium/high-risk links use an explicit “Siteyi Yine de Aç” action
 - Safe Auto Open now allows only low-risk HTTPS links; HTTP, shorteners, IDN/Punycode, IP hosts and high-risk structures never auto-open
 - The existing scanner, batch scan, history, QR creation and PRO flows are unchanged
