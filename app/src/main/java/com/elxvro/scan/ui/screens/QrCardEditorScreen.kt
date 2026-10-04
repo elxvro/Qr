@@ -106,7 +106,7 @@ fun QrCardEditorScreen(
     var socialHandle by remember { mutableStateOf("@elxvro") }
     var eventDate by remember { mutableStateOf("Etkinlik tarihi") }
     var eventLocation by remember { mutableStateOf("Etkinlik konumu") }
-    var logoMode by remember { mutableStateOf(LogoMode.ELXVRO) }
+    var logoMode by remember { mutableStateOf(LogoMode.NONE) }
     var customLogo by remember { mutableStateOf<Bitmap?>(null) }
     var heroImage by remember { mutableStateOf<Bitmap?>(null) }
     var logoScale by remember { mutableFloatStateOf(0.18f) }
@@ -340,9 +340,9 @@ fun QrCardEditorScreen(
 
                     Text(
                         text = if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
-                            "Sabit premium arka plan tüm oranlarda korunur; seçtiğin fotoğraf kart içindeki görsel alanına yerleşir."
+                            "Referanstaki sade koyu-altın arka plan kullanılır. Fotoğraf kartın içine eklenmez."
                         } else {
-                            "Seçtiğin görsel kartın tamamını kaplar; QR, metin ve buton düzeni seçilen orana göre profesyonel şekilde uyarlanır."
+                            "Seçtiğin görsel kartın tamamını kaplar. Aynı sade kart düzeni tüm oranlarda korunur."
                         },
                         color = ScanTokens.Muted,
                         style = MaterialTheme.typography.bodySmall,
@@ -361,38 +361,25 @@ fun QrCardEditorScreen(
                         applyDesign(QrCardDesignCatalog.defaultFor(selectedAspect, backgroundMode))
                     }
 
-                    SectionTitle(
-                        if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
-                            "Kart görseli"
-                        } else {
-                            "Tam arka plan görseli"
-                        }
-                    )
-                    ReferencePrimaryButton(
-                        text = when {
-                            heroImage == null && backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND -> "Kart Görseli Seç"
-                            heroImage == null -> "Arka Plan Görseli Seç"
-                            backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND -> "Kart Görselini Değiştir"
-                            else -> "Arka Planı Değiştir"
-                        },
-                        onClick = {
-                            if (isPro) heroPicker.launch("image/*") else onOpenPaywall()
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    if (heroImage != null) {
-                        Text(
-                            text = if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
-                                "Görseli kaldır"
-                            } else {
-                                "Arka planı kaldır"
+                    if (backgroundMode == QrCardBackgroundMode.FULL_BACKGROUND) {
+                        SectionTitle("Tam arka plan görseli")
+                        ReferencePrimaryButton(
+                            text = if (heroImage == null) "Arka Plan Görseli Seç" else "Arka Planı Değiştir",
+                            onClick = {
+                                if (isPro) heroPicker.launch("image/*") else onOpenPaywall()
                             },
-                            color = ScanTokens.Blue,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier
-                                .padding(top = 8.dp)
-                                .clickable { heroImage = null }
+                            modifier = Modifier.fillMaxWidth()
                         )
+                        if (heroImage != null) {
+                            Text(
+                                text = "Arka planı kaldır",
+                                color = ScanTokens.Blue,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier
+                                    .padding(top = 8.dp)
+                                    .clickable { heroImage = null }
+                            )
+                        }
                     }
 
                     Text(
