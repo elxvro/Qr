@@ -48,6 +48,15 @@ class UrlSafetyPolicyTest {
     }
 
     @Test
+    fun unicodeIdnDomainIsFlaggedAndNormalized() {
+        val report = UrlSafetyPolicy.analyze("https://bücher.example")
+
+        assertEquals(UrlRiskLevel.MEDIUM, report.level)
+        assertTrue(UrlRiskReason.IDN_OR_PUNYCODE_HOST in report.reasons)
+        assertEquals("xn--bcher-kva.example", report.host)
+    }
+
+    @Test
     fun knownShortenerIsFlagged() {
         val report = UrlSafetyPolicy.analyze("https://bit.ly/3Example")
 
