@@ -13,6 +13,11 @@ class QrCardOutputSizePolicyTest {
     }
 
     @Test
+    fun smallStoryPreviewKeepsNineBySixteenGeometry() {
+        assertEquals(QrCardOutputSize(394, 700), QrCardOutputSizePolicy.resolve(700, 9f / 16f))
+    }
+
+    @Test
     fun outputNeverExceedsRequestedLongEdge() {
         val ratios = listOf(1f, 16f / 9f, 1.586f, 0.8f, 9f / 16f)
         ratios.forEach { ratio ->
