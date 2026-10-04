@@ -10,96 +10,37 @@ data class QrCardDesignTheme(
     val photoOverlayAlpha: Float
 )
 
+enum class QrCardBackgroundMode(val label: String) {
+    FIXED_BACKGROUND("Sabit Arka Plan"),
+    FULL_BACKGROUND("Değişen Arka Plan")
+}
+
 enum class QrCardDesignPreset(
     val label: String,
-    val aspectPreset: QrCardAspectPreset
+    val aspectPreset: QrCardAspectPreset,
+    val backgroundMode: QrCardBackgroundMode
 ) {
-    SQUARE_MINIMAL("Square Minimal", QrCardAspectPreset.SQUARE),
-    SQUARE_PHOTO("Square Photo", QrCardAspectPreset.SQUARE),
+    SQUARE_MINIMAL("1:1 Sabit", QrCardAspectPreset.SQUARE, QrCardBackgroundMode.FIXED_BACKGROUND),
+    SQUARE_PHOTO("1:1 Değişen", QrCardAspectPreset.SQUARE, QrCardBackgroundMode.FULL_BACKGROUND),
 
-    WIDE_EDITORIAL("Wide Editorial", QrCardAspectPreset.WIDE),
-    WIDE_CINEMATIC("Wide Cinematic", QrCardAspectPreset.WIDE),
+    WIDE_EDITORIAL("16:9 Sabit", QrCardAspectPreset.WIDE, QrCardBackgroundMode.FIXED_BACKGROUND),
+    WIDE_CINEMATIC("16:9 Değişen", QrCardAspectPreset.WIDE, QrCardBackgroundMode.FULL_BACKGROUND),
 
-    CLASSIC_EXECUTIVE("Executive", QrCardAspectPreset.CARD),
-    CLASSIC_LUXURY("Black & Gold", QrCardAspectPreset.CARD),
+    CLASSIC_EXECUTIVE("Kart Sabit", QrCardAspectPreset.CARD, QrCardBackgroundMode.FIXED_BACKGROUND),
+    CLASSIC_LUXURY("Kart Değişen", QrCardAspectPreset.CARD, QrCardBackgroundMode.FULL_BACKGROUND),
 
-    PORTRAIT_EDITORIAL("Portrait Editorial", QrCardAspectPreset.PORTRAIT),
-    PORTRAIT_CAMPAIGN("Portrait Campaign", QrCardAspectPreset.PORTRAIT),
+    PORTRAIT_EDITORIAL("4:5 Sabit", QrCardAspectPreset.PORTRAIT, QrCardBackgroundMode.FIXED_BACKGROUND),
+    PORTRAIT_CAMPAIGN("4:5 Değişen", QrCardAspectPreset.PORTRAIT, QrCardBackgroundMode.FULL_BACKGROUND),
 
-    STORY_EDITORIAL("Story Editorial", QrCardAspectPreset.STORY),
-    STORY_LUXURY("Story Luxury", QrCardAspectPreset.STORY);
+    STORY_EDITORIAL("9:16 Sabit", QrCardAspectPreset.STORY, QrCardBackgroundMode.FIXED_BACKGROUND),
+    STORY_LUXURY("9:16 Değişen", QrCardAspectPreset.STORY, QrCardBackgroundMode.FULL_BACKGROUND);
 
-    fun theme(): QrCardDesignTheme = when (this) {
-        SQUARE_MINIMAL -> QrCardDesignTheme(
-            backgroundArgb = 0xFFF5F2EA.toInt(),
-            accentArgb = 0xFFB7893E.toInt(),
-            titleArgb = 0xFF11151B.toInt(),
-            bodyArgb = 0xFF5D5345.toInt(),
-            photoOverlayAlpha = 0.06f
-        )
-        SQUARE_PHOTO -> QrCardDesignTheme(
-            backgroundArgb = 0xFF10151C.toInt(),
-            accentArgb = 0xFFD6A85F.toInt(),
-            titleArgb = 0xFFFFFFFF.toInt(),
-            bodyArgb = 0xFFE9D7B8.toInt(),
-            photoOverlayAlpha = 0.42f
-        )
-        WIDE_EDITORIAL -> QrCardDesignTheme(
-            backgroundArgb = 0xFF0C1118.toInt(),
-            accentArgb = 0xFFD7A85C.toInt(),
-            titleArgb = 0xFFF8FAFC.toInt(),
-            bodyArgb = 0xFFB7C0CB.toInt(),
-            photoOverlayAlpha = 0.18f
-        )
-        WIDE_CINEMATIC -> QrCardDesignTheme(
-            backgroundArgb = 0xFF090D12.toInt(),
-            accentArgb = 0xFFF0B85E.toInt(),
-            titleArgb = 0xFFFFFFFF.toInt(),
-            bodyArgb = 0xFFE8D8BA.toInt(),
-            photoOverlayAlpha = 0.48f
-        )
-        CLASSIC_EXECUTIVE -> QrCardDesignTheme(
-            backgroundArgb = 0xFFF2F5F9.toInt(),
-            accentArgb = 0xFF1C4D8C.toInt(),
-            titleArgb = 0xFF122033.toInt(),
-            bodyArgb = 0xFF566579.toInt(),
-            photoOverlayAlpha = 0.08f
-        )
-        CLASSIC_LUXURY -> QrCardDesignTheme(
-            backgroundArgb = 0xFF0A0D11.toInt(),
-            accentArgb = 0xFFD5A653.toInt(),
-            titleArgb = 0xFFF7F4EE.toInt(),
-            bodyArgb = 0xFFCDBE9F.toInt(),
-            photoOverlayAlpha = 0.34f
-        )
-        PORTRAIT_EDITORIAL -> QrCardDesignTheme(
-            backgroundArgb = 0xFFF7F2E9.toInt(),
-            accentArgb = 0xFFC58842.toInt(),
-            titleArgb = 0xFF18140F.toInt(),
-            bodyArgb = 0xFF6A5948.toInt(),
-            photoOverlayAlpha = 0.08f
-        )
-        PORTRAIT_CAMPAIGN -> QrCardDesignTheme(
-            backgroundArgb = 0xFF121317.toInt(),
-            accentArgb = 0xFFE7B85D.toInt(),
-            titleArgb = 0xFFFFFFFF.toInt(),
-            bodyArgb = 0xFFE9D9BB.toInt(),
-            photoOverlayAlpha = 0.52f
-        )
-        STORY_EDITORIAL -> QrCardDesignTheme(
-            backgroundArgb = 0xFF101319.toInt(),
-            accentArgb = 0xFFE0AD59.toInt(),
-            titleArgb = 0xFFFFFFFF.toInt(),
-            bodyArgb = 0xFFD5C8B2.toInt(),
-            photoOverlayAlpha = 0.30f
-        )
-        STORY_LUXURY -> QrCardDesignTheme(
-            backgroundArgb = 0xFF070A0E.toInt(),
-            accentArgb = 0xFFF1BE63.toInt(),
-            titleArgb = 0xFFFDFBF7.toInt(),
-            bodyArgb = 0xFFCDBA98.toInt(),
-            photoOverlayAlpha = 0.56f
-        )
+    val fullBleedPhoto: Boolean
+        get() = backgroundMode == QrCardBackgroundMode.FULL_BACKGROUND
+
+    fun theme(): QrCardDesignTheme = when (backgroundMode) {
+        QrCardBackgroundMode.FIXED_BACKGROUND -> fixedPremiumTheme()
+        QrCardBackgroundMode.FULL_BACKGROUND -> fullBackgroundTheme()
     }
 }
 
@@ -107,6 +48,41 @@ object QrCardDesignCatalog {
     fun forAspect(aspect: QrCardAspectPreset): List<QrCardDesignPreset> =
         QrCardDesignPreset.entries.filter { it.aspectPreset == aspect }
 
+    fun forAspectAndMode(
+        aspect: QrCardAspectPreset,
+        mode: QrCardBackgroundMode
+    ): List<QrCardDesignPreset> =
+        QrCardDesignPreset.entries.filter {
+            it.aspectPreset == aspect && it.backgroundMode == mode
+        }
+
     fun defaultFor(aspect: QrCardAspectPreset): QrCardDesignPreset =
-        forAspect(aspect).firstOrNull() ?: QrCardDesignPreset.CLASSIC_EXECUTIVE
+        defaultFor(aspect, QrCardBackgroundMode.FIXED_BACKGROUND)
+
+    fun defaultFor(
+        aspect: QrCardAspectPreset,
+        mode: QrCardBackgroundMode
+    ): QrCardDesignPreset =
+        forAspectAndMode(aspect, mode).firstOrNull()
+            ?: QrCardDesignPreset.CLASSIC_EXECUTIVE
 }
+
+private fun fixedPremiumTheme() = QrCardDesignTheme(
+    backgroundArgb = 0xFF090C10.toInt(),
+    accentArgb = 0xFFE2B15E.toInt(),
+    titleArgb = 0xFFF9F7F2.toInt(),
+    bodyArgb = 0xFFD2C3A8.toInt(),
+    qrForegroundArgb = 0xFF0A0D12.toInt(),
+    qrBackgroundArgb = 0xFFFFFFFF.toInt(),
+    photoOverlayAlpha = 0.18f
+)
+
+private fun fullBackgroundTheme() = QrCardDesignTheme(
+    backgroundArgb = 0xFF080B0F.toInt(),
+    accentArgb = 0xFFE7B45F.toInt(),
+    titleArgb = 0xFFFFFFFF.toInt(),
+    bodyArgb = 0xFFE2D3B7.toInt(),
+    qrForegroundArgb = 0xFF0A0D12.toInt(),
+    qrBackgroundArgb = 0xFFFFFFFF.toInt(),
+    photoOverlayAlpha = 0.48f
+)
