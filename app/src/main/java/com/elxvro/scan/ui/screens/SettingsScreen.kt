@@ -50,12 +50,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.elxvro.scan.AppPrefs
+import com.elxvro.scan.ElxvroBrandContent
 import com.elxvro.scan.HistoryExport
 import com.elxvro.scan.ScanSettings
 import com.elxvro.scan.ScanStore
@@ -87,6 +89,7 @@ fun SettingsScreen(
     var settings by remember { mutableStateOf(prefs.snapshot()) }
     var clearConfirm by remember { mutableStateOf(false) }
     var privacyOpen by remember { mutableStateOf(false) }
+    var termsOpen by remember { mutableStateOf(false) }
     var supportOpen by remember { mutableStateOf(false) }
     var aboutOpen by remember { mutableStateOf(false) }
     val proState = ProSettingsPresentation.from(entitlement, proTestMode)
@@ -243,8 +246,15 @@ fun SettingsScreen(
                 LinkSettingRow(
                     icon = Icons.Outlined.PrivacyTip,
                     title = "Gizlilik ve Veri Kullanımı",
-                    subtitle = "Yerel işleme ve saklama bilgisi",
+                    subtitle = "ELXVRO'nun yerel işleme ve kullanıcı kontrolü yaklaşımı",
                     onClick = { privacyOpen = true }
+                )
+                DividerLine()
+                LinkSettingRow(
+                    icon = Icons.Outlined.Info,
+                    title = "Kullanım Koşulları",
+                    subtitle = "Güvenli ve sorumlu kullanım esasları",
+                    onClick = { termsOpen = true }
                 )
             }
 
@@ -252,20 +262,18 @@ fun SettingsScreen(
                 LinkSettingRow(
                     icon = Icons.Outlined.QrCode2,
                     title = "Desteklenen İçerikler",
-                    subtitle = "QR, barkod ve akıllı sonuç türleri",
+                    subtitle = "Kod formatları, akıllı QR türleri ve hızlı işlemler",
                     onClick = { supportOpen = true }
                 )
                 DividerLine()
-                LinkSettingRow(
-                    icon = Icons.Outlined.Info,
-                    title = "ELXVRO Scan",
-                    subtitle = "Sürüm $appVersion",
+                BrandVersionRow(
+                    appVersion = appVersion,
                     onClick = { aboutOpen = true }
                 )
             }
 
             Text(
-                "Kamera görüntüleri ve geçmiş sunucuya yüklenmez. Tarama ve QR üretimi cihaz üzerinde yapılır.",
+                "ELXVRO • ${ElxvroBrandContent.tagline}\nTarama ve QR üretimi gizlilik odaklı yerel çalışma yaklaşımıyla tasarlanmıştır.",
                 color = ScanTokens.Muted,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(horizontal = 2.dp, vertical = 4.dp)
@@ -291,23 +299,90 @@ fun SettingsScreen(
     if (privacyOpen) {
         InfoDialog(
             title = "Gizlilik ve Veri Kullanımı",
-            text = "ELXVRO Scan kamera karelerini ve tarama geçmişini bir sunucuya göndermez. Geçmiş ve favoriler uygulamanın cihazdaki yerel verisinde tutulur. QR oluşturma da cihaz üzerinde yapılır. Web, harita, e-posta veya ürün arama gibi işlemler yalnız siz seçtiğinizde ilgili harici uygulamayı açar.",
+            text = ElxvroBrandContent.privacyText,
             onDismiss = { privacyOpen = false }
+        )
+    }
+    if (termsOpen) {
+        InfoDialog(
+            title = "Kullanım Koşulları",
+            text = ElxvroBrandContent.termsText,
+            onDismiss = { termsOpen = false }
         )
     }
     if (supportOpen) {
         InfoDialog(
             title = "Desteklenen İçerikler",
-            text = "QR Kod • EAN-13 • EAN-8 • UPC-A • UPC-E • Code 39 • Code 93 • Code 128 • ITF • Codabar • PDF417 • Data Matrix • Aztec\n\nAkıllı sonuçlar: Web sitesi, telefon, e-posta, SMS, Wi-Fi, konum, kişi kartı, takvim ve ürün barkodu.",
+            text = ElxvroBrandContent.supportedContentText,
             onDismiss = { supportOpen = false }
         )
     }
     if (aboutOpen) {
         InfoDialog(
-            title = "ELXVRO Scan $appVersion",
-            text = "Hızlı, yerel ve kompakt QR / barkod tarayıcı. PRO ile özel logo, yüksek çözünürlük ve tasarımlı QR Kart özellikleri eklenmiştir.",
+            title = "ELXVRO Scan • Sürüm $appVersion",
+            text = "${ElxvroBrandContent.aboutText}\n\nSürüm $appVersion",
             onDismiss = { aboutOpen = false }
         )
+    }
+}
+
+@Composable
+private fun BrandVersionRow(
+    appVersion: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                brush = Brush.linearGradient(
+                    listOf(
+                        ScanTokens.Ink,
+                        ScanTokens.InkRaised
+                    )
+                )
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 15.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .background(ScanTokens.Blue.copy(alpha = 0.16f), RoundedCornerShape(12.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Outlined.AutoAwesome,
+                contentDescription = null,
+                tint = ScanTokens.Blue,
+                modifier = Modifier.size(22.dp)
+            )
+        }
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 11.dp)
+        ) {
+            Text(
+                "ELXVRO Scan",
+                color = ScanTokens.TextOnDark,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                ElxvroBrandContent.tagline,
+                color = ScanTokens.TextOnDark.copy(alpha = 0.72f),
+                style = MaterialTheme.typography.bodySmall
+            )
+            Text(
+                "Sürüm $appVersion • elxvro.com",
+                color = ScanTokens.Blue,
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.padding(top = 3.dp)
+            )
+        }
+        Text("›", color = ScanTokens.TextOnDark.copy(alpha = 0.62f), style = MaterialTheme.typography.titleLarge)
     }
 }
 
