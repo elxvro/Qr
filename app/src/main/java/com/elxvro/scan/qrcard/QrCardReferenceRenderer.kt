@@ -139,9 +139,9 @@ object QrCardReferenceRenderer {
                 0f,
                 height,
                 intArrayOf(
-                    0x66000000,
-                    0x22000000,
-                    0x5A000000
+                    withAlpha(theme.backgroundArgb, 0.58f),
+                    withAlpha(theme.backgroundArgb, 0.18f),
+                    withAlpha(theme.backgroundArgb, 0.64f)
                 ),
                 floatArrayOf(0f, 0.48f, 1f),
                 Shader.TileMode.CLAMP
