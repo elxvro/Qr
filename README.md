@@ -2,6 +2,22 @@
 
 Native Android QR & barcode scanner and QR generator.
 
+## v3.3.0-test — Reference Card Redesign
+
+- Replaced the previous v3 QR Card renderer with a new renderer built from the approved reference layout.
+- One shared visual composition is used across 1:1, 16:9, 1.586:1, 4:5 and 9:16.
+- Landscape ratios keep copy on the left and QR on the right; portrait ratios keep copy above QR.
+- Fixed Background now uses a simple dark reference background with restrained gold lines and ignores user photos.
+- Changing Background uses the selected photo as a true full-card background with a dark readability overlay.
+- Removed the old complex decorative v3 curves, photo panels and per-preset visual treatment from rendered cards.
+- QR is rendered in a clean white frame with one accent border.
+- CTA is a simple pill button matching the reference.
+- Brand, title, description and CTA remain fully editable; blank brand stays hidden.
+- Brand, title, description and CTA text colors remain independently editable.
+- QR logo defaults to none in the card editor; ELXVRO/custom/no-logo remain selectable.
+- Added pure Kotlin tests for common reference layout geometry and fixed/full background behavior.
+- Version 3.3.0-test / versionCode 35.
+
 ## v3.2.0-test — Fully Custom Common QR Card
 
 The PRO QR Card editor now uses one simple shared card structure across both background modes and every ratio:
