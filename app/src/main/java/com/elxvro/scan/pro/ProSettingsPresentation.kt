@@ -11,7 +11,21 @@ data class ProSettingsState(
 )
 
 object ProSettingsPresentation {
-    fun from(entitlement: ProEntitlement): ProSettingsState = when (entitlement) {
+    fun from(
+        entitlement: ProEntitlement,
+        testMode: Boolean = false
+    ): ProSettingsState {
+        if (testMode) {
+            return ProSettingsState(
+                statusLabel = "PRO TEST aktif",
+                showUpgrade = false,
+                showManage = false,
+                showRestore = false,
+                showRetry = false
+            )
+        }
+
+        return when (entitlement) {
         ProEntitlement.Pro -> ProSettingsState(
             statusLabel = "PRO aktif",
             showUpgrade = false,
@@ -47,5 +61,6 @@ object ProSettingsPresentation {
             showRestore = true,
             showRetry = false
         )
+        }
     }
 }
