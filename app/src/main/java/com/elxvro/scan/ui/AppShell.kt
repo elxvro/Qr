@@ -6,6 +6,7 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -98,6 +99,25 @@ fun ElxvroScanApp() {
     }
 
     val childScreenOpen = showPaywall || showQrCard || showBarcodeCreate || showBatchScan
+    val backState = AppBackState(
+        tab = tab,
+        showPaywall = showPaywall,
+        showQrCard = showQrCard,
+        showBarcodeCreate = showBarcodeCreate,
+        showBatchScan = showBatchScan
+    )
+    val backAction = AppBackNavigationPolicy.resolve(backState)
+
+    BackHandler(enabled = backAction != AppBackAction.ALLOW_SYSTEM_EXIT) {
+        when (backAction) {
+            AppBackAction.CLOSE_PAYWALL -> showPaywall = false
+            AppBackAction.CLOSE_QR_CARD -> showQrCard = false
+            AppBackAction.CLOSE_BARCODE_CREATE -> showBarcodeCreate = false
+            AppBackAction.CLOSE_BATCH_SCAN -> showBatchScan = false
+            AppBackAction.GO_TO_SCAN -> tab = AppTab.SCAN
+            AppBackAction.ALLOW_SYSTEM_EXIT -> Unit
+        }
+    }
 
     Scaffold(
         containerColor = ScanTokens.Ink,
