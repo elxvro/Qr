@@ -77,6 +77,10 @@ import com.elxvro.scan.SmartAction
 import com.elxvro.scan.SmartActionExecutor
 import com.elxvro.scan.SmartActionResolver
 import com.elxvro.scan.SmartActionType
+import com.elxvro.scan.UrlRiskLevel
+import com.elxvro.scan.UrlSafetyPolicy
+import com.elxvro.scan.UrlSafetyPresentation
+import com.elxvro.scan.UrlSafetyReport
 import com.elxvro.scan.ui.components.ReferenceChip
 import com.elxvro.scan.ui.components.ReferenceHeader
 import com.elxvro.scan.ui.theme.ScanTokens
@@ -96,6 +100,8 @@ fun HistoryScreen(store: ScanStore, onBack: () -> Unit) {
     var selected by remember { mutableStateOf(emptySet<String>()) }
     var menuOpen by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var pendingUrlAction by remember { mutableStateOf<SmartAction?>(null) }
+    var pendingUrlReport by remember { mutableStateOf<UrlSafetyReport?>(null) }
 
     val all = remember(refresh) { store.list() }
     val visible = remember(all, filter, query, newestFirst) {
@@ -110,6 +116,14 @@ fun HistoryScreen(store: ScanStore, onBack: () -> Unit) {
     fun toggle(id: String) {
         selected = if (id in selected) selected - id else selected + id
     }
+    fun executeAction(action: SmartAction) {
+        runCatching {
+            SmartActionExecutor.execute(context, action)
+        }.onFailure {
+            Toast.makeText(context, "İşlem açılamadı", Toast.LENGTH_SHORT).show()
+        }
+    }
+
 
     Column(Modifier.fillMaxSize().background(ScanTokens.Ink)) {
         ReferenceHeader(
@@ -279,11 +293,21 @@ fun HistoryScreen(store: ScanStore, onBack: () -> Unit) {
                             selected = item.id in selected,
                             selecting = selecting,
                             onClick = {
-                                if (selecting) toggle(item.id)
-                                else runCatching {
-                                    SmartActionExecutor.execute(context, SmartActionResolver.resolve(item.value, item.kind))
-                                }.onFailure {
-                                    Toast.makeText(context, "İşlem açılamadı", Toast.LENGTH_SHORT).show()
+                                if (selecting) {
+                                    toggle(item.id)
+                                } else {
+                                    val action = SmartActionResolver.resolve(item.value, item.kind)
+                                    if (action.type == SmartActionType.OPEN_URL) {
+                                        val report = UrlSafetyPolicy.analyze(action.value)
+                                        if (report.level == UrlRiskLevel.LOW) {
+                                            executeAction(action)
+                                        } else {
+                                            pendingUrlAction = action
+                                            pendingUrlReport = report
+                                        }
+                                    } else {
+                                        executeAction(action)
+                                    }
                                 }
                             },
                             onLongClick = {
@@ -299,6 +323,61 @@ fun HistoryScreen(store: ScanStore, onBack: () -> Unit) {
                     item { Spacer(Modifier.height(14.dp)) }
                 }
             }
+        }
+    }
+
+    pendingUrlAction?.let { action ->
+        pendingUrlReport?.let { report ->
+            AlertDialog(
+                onDismissRequest = {
+                    pendingUrlAction = null
+                    pendingUrlReport = null
+                },
+                containerColor = ScanTokens.Card,
+                shape = RoundedCornerShape(18.dp),
+                title = {
+                    Text(
+                        UrlSafetyPresentation.label(report.level),
+                        color = if (report.level == UrlRiskLevel.HIGH) ScanTokens.Danger else ScanTokens.Warning
+                    )
+                },
+                text = {
+                    Column {
+                        report.host?.let {
+                            Text("Hedef: $it", color = ScanTokens.Text)
+                        }
+                        report.reasons.take(3).forEach { reason ->
+                            Text(
+                                "• ${UrlSafetyPresentation.reasonText(reason)}",
+                                color = ScanTokens.Muted,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(top = 5.dp)
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            pendingUrlAction = null
+                            pendingUrlReport = null
+                            executeAction(action)
+                        }
+                    ) {
+                        Text("Yine de Aç", color = ScanTokens.Danger)
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            pendingUrlAction = null
+                            pendingUrlReport = null
+                        }
+                    ) {
+                        Text("Vazgeç", color = ScanTokens.Blue)
+                    }
+                }
+            )
         }
     }
 
