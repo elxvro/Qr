@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -49,10 +51,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -67,7 +69,6 @@ import com.elxvro.scan.pro.QrGenerationPolicy
 import com.elxvro.scan.pro.QrPremiumPolicy
 import com.elxvro.scan.qrcard.ElxvroBrandLogo
 import com.elxvro.scan.qrcard.LogoMode
-import com.elxvro.scan.qrcard.PremiumFixedBackgroundCatalog
 import com.elxvro.scan.qrcard.QrCardAspectPreset
 import com.elxvro.scan.qrcard.QrCardBackgroundMode
 import com.elxvro.scan.qrcard.QrCardDesignCatalog
@@ -136,9 +137,9 @@ fun CreateScreen(
         LogoMode.NONE -> null
     }
 
-    fun renderQr(text: String): Bitmap {
+    fun renderBaseQr(text: String, size: Int = qrSize): Bitmap {
         val options = QrGenerationPolicy.resolve(
-            requestedSize = qrSize,
+            requestedSize = size,
             requestedMargin = qrMargin,
             logoMode = logoMode,
             entitlement = entitlement
@@ -152,10 +153,15 @@ fun CreateScreen(
             highErrorCorrection = options.highErrorCorrection
         )
         val logo = selectedLogoBitmap()
-        val composed = if (logo != null) QrLogoComposer.compose(raw, logo, logoScale) else raw
-        if (usePlainQr && isPro) return composed
+        return if (logo != null) QrLogoComposer.compose(raw, logo, logoScale) else raw
+    }
 
-        val brandPreset = FreeQrBrandPresetCatalog.find(selectedBrandPresetId)
+    fun renderBrandCard(
+        text: String,
+        brandPreset: FreeQrBrandPreset,
+        outputSize: Int
+    ): Bitmap {
+        val qr = renderBaseQr(text, outputSize.coerceIn(512, 900))
         val cardModel = QrCardModel(
             template = QrCardTemplate.MINIMAL,
             designPreset = QrCardDesignCatalog.defaultFor(
@@ -175,8 +181,18 @@ fun CreateScreen(
         )
         return QrCardRenderer.render(
             model = cardModel,
-            qrBitmap = composed,
-            outputWidth = options.size.coerceIn(512, 4096)
+            qrBitmap = qr,
+            outputWidth = outputSize.coerceIn(512, 4096)
+        )
+    }
+
+    fun renderQr(text: String): Bitmap {
+        val composed = renderBaseQr(text)
+        if (usePlainQr && isPro) return composed
+        return renderBrandCard(
+            text = text,
+            brandPreset = FreeQrBrandPresetCatalog.find(selectedBrandPresetId),
+            outputSize = qrSize
         )
     }
 
@@ -328,6 +344,24 @@ fun CreateScreen(
                 selectedId = selectedBrandPresetId,
                 usePlainQr = usePlainQr,
                 isPro = isPro,
+                previewKey = listOf(
+                    payload,
+                    primary,
+                    foreground,
+                    background,
+                    logoMode,
+                    logoScale,
+                    customLogo
+                ),
+                previewFor = { preset ->
+                    runCatching {
+                        renderBrandCard(
+                            text = payload.ifBlank { "https://elxvro.com" },
+                            brandPreset = preset,
+                            outputSize = 320
+                        )
+                    }.getOrNull()
+                },
                 onSelect = { preset ->
                     selectedBrandPresetId = preset.id
                     usePlainQr = false
@@ -505,106 +539,97 @@ private fun FreeBrandPresetSelector(
     selectedId: String,
     usePlainQr: Boolean,
     isPro: Boolean,
+    previewKey: Any,
+    previewFor: (FreeQrBrandPreset) -> Bitmap?,
     onSelect: (FreeQrBrandPreset) -> Unit,
     onPlain: () -> Unit
 ) {
-    Row(
+    LazyRow(
         modifier = Modifier
             .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(9.dp)
+            .height(150.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        FreeQrBrandPresetCatalog.all.forEach { preset ->
-            val backgroundPreset = PremiumFixedBackgroundCatalog.find(preset.backgroundPresetId)
+        items(
+            items = FreeQrBrandPresetCatalog.all,
+            key = { it.id }
+        ) { preset ->
             val selected = !usePlainQr && selectedId == preset.id
+            val thumbnail = remember(preset.id, previewKey) {
+                previewFor(preset)
+            }
             Column(
                 modifier = Modifier
-                    .width(116.dp)
+                    .width(154.dp)
                     .clickable { onSelect(preset) },
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(72.dp)
-                        .background(
-                            brush = Brush.linearGradient(
-                                listOf(
-                                    Color(backgroundPreset.startArgb),
-                                    Color(backgroundPreset.endArgb)
-                                )
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        )
+                        .height(104.dp)
+                        .background(Color(0xFFF2F4F7), RoundedCornerShape(12.dp))
                         .border(
                             if (selected) 2.dp else 1.dp,
-                            if (selected) ScanTokens.Blue else Color(backgroundPreset.accentArgb).copy(alpha = 0.70f),
+                            if (selected) ScanTokens.Blue else ScanTokens.Divider,
                             RoundedCornerShape(12.dp)
                         )
-                        .padding(8.dp)
+                        .padding(5.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        "ELXVRO",
-                        color = Color(backgroundPreset.accentArgb),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.align(Alignment.TopStart)
-                    )
-                    Text(
-                        preset.cta,
-                        color = Color(backgroundPreset.ctaTextArgb),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .background(
-                                Color(backgroundPreset.accentArgb),
-                                RoundedCornerShape(99.dp)
-                            )
-                            .padding(horizontal = 7.dp, vertical = 3.dp)
-                    )
+                    thumbnail?.let {
+                        Image(
+                            bitmap = it.asImageBitmap(),
+                            contentDescription = preset.label,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } ?: Text("QR", color = ScanTokens.Muted)
                 }
                 Text(
-                    preset.label,
+                    text = preset.label,
                     color = if (selected) ScanTokens.Blue else ScanTokens.Text,
                     style = MaterialTheme.typography.labelSmall,
                     maxLines = 2,
-                    modifier = Modifier.padding(top = 4.dp)
+                    modifier = Modifier.padding(top = 5.dp)
                 )
             }
         }
+
         if (isPro) {
-            Column(
-                modifier = Modifier
-                    .width(96.dp)
-                    .clickable(onClick = onPlain),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Box(
+            item(key = "plain") {
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(72.dp)
-                        .background(Color.White, RoundedCornerShape(12.dp))
-                        .border(
-                            if (usePlainQr) 2.dp else 1.dp,
-                            if (usePlainQr) ScanTokens.Blue else ScanTokens.Divider,
-                            RoundedCornerShape(12.dp)
-                        ),
-                    contentAlignment = Alignment.Center
+                        .width(110.dp)
+                        .clickable(onClick = onPlain),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(
-                        Icons.Outlined.QrCode2,
-                        contentDescription = null,
-                        tint = ScanTokens.Text,
-                        modifier = Modifier.size(28.dp)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(104.dp)
+                            .background(Color.White, RoundedCornerShape(12.dp))
+                            .border(
+                                if (usePlainQr) 2.dp else 1.dp,
+                                if (usePlainQr) ScanTokens.Blue else ScanTokens.Divider,
+                                RoundedCornerShape(12.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Outlined.QrCode2,
+                            contentDescription = null,
+                            tint = ScanTokens.Text,
+                            modifier = Modifier.size(36.dp)
+                        )
+                    }
+                    Text(
+                        "Sade QR",
+                        color = if (usePlainQr) ScanTokens.Blue else ScanTokens.Text,
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.padding(top = 5.dp)
                     )
                 }
-                Text(
-                    "Sade QR",
-                    color = if (usePlainQr) ScanTokens.Blue else ScanTokens.Text,
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
             }
         }
     }
