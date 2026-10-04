@@ -22,7 +22,7 @@ object QrCardReferenceRenderer {
         val preset = requireNotNull(model.designPreset)
         val aspect = preset.aspectPreset
         val mode = preset.backgroundMode
-        val fixedPreset = PremiumFixedBackgroundCatalog.find(model.backgroundPresetId)
+        val fixedPreset = FixedCardLibrary.find(model.backgroundPresetId)
         val editableTheme = QrCardDesignColorPolicy.resolve(
             preset = preset,
             cardBackgroundArgb = model.cardBackgroundArgb,
@@ -65,7 +65,17 @@ object QrCardReferenceRenderer {
         val output = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
-        val layout = QrCardReferenceLayoutPolicy.resolve(size.width, size.height, aspect)
+        val layout = if (mode == QrCardBackgroundMode.FIXED_BACKGROUND) {
+            val fixed = FixedCardLayoutPolicy.resolve(size.width, size.height, fixedPreset.layout)
+            QrCardReferenceLayout(
+                brandRect = fixed.brandRect,
+                titleRect = fixed.titleRect,
+                qrRect = fixed.qrRect,
+                ctaRect = fixed.ctaRect
+            )
+        } else {
+            QrCardReferenceLayoutPolicy.resolve(size.width, size.height, aspect)
+        }
         val background = QrCardReferenceBackgroundPolicy.resolve(mode)
         val short = min(size.width, size.height).toFloat()
 
@@ -92,7 +102,7 @@ object QrCardReferenceRenderer {
         paint: Paint,
         theme: QrCardDesignTheme,
         background: QrCardReferenceBackground,
-        fixedPreset: PremiumFixedBackgroundPreset,
+        fixedPreset: FixedCardPreset,
         heroBitmap: Bitmap?,
         width: Float,
         height: Float,
@@ -161,7 +171,7 @@ object QrCardReferenceRenderer {
     private fun drawPremiumPattern(
         canvas: Canvas,
         paint: Paint,
-        preset: PremiumFixedBackgroundPreset,
+        preset: FixedCardPreset,
         width: Float,
         height: Float,
         short: Float
@@ -171,7 +181,7 @@ object QrCardReferenceRenderer {
         paint.color = withAlpha(preset.accentArgb, 0.72f)
 
         when (preset.pattern) {
-            PremiumFixedPattern.SWEEP -> {
+            FixedCardPattern.SWEEP -> {
                 paint.strokeWidth = max(2f, short * 0.010f)
                 val p1 = Path().apply {
                     moveTo(-short * 0.10f, height * 0.30f)
@@ -185,7 +195,7 @@ object QrCardReferenceRenderer {
                 }
                 canvas.drawPath(p2, paint)
             }
-            PremiumFixedPattern.RINGS -> {
+            FixedCardPattern.RINGS -> {
                 paint.strokeWidth = max(2f, short * 0.008f)
                 listOf(0.20f, 0.31f, 0.44f).forEachIndexed { index, radius ->
                     paint.color = withAlpha(preset.accentArgb, 0.18f + index * 0.14f)
@@ -196,7 +206,7 @@ object QrCardReferenceRenderer {
                     canvas.drawCircle(width * 0.12f, height * 0.88f, short * radius, paint)
                 }
             }
-            PremiumFixedPattern.DIAGONAL -> {
+            FixedCardPattern.DIAGONAL -> {
                 paint.strokeWidth = max(2f, short * 0.007f)
                 var offset = -height
                 var index = 0
@@ -207,7 +217,7 @@ object QrCardReferenceRenderer {
                     index++
                 }
             }
-            PremiumFixedPattern.FRAME -> {
+            FixedCardPattern.FRAME -> {
                 paint.strokeWidth = max(2f, short * 0.010f)
                 val inset = short * 0.055f
                 canvas.drawRoundRect(
@@ -225,7 +235,7 @@ object QrCardReferenceRenderer {
                     paint
                 )
             }
-            PremiumFixedPattern.HORIZON -> {
+            FixedCardPattern.HORIZON -> {
                 paint.strokeWidth = max(2f, short * 0.008f)
                 val baseY = height * 0.72f
                 repeat(5) { index ->
@@ -236,7 +246,7 @@ object QrCardReferenceRenderer {
                 paint.color = withAlpha(preset.accentArgb, 0.56f)
                 canvas.drawLine(0f, baseY, width, baseY - short * 0.12f, paint)
             }
-            PremiumFixedPattern.FACETS -> {
+            FixedCardPattern.FACETS -> {
                 paint.strokeWidth = max(2f, short * 0.007f)
                 val points = listOf(
                     0f to height * 0.18f,
@@ -255,6 +265,70 @@ object QrCardReferenceRenderer {
                 paint.color = withAlpha(preset.accentArgb, 0.18f)
                 canvas.drawLine(points[1].first, points[1].second, points[6].first, points[6].second, paint)
                 canvas.drawLine(points[2].first, points[2].second, points[4].first, points[4].second, paint)
+            }
+            FixedCardPattern.ARC -> {
+                paint.strokeWidth = max(2f, short * 0.010f)
+                repeat(4) { index ->
+                    val inset = short * (0.06f + index * 0.055f)
+                    paint.color = withAlpha(preset.accentArgb, 0.34f - index * 0.05f)
+                    canvas.drawArc(
+                        RectF(width - short * 0.70f - inset, -short * 0.20f + inset, width + short * 0.10f - inset, short * 0.60f - inset),
+                        105f, 165f, false, paint
+                    )
+                }
+            }
+            FixedCardPattern.GRID -> {
+                paint.strokeWidth = max(1.5f, short * 0.004f)
+                val step = short * 0.12f
+                var x = -step
+                while (x < width + step) {
+                    paint.color = withAlpha(preset.accentArgb, 0.12f)
+                    canvas.drawLine(x, 0f, x, height, paint)
+                    x += step
+                }
+                var y = -step
+                while (y < height + step) {
+                    canvas.drawLine(0f, y, width, y, paint)
+                    y += step
+                }
+                paint.color = withAlpha(preset.accentArgb, 0.44f)
+                canvas.drawLine(width * 0.08f, height * 0.12f, width * 0.92f, height * 0.12f, paint)
+            }
+            FixedCardPattern.ORBIT -> {
+                paint.strokeWidth = max(2f, short * 0.006f)
+                repeat(3) { index ->
+                    paint.color = withAlpha(preset.accentArgb, 0.22f + index * 0.08f)
+                    canvas.drawOval(
+                        RectF(
+                            width * 0.52f - short * (0.20f + index * 0.09f),
+                            height * 0.48f - short * (0.11f + index * 0.06f),
+                            width * 0.52f + short * (0.20f + index * 0.09f),
+                            height * 0.48f + short * (0.11f + index * 0.06f)
+                        ),
+                        paint
+                    )
+                }
+            }
+            FixedCardPattern.WAVE -> {
+                paint.strokeWidth = max(2f, short * 0.008f)
+                repeat(3) { index ->
+                    val y = height * (0.72f + index * 0.06f)
+                    val wave = Path().apply {
+                        moveTo(-short * 0.05f, y)
+                        cubicTo(width * 0.24f, y - short * 0.11f, width * 0.42f, y + short * 0.10f, width * 0.63f, y)
+                        cubicTo(width * 0.80f, y - short * 0.09f, width * 0.93f, y + short * 0.06f, width + short * 0.05f, y - short * 0.02f)
+                    }
+                    paint.color = withAlpha(preset.accentArgb, 0.42f - index * 0.10f)
+                    canvas.drawPath(wave, paint)
+                }
+            }
+            FixedCardPattern.CUT -> {
+                paint.strokeWidth = max(2f, short * 0.007f)
+                paint.color = withAlpha(preset.accentArgb, 0.36f)
+                canvas.drawLine(width * 0.68f, 0f, width * 0.43f, height, paint)
+                paint.color = withAlpha(preset.accentArgb, 0.18f)
+                canvas.drawLine(width * 0.78f, 0f, width * 0.53f, height, paint)
+                canvas.drawLine(width * 0.88f, 0f, width * 0.63f, height, paint)
             }
         }
 
