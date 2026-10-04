@@ -333,7 +333,7 @@ fun CreateScreen(
             }
 
             Text(
-                "Hazır ELXVRO kartları • Ücretsiz",
+                "50 hazır ELXVRO kartı • Ücretsiz",
                 color = ScanTokens.Muted,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier
@@ -544,6 +544,20 @@ private fun FreeBrandPresetSelector(
     onSelect: (FreeQrBrandPreset) -> Unit,
     onPlain: () -> Unit
 ) {
+    val selectedIndex = FreeQrBrandPresetCatalog.all.indexOfFirst { it.id == selectedId }
+    Text(
+        text = if (usePlainQr && isPro) {
+            "Seçili: Sade QR"
+        } else if (selectedIndex >= 0) {
+            "Seçili: ${selectedIndex + 1}/50 • ${FreeQrBrandPresetCatalog.all[selectedIndex].label}"
+        } else {
+            "50 ücretsiz kart"
+        },
+        color = ScanTokens.Text,
+        style = MaterialTheme.typography.bodySmall,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.fillMaxWidth().padding(bottom = 7.dp)
+    )
     LazyRow(
         modifier = Modifier
             .fillMaxWidth()
