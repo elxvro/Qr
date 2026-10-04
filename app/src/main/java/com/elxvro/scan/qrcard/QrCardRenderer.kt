@@ -13,12 +13,22 @@ object QrCardRenderer {
         model: QrCardModel,
         qrBitmap: Bitmap,
         logoBitmap: Bitmap? = null,
+        heroBitmap: Bitmap? = null,
         outputWidth: Int = 1600
     ): Bitmap {
         require(QrCardValidator.validate(model) is ValidationResult.Valid) {
             "QR Card model is not safe to render"
         }
         require(outputWidth in 512..4096) { "Unsupported output width" }
+
+        if (model.designPreset != null) {
+            return QrCardV3Renderer.render(
+                model = model,
+                qrBitmap = qrBitmap,
+                heroBitmap = heroBitmap,
+                requestedLongEdge = outputWidth
+            )
+        }
 
         val width = outputWidth
         val height = max(512, (width / model.cardAspectRatio).toInt())
