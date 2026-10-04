@@ -56,7 +56,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.elxvro.scan.AppPrefs
-import com.elxvro.scan.BuildConfig
 import com.elxvro.scan.HistoryExport
 import com.elxvro.scan.ScanSettings
 import com.elxvro.scan.ScanStore
@@ -79,6 +78,11 @@ fun SettingsScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val appVersion = remember {
+        runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        }.getOrNull().orEmpty().ifBlank { "?" }
+    }
     var settings by remember { mutableStateOf(prefs.snapshot()) }
     var clearConfirm by remember { mutableStateOf(false) }
     var privacyOpen by remember { mutableStateOf(false) }
@@ -254,7 +258,7 @@ fun SettingsScreen(
                 LinkSettingRow(
                     icon = Icons.Outlined.Info,
                     title = "ELXVRO Scan",
-                    subtitle = "Sürüm ${BuildConfig.VERSION_NAME}",
+                    subtitle = "Sürüm $appVersion",
                     onClick = { aboutOpen = true }
                 )
             }
@@ -299,7 +303,7 @@ fun SettingsScreen(
     }
     if (aboutOpen) {
         InfoDialog(
-            title = "ELXVRO Scan ${BuildConfig.VERSION_NAME}",
+            title = "ELXVRO Scan $appVersion",
             text = "Hızlı, yerel ve kompakt QR / barkod tarayıcı. PRO ile özel logo, yüksek çözünürlük ve tasarımlı QR Kart özellikleri eklenmiştir.",
             onDismiss = { aboutOpen = false }
         )
