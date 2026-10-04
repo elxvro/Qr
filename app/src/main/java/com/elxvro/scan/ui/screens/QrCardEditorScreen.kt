@@ -5,11 +5,13 @@ import android.graphics.BitmapFactory
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +24,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -49,14 +53,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.elxvro.scan.QrCodeUtil
 import com.elxvro.scan.billing.ProEntitlement
 import com.elxvro.scan.pro.QrGenerationPolicy
 import com.elxvro.scan.pro.QrPremiumPolicy
+import com.elxvro.scan.qrcard.CardColorPickerPolicy
 import com.elxvro.scan.qrcard.ElxvroBrandLogo
+import com.elxvro.scan.qrcard.FixedCardLibrary
+import com.elxvro.scan.qrcard.FixedCardPreset
 import com.elxvro.scan.qrcard.LogoMode
 import com.elxvro.scan.qrcard.QrCardAspectPreset
 import com.elxvro.scan.qrcard.QrCardBackgroundMode
@@ -71,8 +81,6 @@ import com.elxvro.scan.qrcard.QrCardTemplate
 import com.elxvro.scan.qrcard.QrCardTextColorPolicy
 import com.elxvro.scan.qrcard.QrCardValidator
 import com.elxvro.scan.qrcard.QrLogoComposer
-import com.elxvro.scan.qrcard.PremiumFixedBackgroundCatalog
-import com.elxvro.scan.qrcard.PremiumFixedBackgroundPreset
 import com.elxvro.scan.qrcard.QrPosition
 import com.elxvro.scan.qrcard.ValidationResult
 import com.elxvro.scan.ui.components.ProBadge
@@ -86,6 +94,17 @@ private enum class QrCardEditorTab(val label: String) {
     CONTENT("İçerik"),
     STYLE("Stil"),
     ADVANCED("Gelişmiş")
+}
+
+private enum class CardColorTarget(val label: String) {
+    BACKGROUND("Arka plan"),
+    ACCENT("Buton / vurgu"),
+    BRAND("Marka"),
+    TITLE("Başlık"),
+    BODY("Açıklama"),
+    CTA_TEXT("Buton yazısı"),
+    QR("QR"),
+    QR_BACKGROUND("QR zemini")
 }
 
 @Composable
@@ -116,7 +135,7 @@ fun QrCardEditorScreen(
     var logoScale by remember { mutableFloatStateOf(0.18f) }
     var exportSize by remember { mutableIntStateOf(1200) }
     var backgroundMode by remember { mutableStateOf(QrCardBackgroundMode.FIXED_BACKGROUND) }
-    var backgroundPresetId by remember { mutableStateOf(PremiumFixedBackgroundCatalog.default.id) }
+    var backgroundPresetId by remember { mutableStateOf(FixedCardLibrary.defaultPro.id) }
     var aspectPreset by remember { mutableStateOf(QrCardAspectPreset.CARD) }
     var designPreset by remember { mutableStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE) }
     var qrPosition by remember { mutableStateOf(QrPosition.CENTER) }
@@ -130,6 +149,7 @@ fun QrCardEditorScreen(
     }
     var qrForeground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().qrForegroundArgb) }
     var qrBackground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().qrBackgroundArgb) }
+    var colorTarget by remember { mutableStateOf(CardColorTarget.BACKGROUND) }
 
     fun toast(text: String) = Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
 
@@ -341,6 +361,12 @@ fun QrCardEditorScreen(
                         onLocked = onOpenPaywall
                     ) { selectedMode ->
                         backgroundMode = selectedMode
+                        if (
+                            selectedMode == QrCardBackgroundMode.FIXED_BACKGROUND &&
+                            FixedCardLibrary.pro.none { it.id == backgroundPresetId }
+                        ) {
+                            backgroundPresetId = FixedCardLibrary.defaultPro.id
+                        }
                         applyDesign(QrCardDesignCatalog.defaultFor(aspectPreset, selectedMode))
                     }
 
@@ -368,14 +394,24 @@ fun QrCardEditorScreen(
                     }
 
                     if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
-                        SectionTitle("Premium sabit kartlar • 48 tasarım")
-                        PremiumFixedBackgroundSelector(
+                        SectionTitle("PRO sabit kartlar • 50 benzersiz tasarım")
+                        FixedCardPresetSelector(
                             selectedId = backgroundPresetId,
                             enabled = isPro,
-                            onLocked = onOpenPaywall
-                        ) { preset ->
-                            backgroundPresetId = preset.id
-                        }
+                            onLocked = onOpenPaywall,
+                            previewKey = previewModel.copy(backgroundPresetId = ""),
+                            previewFor = { preset ->
+                                runCatching {
+                                    renderCard(
+                                        320,
+                                        previewModel.copy(backgroundPresetId = preset.id)
+                                    )
+                                }.getOrNull()
+                            },
+                            onSelect = { preset ->
+                                backgroundPresetId = preset.id
+                            }
+                        )
                     }
 
                     if (backgroundMode == QrCardBackgroundMode.FULL_BACKGROUND) {
@@ -426,7 +462,7 @@ fun QrCardEditorScreen(
                 QrCardEditorTab.STYLE -> {
                     if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
                         Text(
-                            text = "Sabit premium kartlarda arka plan, vurgu, QR ve yazı renkleri seçilen tasarıma bağlıdır. Bu kartlarda yalnız metinler ve logo özelleştirilir.",
+                            text = "Sabit PRO kartlarda tasarımın kendi premium renkleri korunur. Sen yalnız metinleri ve logoyu değiştirirsin.",
                             color = ScanTokens.Muted,
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier
@@ -436,20 +472,38 @@ fun QrCardEditorScreen(
                                 .padding(14.dp)
                         )
                     } else {
-                        SectionTitle("Kart rengi")
-                        CardColorSwatches(cardBackground, isPro, onOpenPaywall) { cardBackground = it }
-                        SectionTitle("Vurgu / buton rengi")
-                        CardColorSwatches(accent, isPro, onOpenPaywall) { accent = it }
-                        SectionTitle("Marka yazı rengi")
-                        CardColorSwatches(brandTextColor, isPro, onOpenPaywall) { brandTextColor = it }
-                        SectionTitle("Başlık rengi")
-                        CardColorSwatches(textColor, isPro, onOpenPaywall) { textColor = it }
-                        SectionTitle("Açıklama rengi")
-                        CardColorSwatches(bodyTextColor, isPro, onOpenPaywall) { bodyTextColor = it }
-                        SectionTitle("Buton yazı rengi")
-                        CardColorSwatches(ctaTextColor, isPro, onOpenPaywall) { ctaTextColor = it }
-                        SectionTitle("QR rengi")
-                        CardColorSwatches(qrForeground, isPro, onOpenPaywall) { qrForeground = it }
+                        SectionTitle("Rengini değiştireceğin bölüm")
+                        CardColorTargetSelector(
+                            selected = colorTarget,
+                            onSelect = { colorTarget = it }
+                        )
+                        val selectedColor = when (colorTarget) {
+                            CardColorTarget.BACKGROUND -> cardBackground
+                            CardColorTarget.ACCENT -> accent
+                            CardColorTarget.BRAND -> brandTextColor
+                            CardColorTarget.TITLE -> textColor
+                            CardColorTarget.BODY -> bodyTextColor
+                            CardColorTarget.CTA_TEXT -> ctaTextColor
+                            CardColorTarget.QR -> qrForeground
+                            CardColorTarget.QR_BACKGROUND -> qrBackground
+                        }
+                        SectionTitle("${colorTarget.label} rengi")
+                        ContinuousColorPicker(
+                            selectedArgb = selectedColor,
+                            enabled = isPro,
+                            onLocked = onOpenPaywall
+                        ) { color ->
+                            when (colorTarget) {
+                                CardColorTarget.BACKGROUND -> cardBackground = color
+                                CardColorTarget.ACCENT -> accent = color
+                                CardColorTarget.BRAND -> brandTextColor = color
+                                CardColorTarget.TITLE -> textColor = color
+                                CardColorTarget.BODY -> bodyTextColor = color
+                                CardColorTarget.CTA_TEXT -> ctaTextColor = color
+                                CardColorTarget.QR -> qrForeground = color
+                                CardColorTarget.QR_BACKGROUND -> qrBackground = color
+                            }
+                        }
                     }
                 }
                 QrCardEditorTab.ADVANCED -> {
@@ -597,33 +651,151 @@ private fun EditorField(
 }
 
 @Composable
-private fun CardColorSwatches(selected: Int, enabled: Boolean, onLocked: () -> Unit, onSelect: (Int) -> Unit) {
-    val colors = listOf(
-        Color.White,
-        Color(0xFFF7F8F9),
-        Color(0xFF090E15),
-        Color(0xFF0068F8),
-        Color(0xFF7539E8),
-        Color(0xFF0D9F55),
-        Color(0xFFCF24E8),
-        Color(0xFF1F4B99),
-        Color(0xFFFF3D7F),
-        Color(0xFFFFD166)
-    )
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        colors.forEach { color ->
-            val argb = color.toArgb()
+private fun CardColorTargetSelector(
+    selected: CardColorTarget,
+    onSelect: (CardColorTarget) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+        CardColorTarget.entries.forEach { target ->
             Box(
                 modifier = Modifier
-                    .size(32.dp)
-                    .border(if (selected == argb) 2.dp else 1.dp, if (selected == argb) ScanTokens.Blue else ScanTokens.Divider, CircleShape)
-                    .padding(4.dp)
-                    .background(color, CircleShape)
-                    .clickable {
-                        if (enabled) onSelect(argb) else onLocked()
-                    }
+                    .height(38.dp)
+                    .background(
+                        if (selected == target) ScanTokens.Blue.copy(alpha = 0.10f) else Color.White,
+                        RoundedCornerShape(10.dp)
+                    )
+                    .border(
+                        1.dp,
+                        if (selected == target) ScanTokens.Blue else ScanTokens.Divider,
+                        RoundedCornerShape(10.dp)
+                    )
+                    .clickable { onSelect(target) }
+                    .padding(horizontal = 11.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    target.label,
+                    color = if (selected == target) ScanTokens.Blue else ScanTokens.Text,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ContinuousColorPicker(
+    selectedArgb: Int,
+    enabled: Boolean,
+    onLocked: () -> Unit,
+    onSelect: (Int) -> Unit
+) {
+    val hsv = CardColorPickerPolicy.fromArgb(selectedArgb)
+    var hue by remember(selectedArgb) { mutableFloatStateOf(hsv.hue) }
+    var saturation by remember(selectedArgb) { mutableFloatStateOf(hsv.saturation) }
+    var value by remember(selectedArgb) { mutableFloatStateOf(hsv.value) }
+
+    fun emit(nextHue: Float = hue, nextSaturation: Float = saturation, nextValue: Float = value) {
+        hue = nextHue
+        saturation = nextSaturation
+        value = nextValue
+        onSelect(CardColorPickerPolicy.toArgb(hue, saturation, value))
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White, RoundedCornerShape(14.dp))
+            .border(1.dp, ScanTokens.Divider, RoundedCornerShape(14.dp))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .background(Color(selectedArgb), CircleShape)
+                    .border(1.dp, ScanTokens.Divider, CircleShape)
+            )
+            Text(
+                "#%08X".format(selectedArgb),
+                color = ScanTokens.Text,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.SemiBold
             )
         }
+
+        val hueColor = Color(CardColorPickerPolicy.toArgb(hue, 1f, 1f))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(180.dp)
+                .background(
+                    Brush.horizontalGradient(listOf(Color.White, hueColor)),
+                    RoundedCornerShape(10.dp)
+                )
+                .background(
+                    Brush.verticalGradient(listOf(Color.Transparent, Color.Black)),
+                    RoundedCornerShape(10.dp)
+                )
+                .border(1.dp, ScanTokens.Divider, RoundedCornerShape(10.dp))
+                .pointerInput(enabled, hue) {
+                    detectTapGestures { offset ->
+                        if (!enabled) {
+                            onLocked()
+                        } else {
+                            val s = (offset.x / size.width.toFloat()).coerceIn(0f, 1f)
+                            val v = (1f - offset.y / size.height.toFloat()).coerceIn(0f, 1f)
+                            emit(nextSaturation = s, nextValue = v)
+                        }
+                    }
+                }
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(26.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            Color.Red,
+                            Color.Yellow,
+                            Color.Green,
+                            Color.Cyan,
+                            Color.Blue,
+                            Color.Magenta,
+                            Color.Red
+                        )
+                    ),
+                    RoundedCornerShape(99.dp)
+                )
+                .border(1.dp, ScanTokens.Divider, RoundedCornerShape(99.dp))
+                .pointerInput(enabled) {
+                    detectTapGestures { offset ->
+                        if (!enabled) {
+                            onLocked()
+                        } else {
+                            val h = (offset.x / size.width.toFloat()).coerceIn(0f, 1f) * 360f
+                            emit(nextHue = h)
+                        }
+                    }
+                }
+        )
+
+        Text(
+            "Renk kartına dokunarak doygunluk/parlaklığı, alt şeritten tonu seç.",
+            color = ScanTokens.Muted,
+            style = MaterialTheme.typography.bodySmall
+        )
     }
 }
 
@@ -685,72 +857,69 @@ private fun ResolutionSelector(
 }
 
 @Composable
-private fun PremiumFixedBackgroundSelector(
+private fun FixedCardPresetSelector(
     selectedId: String,
     enabled: Boolean,
     onLocked: () -> Unit,
-    onSelect: (PremiumFixedBackgroundPreset) -> Unit
+    previewKey: Any,
+    previewFor: (FixedCardPreset) -> Bitmap?,
+    onSelect: (FixedCardPreset) -> Unit
 ) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+    LazyRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(150.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        PremiumFixedBackgroundCatalog.all.chunked(8).forEach { rowItems ->
-            Row(
+        items(
+            items = FixedCardLibrary.pro,
+            key = { it.id }
+        ) { preset ->
+            val selected = preset.id == selectedId
+            val thumbnail = remember(preset.id, previewKey) {
+                previewFor(preset)
+            }
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .width(154.dp)
+                    .clickable {
+                        if (enabled) onSelect(preset) else onLocked()
+                    },
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                rowItems.forEach { preset ->
-                    val selected = preset.id == selectedId
-                    Column(
-                        modifier = Modifier
-                            .width(106.dp)
-                            .clickable {
-                                if (enabled) onSelect(preset) else onLocked()
-                            },
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(60.dp)
-                                .background(
-                                    brush = Brush.linearGradient(
-                                        listOf(
-                                            Color(preset.startArgb),
-                                            Color(preset.endArgb)
-                                        )
-                                    ),
-                                    shape = RoundedCornerShape(11.dp)
-                                )
-                                .border(
-                                    if (selected) 2.dp else 1.dp,
-                                    if (selected) ScanTokens.Blue else Color(preset.accentArgb).copy(alpha = 0.72f),
-                                    RoundedCornerShape(11.dp)
-                                )
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.BottomCenter)
-                                    .fillMaxWidth(0.70f)
-                                    .height(3.dp)
-                                    .background(
-                                        Color(preset.accentArgb),
-                                        RoundedCornerShape(99.dp)
-                                    )
-                            )
-                        }
-                        Text(
-                            text = preset.label,
-                            color = if (selected) ScanTokens.Blue else ScanTokens.Text,
-                            style = MaterialTheme.typography.labelSmall,
-                            maxLines = 2,
-                            modifier = Modifier.padding(top = 4.dp)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(104.dp)
+                        .background(Color(0xFFF2F4F7), RoundedCornerShape(12.dp))
+                        .border(
+                            if (selected) 2.dp else 1.dp,
+                            if (selected) ScanTokens.Blue else ScanTokens.Divider,
+                            RoundedCornerShape(12.dp)
                         )
-                    }
+                        .padding(5.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    thumbnail?.let {
+                        Image(
+                            bitmap = it.asImageBitmap(),
+                            contentDescription = preset.label,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } ?: Text(
+                        "QR",
+                        color = ScanTokens.Muted,
+                        style = MaterialTheme.typography.labelSmall
+                    )
                 }
+                Text(
+                    text = preset.label,
+                    color = if (selected) ScanTokens.Blue else ScanTokens.Text,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 2,
+                    modifier = Modifier.padding(top = 5.dp)
+                )
             }
         }
     }
