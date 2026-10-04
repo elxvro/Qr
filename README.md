@@ -2,6 +2,17 @@
 
 Native Android QR & barcode scanner and QR generator.
 
+## v2.9.1-test — PRO production validation build
+
+This build is intended only for pre-release device testing of PRO features:
+
+- Debuggable builds force the effective entitlement to PRO so premium features can be tested without a Google Play purchase
+- Release/non-debuggable builds continue to use the real Google Play Billing entitlement unchanged
+- Settings shows “PRO TEST aktif” and hides upgrade/manage/restore billing actions while test mode is active
+- Billing code remains present and continues to refresh in the background; the test override only changes the entitlement exposed to feature gates
+- PRO test mode must not be used as the final store build; remove/disable the override before publishing the production release
+- Version bumped to 2.9.1-test / versionCode 31
+
 ## v2.9.0 — Smart result cards
 
 ELXVRO Scan 2.9 makes structured QR and barcode results easier to read while keeping the original raw payload available:
