@@ -57,6 +57,7 @@ import com.elxvro.scan.pro.QrPremiumPolicy
 import com.elxvro.scan.qrcard.ElxvroBrandLogo
 import com.elxvro.scan.qrcard.LogoMode
 import com.elxvro.scan.qrcard.QrCardAspectPreset
+import com.elxvro.scan.qrcard.QrCardBackgroundMode
 import com.elxvro.scan.qrcard.QrCardDesignCatalog
 import com.elxvro.scan.qrcard.QrCardDesignPreset
 import com.elxvro.scan.qrcard.QrCardExport
@@ -106,14 +107,15 @@ fun QrCardEditorScreen(
     var heroImage by remember { mutableStateOf<Bitmap?>(null) }
     var logoScale by remember { mutableFloatStateOf(0.18f) }
     var exportSize by remember { mutableIntStateOf(1200) }
+    var backgroundMode by remember { mutableStateOf(QrCardBackgroundMode.FIXED_BACKGROUND) }
     var aspectPreset by remember { mutableStateOf(QrCardAspectPreset.CARD) }
-    var designPreset by remember { mutableStateOf(QrCardDesignPreset.CLASSIC_LUXURY) }
+    var designPreset by remember { mutableStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE) }
     var qrPosition by remember { mutableStateOf(QrPosition.CENTER) }
-    var cardBackground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_LUXURY.theme().backgroundArgb) }
-    var accent by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_LUXURY.theme().accentArgb) }
-    var textColor by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_LUXURY.theme().titleArgb) }
-    var qrForeground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_LUXURY.theme().qrForegroundArgb) }
-    var qrBackground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_LUXURY.theme().qrBackgroundArgb) }
+    var cardBackground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().backgroundArgb) }
+    var accent by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().accentArgb) }
+    var textColor by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().titleArgb) }
+    var qrForeground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().qrForegroundArgb) }
+    var qrBackground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().qrBackgroundArgb) }
 
     fun toast(text: String) = Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
 
@@ -162,6 +164,7 @@ fun QrCardEditorScreen(
     fun applyDesign(next: QrCardDesignPreset) {
         designPreset = next
         aspectPreset = next.aspectPreset
+        backgroundMode = next.backgroundMode
         val theme = next.theme()
         cardBackground = theme.backgroundArgb
         accent = theme.accentArgb
@@ -313,6 +316,29 @@ fun QrCardEditorScreen(
 
             when (tab) {
                 QrCardEditorTab.DESIGN -> {
+                    SectionTitle("Kart tipi")
+                    BackgroundModeSelector(
+                        selected = backgroundMode,
+                        enabled = isPro,
+                        onLocked = onOpenPaywall
+                    ) { selectedMode ->
+                        backgroundMode = selectedMode
+                        applyDesign(QrCardDesignCatalog.defaultFor(aspectPreset, selectedMode))
+                    }
+
+                    Text(
+                        text = if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
+                            "Sabit premium arka plan tüm oranlarda korunur; seçtiğin fotoğraf kart içindeki görsel alanına yerleşir."
+                        } else {
+                            "Seçtiğin görsel kartın tamamını kaplar; QR, metin ve buton düzeni seçilen orana göre profesyonel şekilde uyarlanır."
+                        },
+                        color = ScanTokens.Muted,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 6.dp)
+                    )
+
                     SectionTitle("Kart oranı")
                     AspectRatioSelector(
                         selected = aspectPreset,
@@ -320,21 +346,23 @@ fun QrCardEditorScreen(
                         onLocked = onOpenPaywall
                     ) { selectedAspect ->
                         aspectPreset = selectedAspect
-                        applyDesign(QrCardDesignCatalog.defaultFor(selectedAspect))
+                        applyDesign(QrCardDesignCatalog.defaultFor(selectedAspect, backgroundMode))
                     }
 
-                    SectionTitle("Profesyonel tasarım")
-                    DesignPresetSelector(
-                        aspect = aspectPreset,
-                        selected = designPreset,
-                        enabled = isPro,
-                        onLocked = onOpenPaywall,
-                        onSelect = ::applyDesign
+                    SectionTitle(
+                        if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
+                            "Kart görseli"
+                        } else {
+                            "Tam arka plan görseli"
+                        }
                     )
-
-                    SectionTitle("Kart görseli")
                     ReferencePrimaryButton(
-                        text = if (heroImage == null) "Kart Görseli Seç" else "Kart Görselini Değiştir",
+                        text = when {
+                            heroImage == null && backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND -> "Kart Görseli Seç"
+                            heroImage == null -> "Arka Plan Görseli Seç"
+                            backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND -> "Kart Görselini Değiştir"
+                            else -> "Arka Planı Değiştir"
+                        },
                         onClick = {
                             if (isPro) heroPicker.launch("image/*") else onOpenPaywall()
                         },
@@ -342,7 +370,11 @@ fun QrCardEditorScreen(
                     )
                     if (heroImage != null) {
                         Text(
-                            text = "Görseli kaldır",
+                            text = if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
+                                "Görseli kaldır"
+                            } else {
+                                "Arka planı kaldır"
+                            },
                             color = ScanTokens.Blue,
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier
@@ -614,27 +646,42 @@ private fun ResolutionSelector(
 }
 
 @Composable
-private fun DesignPresetSelector(
-    aspect: QrCardAspectPreset,
-    selected: QrCardDesignPreset,
+private fun BackgroundModeSelector(
+    selected: QrCardBackgroundMode,
     enabled: Boolean,
     onLocked: () -> Unit,
-    onSelect: (QrCardDesignPreset) -> Unit
+    onSelect: (QrCardBackgroundMode) -> Unit
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        QrCardDesignCatalog.forAspect(aspect).forEach { preset ->
-            ReferenceChip(
-                text = preset.label,
-                selected = selected == preset,
-                onClick = {
-                    if (enabled) onSelect(preset) else onLocked()
-                }
-            )
+        QrCardBackgroundMode.entries.forEach { mode ->
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
+                    .background(
+                        if (selected == mode) ScanTokens.Blue.copy(alpha = 0.10f) else Color.White,
+                        RoundedCornerShape(10.dp)
+                    )
+                    .border(
+                        1.dp,
+                        if (selected == mode) ScanTokens.Blue else ScanTokens.Divider,
+                        RoundedCornerShape(10.dp)
+                    )
+                    .clickable {
+                        if (enabled) onSelect(mode) else onLocked()
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = mode.label,
+                    color = if (selected == mode) ScanTokens.Blue else ScanTokens.Text,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
     }
 }
