@@ -57,6 +57,8 @@ import com.elxvro.scan.pro.QrPremiumPolicy
 import com.elxvro.scan.qrcard.ElxvroBrandLogo
 import com.elxvro.scan.qrcard.LogoMode
 import com.elxvro.scan.qrcard.QrCardAspectPreset
+import com.elxvro.scan.qrcard.QrCardDesignCatalog
+import com.elxvro.scan.qrcard.QrCardDesignPreset
 import com.elxvro.scan.qrcard.QrCardExport
 import com.elxvro.scan.qrcard.QrCardModel
 import com.elxvro.scan.qrcard.QrCardPreviewPolicy
@@ -91,8 +93,8 @@ fun QrCardEditorScreen(
     var tab by remember { mutableStateOf(QrCardEditorTab.DESIGN) }
     var template by remember { mutableStateOf(QrCardTemplate.MINIMAL) }
     var title by remember { mutableStateOf("ELXVRO") }
-    var subtitle by remember { mutableStateOf("QR ile hızlı erişim") }
-    var contactLine by remember { mutableStateOf("") }
+    var subtitle by remember { mutableStateOf("Premium QR Card") }
+    var contactLine by remember { mutableStateOf("People • Places • Possibilities") }
     var payload by remember { mutableStateOf(initialPayload.ifBlank { "https://elxvro.com" }) }
     var wifiSsid by remember { mutableStateOf("ELXVRO Wi-Fi") }
     var socialHandle by remember { mutableStateOf("@elxvro") }
@@ -100,15 +102,17 @@ fun QrCardEditorScreen(
     var eventLocation by remember { mutableStateOf("Etkinlik konumu") }
     var logoMode by remember { mutableStateOf(LogoMode.ELXVRO) }
     var customLogo by remember { mutableStateOf<Bitmap?>(null) }
+    var heroImage by remember { mutableStateOf<Bitmap?>(null) }
     var logoScale by remember { mutableFloatStateOf(0.18f) }
     var exportSize by remember { mutableIntStateOf(1200) }
-    var aspectPreset by remember { mutableStateOf(QrCardAspectPreset.DEFAULT) }
+    var aspectPreset by remember { mutableStateOf(QrCardAspectPreset.CARD) }
+    var designPreset by remember { mutableStateOf(QrCardDesignPreset.CLASSIC_LUXURY) }
     var qrPosition by remember { mutableStateOf(QrPosition.CENTER) }
-    var cardBackground by remember { mutableIntStateOf(QrCardTemplate.MINIMAL.defaults().cardBackgroundArgb) }
-    var accent by remember { mutableIntStateOf(QrCardTemplate.MINIMAL.defaults().accentArgb) }
-    var textColor by remember { mutableIntStateOf(QrCardTemplate.MINIMAL.defaults().textArgb) }
-    var qrForeground by remember { mutableIntStateOf(QrCardTemplate.MINIMAL.defaults().qrForegroundArgb) }
-    var qrBackground by remember { mutableIntStateOf(QrCardTemplate.MINIMAL.defaults().qrBackgroundArgb) }
+    var cardBackground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_LUXURY.theme().backgroundArgb) }
+    var accent by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_LUXURY.theme().accentArgb) }
+    var textColor by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_LUXURY.theme().titleArgb) }
+    var qrForeground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_LUXURY.theme().qrForegroundArgb) }
+    var qrBackground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_LUXURY.theme().qrBackgroundArgb) }
 
     fun toast(text: String) = Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
 
@@ -126,20 +130,40 @@ fun QrCardEditorScreen(
         }
     }
 
+    val heroPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            runCatching {
+                context.contentResolver.openInputStream(uri)?.use(BitmapFactory::decodeStream)
+                    ?: error("Görsel okunamadı")
+            }.onSuccess {
+                heroImage = it
+            }.onFailure {
+                toast("Kart görseli açılamadı")
+            }
+        }
+    }
+
     fun applyTemplate(next: QrCardTemplate) {
         template = next
         val defaults = next.defaults()
-        cardBackground = defaults.cardBackgroundArgb
-        accent = defaults.accentArgb
-        textColor = defaults.textArgb
-        qrForeground = defaults.qrForegroundArgb
-        qrBackground = defaults.qrBackgroundArgb
         qrPosition = defaults.qrPosition
         logoScale = defaults.logoScaleFraction
     }
 
+    fun applyDesign(next: QrCardDesignPreset) {
+        designPreset = next
+        aspectPreset = next.aspectPreset
+        val theme = next.theme()
+        cardBackground = theme.backgroundArgb
+        accent = theme.accentArgb
+        textColor = theme.titleArgb
+        qrForeground = theme.qrForegroundArgb
+        qrBackground = theme.qrBackgroundArgb
+    }
+
     fun currentModel(): QrCardModel = QrCardModel(
         template = template,
+        designPreset = designPreset,
         payload = payload.trim(),
         title = title.trim(),
         subtitle = subtitle.trim(),
@@ -187,12 +211,18 @@ fun QrCardEditorScreen(
         } else {
             rawQr
         }
-        return QrCardRenderer.render(model, composedQr, logoBitmap = null, outputWidth = size)
+        return QrCardRenderer.render(
+            model = model,
+            qrBitmap = composedQr,
+            logoBitmap = null,
+            heroBitmap = heroImage,
+            outputWidth = size
+        )
     }
 
     val model = currentModel()
     val previewModel = remember(model) { QrCardPreviewPolicy.sanitize(model) }
-    val preview = remember(previewModel, customLogo, entitlement) {
+    val preview = remember(previewModel, customLogo, heroImage, entitlement) {
         runCatching {
             renderCard(700, previewModel)
         }.getOrNull()
@@ -240,7 +270,13 @@ fun QrCardEditorScreen(
                         bitmap = it.asImageBitmap(),
                         contentDescription = "QR Kart önizlemesi",
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .fillMaxWidth(
+                                when {
+                                    previewModel.cardAspectRatio < 0.65f -> 0.62f
+                                    previewModel.cardAspectRatio < 0.90f -> 0.82f
+                                    else -> 1f
+                                }
+                            )
                             .aspectRatio(previewModel.cardAspectRatio)
                     )
                 } ?: Text("Önizleme hazırlanamadı", color = ScanTokens.Muted)
@@ -268,21 +304,46 @@ fun QrCardEditorScreen(
 
             when (tab) {
                 QrCardEditorTab.DESIGN -> {
-                    SectionTitle("Kart şablonu")
-                    TemplateSelector(template, ::applyTemplate)
-                    SectionTitle("QR konumu")
-                    LightChoiceRow(
-                        items = listOf("Üst" to QrPosition.TOP, "Orta" to QrPosition.CENTER, "Alt" to QrPosition.BOTTOM),
-                        selected = qrPosition,
-                        enabled = isPro,
-                        onLocked = onOpenPaywall
-                    ) { qrPosition = it }
                     SectionTitle("Kart oranı")
                     AspectRatioSelector(
                         selected = aspectPreset,
                         enabled = isPro,
                         onLocked = onOpenPaywall
-                    ) { aspectPreset = it }
+                    ) { selectedAspect ->
+                        aspectPreset = selectedAspect
+                        applyDesign(QrCardDesignCatalog.defaultFor(selectedAspect))
+                    }
+
+                    SectionTitle("Profesyonel tasarım")
+                    DesignPresetSelector(
+                        aspect = aspectPreset,
+                        selected = designPreset,
+                        enabled = isPro,
+                        onLocked = onOpenPaywall,
+                        onSelect = ::applyDesign
+                    )
+
+                    SectionTitle("Kart görseli")
+                    ReferencePrimaryButton(
+                        text = if (heroImage == null) "Kart Görseli Seç" else "Kart Görselini Değiştir",
+                        onClick = {
+                            if (isPro) heroPicker.launch("image/*") else onOpenPaywall()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (heroImage != null) {
+                        Text(
+                            text = "Görseli kaldır",
+                            color = ScanTokens.Blue,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier
+                                .padding(top = 8.dp)
+                                .clickable { heroImage = null }
+                        )
+                    }
+
+                    SectionTitle("İçerik türü")
+                    TemplateSelector(template, ::applyTemplate)
                 }
                 QrCardEditorTab.CONTENT -> {
                     EditorField("QR içeriği", payload, isPro, onOpenPaywall) { payload = it }
@@ -306,6 +367,8 @@ fun QrCardEditorScreen(
                     CardColorSwatches(cardBackground, isPro, onOpenPaywall) { cardBackground = it }
                     SectionTitle("Vurgu rengi")
                     CardColorSwatches(accent, isPro, onOpenPaywall) { accent = it }
+                    SectionTitle("Yazı rengi")
+                    CardColorSwatches(textColor, isPro, onOpenPaywall) { textColor = it }
                     SectionTitle("QR rengi")
                     CardColorSwatches(qrForeground, isPro, onOpenPaywall) { qrForeground = it }
                 }
@@ -542,6 +605,32 @@ private fun ResolutionSelector(
 }
 
 @Composable
+private fun DesignPresetSelector(
+    aspect: QrCardAspectPreset,
+    selected: QrCardDesignPreset,
+    enabled: Boolean,
+    onLocked: () -> Unit,
+    onSelect: (QrCardDesignPreset) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        QrCardDesignCatalog.forAspect(aspect).forEach { preset ->
+            ReferenceChip(
+                text = preset.label,
+                selected = selected == preset,
+                onClick = {
+                    if (enabled) onSelect(preset) else onLocked()
+                }
+            )
+        }
+    }
+}
+
+@Composable
 private fun AspectRatioSelector(
     selected: QrCardAspectPreset,
     enabled: Boolean,
@@ -554,7 +643,13 @@ private fun AspectRatioSelector(
             .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        QrCardAspectPreset.entries.forEach { preset ->
+        listOf(
+            QrCardAspectPreset.SQUARE,
+            QrCardAspectPreset.WIDE,
+            QrCardAspectPreset.CARD,
+            QrCardAspectPreset.PORTRAIT,
+            QrCardAspectPreset.STORY
+        ).forEach { preset ->
             ReferenceChip(
                 text = preset.label,
                 selected = selected == preset,
