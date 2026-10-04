@@ -865,6 +865,18 @@ private fun FixedCardPresetSelector(
     previewFor: (FixedCardPreset) -> Bitmap?,
     onSelect: (FixedCardPreset) -> Unit
 ) {
+    val selectedIndex = FixedCardLibrary.pro.indexOfFirst { it.id == selectedId }
+    Text(
+        text = if (selectedIndex >= 0) {
+            "Seçili: ${selectedIndex + 1}/50 • ${FixedCardLibrary.pro[selectedIndex].label}"
+        } else {
+            "50 PRO kart"
+        },
+        color = ScanTokens.Text,
+        style = MaterialTheme.typography.bodySmall,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.fillMaxWidth().padding(bottom = 7.dp)
+    )
     LazyRow(
         modifier = Modifier
             .fillMaxWidth()
