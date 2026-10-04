@@ -28,6 +28,14 @@ object QrCardV3Renderer {
             qrForegroundArgb = model.qrForegroundArgb,
             qrBackgroundArgb = model.qrBackgroundArgb
         )
+        val copy = QrCardCopyPolicy.resolve(model)
+        val textColors = QrCardTextColorPolicy.resolve(
+            theme = theme,
+            brandTextArgb = model.brandTextArgb,
+            titleTextArgb = model.textArgb,
+            bodyTextArgb = model.bodyTextArgb,
+            ctaTextArgb = model.ctaTextArgb
+        )
         val size = QrCardOutputSizePolicy.resolve(requestedLongEdge, model.cardAspectRatio)
         val output = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
@@ -40,8 +48,8 @@ object QrCardV3Renderer {
         drawHero(canvas, paint, heroBitmap, imageRect.toRectF(), theme, preset, short)
         drawDecor(canvas, paint, theme, preset, size.width.toFloat(), size.height.toFloat(), short)
         drawQr(canvas, paint, qrBitmap, layout.qrRect.toRectF(), theme, short)
-        drawText(canvas, paint, model, theme, layout.textRect, short)
-        drawCta(canvas, paint, theme, layout.ctaRect.toRectF(), short)
+        drawText(canvas, paint, copy, textColors, layout.textRect, short)
+        drawCta(canvas, paint, copy, textColors, theme, layout.ctaRect.toRectF(), short)
 
         return output
     }
@@ -187,8 +195,8 @@ object QrCardV3Renderer {
     private fun drawText(
         canvas: Canvas,
         paint: Paint,
-        model: QrCardModel,
-        theme: QrCardDesignTheme,
+        copy: QrCardCopy,
+        colors: QrCardTextColors,
         textRect: LayoutRect,
         short: Float
     ) {
@@ -197,58 +205,55 @@ object QrCardV3Renderer {
         val width = textRect.width
 
         paint.textAlign = Paint.Align.LEFT
-        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        paint.color = theme.accentArgb
-        paint.textSize = max(15f, short * 0.035f)
-        y -= paint.ascent()
-        canvas.drawText("ELXVRO", x, y, paint)
+
+        if (copy.brand.isNotBlank()) {
+            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            paint.color = colors.brandArgb
+            paint.textSize = max(15f, short * 0.045f)
+            y -= paint.ascent()
+            val brandLines = QrCardTextLayout.wrap(copy.brand, width, 1, paint::measureText)
+            brandLines.firstOrNull()?.let { canvas.drawText(it, x, y, paint) }
+            y += paint.textSize * 0.72f
+        }
 
         val titleSize = max(24f, min(short * 0.085f, textRect.height * 0.25f))
-        paint.color = theme.titleArgb
-        paint.textSize = titleSize
-        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        y += titleSize * 1.15f
-
-        val title = model.title.ifBlank { defaultTitle(model.template) }
-        val titleLines = QrCardTextLayout.wrap(title, width, 2, paint::measureText)
-        titleLines.forEach { line ->
-            if (y <= textRect.bottom) canvas.drawText(line, x, y, paint)
-            y += titleSize * 1.05f
+        if (copy.title.isNotBlank() && y < textRect.bottom) {
+            paint.color = colors.titleArgb
+            paint.textSize = titleSize
+            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            val titleLines = QrCardTextLayout.wrap(copy.title, width, 2, paint::measureText)
+            titleLines.forEach { line ->
+                if (y <= textRect.bottom) canvas.drawText(line, x, y, paint)
+                y += titleSize * 1.05f
+            }
         }
 
-        if (model.subtitle.isNotBlank() && y < textRect.bottom) {
-            paint.color = theme.accentArgb
-            paint.textSize = titleSize * 0.48f
-            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            val lines = QrCardTextLayout.wrap(model.subtitle, width, 2, paint::measureText)
+        if (copy.description.isNotBlank() && y < textRect.bottom) {
+            paint.color = colors.bodyArgb
+            paint.textSize = max(15f, titleSize * 0.42f)
+            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+            y += paint.textSize * 0.40f
+            val lines = QrCardTextLayout.wrap(copy.description, width, 3, paint::measureText)
             lines.forEach { line ->
                 if (y <= textRect.bottom) canvas.drawText(line, x, y, paint)
-                y += titleSize * 0.58f
+                y += paint.textSize * 1.25f
             }
         }
 
-        val details = detailLines(model)
-        paint.color = theme.bodyArgb
-        paint.textSize = max(15f, titleSize * 0.38f)
-        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-        details.take(3).forEach { detail ->
-            if (detail.isBlank() || y > textRect.bottom) return@forEach
-            val lines = QrCardTextLayout.wrap(detail, width, 1, paint::measureText)
-            lines.firstOrNull()?.let { line ->
-                canvas.drawText(line, x, y, paint)
-                y += titleSize * 0.50f
-            }
-        }
         paint.textAlign = Paint.Align.LEFT
     }
 
     private fun drawCta(
         canvas: Canvas,
         paint: Paint,
+        copy: QrCardCopy,
+        colors: QrCardTextColors,
         theme: QrCardDesignTheme,
         rect: RectF,
         short: Float
     ) {
+        if (copy.cta.isBlank()) return
+
         val radius = rect.height() / 2f
         paint.style = Paint.Style.FILL
         paint.shader = LinearGradient(
@@ -263,37 +268,16 @@ object QrCardV3Renderer {
         canvas.drawRoundRect(rect, radius, radius, paint)
         paint.shader = null
 
-        paint.color = readableOn(theme.accentArgb)
+        paint.color = colors.ctaArgb
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         paint.textSize = max(14f, min(short * 0.034f, rect.height() * 0.42f))
         paint.textAlign = Paint.Align.CENTER
         val baseline = rect.centerY() - (paint.ascent() + paint.descent()) / 2f
-        canvas.drawText("Scan to explore  →", rect.centerX(), baseline, paint)
+        val label = QrCardTextLayout.wrap(copy.cta, rect.width() * 0.82f, 1, paint::measureText)
+            .firstOrNull()
+            .orEmpty()
+        canvas.drawText(label, rect.centerX(), baseline, paint)
         paint.textAlign = Paint.Align.LEFT
-    }
-
-    private fun detailLines(model: QrCardModel): List<String> = when (model.template) {
-        QrCardTemplate.MINIMAL,
-        QrCardTemplate.CORPORATE,
-        QrCardTemplate.BUSINESS,
-        QrCardTemplate.PROMO -> listOf(model.contactLine)
-        QrCardTemplate.WIFI -> listOf(
-            model.wifiSsid.takeIf { it.isNotBlank() }?.let { "Wi-Fi • $it" }.orEmpty()
-        )
-        QrCardTemplate.SOCIAL -> listOf(model.socialHandle, model.contactLine)
-        QrCardTemplate.EVENT,
-        QrCardTemplate.TICKET -> listOf(model.eventDate, model.eventLocation)
-    }.filter { it.isNotBlank() }
-
-    private fun defaultTitle(template: QrCardTemplate): String = when (template) {
-        QrCardTemplate.MINIMAL -> "Premium QR Card"
-        QrCardTemplate.CORPORATE -> "Kurumsal QR"
-        QrCardTemplate.WIFI -> "Wi-Fi"
-        QrCardTemplate.SOCIAL -> "Sosyal Medya"
-        QrCardTemplate.EVENT -> "Etkinlik"
-        QrCardTemplate.BUSINESS -> "Business"
-        QrCardTemplate.PROMO -> "Kampanya"
-        QrCardTemplate.TICKET -> "Bilet"
     }
 
     private fun drawBitmapCenterCrop(
