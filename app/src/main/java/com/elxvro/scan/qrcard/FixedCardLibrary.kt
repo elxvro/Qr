@@ -6,7 +6,7 @@ enum class FixedCardTier {
 }
 
 enum class FixedCardPattern(val label: String) {
-    ARC("Arc"),
+    SWEEP("Sweep"),
     GRID("Grid"),
     RINGS("Rings"),
     DIAGONAL("Diagonal"),
