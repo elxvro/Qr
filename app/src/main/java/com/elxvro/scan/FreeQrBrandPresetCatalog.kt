@@ -1,5 +1,7 @@
 package com.elxvro.scan
 
+import com.elxvro.scan.qrcard.FixedCardLibrary
+
 data class FreeQrBrandPreset(
     val id: String,
     val label: String,
@@ -11,62 +13,37 @@ data class FreeQrBrandPreset(
 )
 
 object FreeQrBrandPresetCatalog {
-    val all = listOf(
-        FreeQrBrandPreset(
-            id = "elxvro_web",
-            label = "ELXVRO.com",
-            brand = "ELXVRO",
-            title = "elxvro.com",
-            description = "Dijital dünyanı keşfet",
-            cta = "TARA",
-            backgroundPresetId = "obsidian_gold_sweep"
-        ),
-        FreeQrBrandPreset(
-            id = "elxvro_scan",
-            label = "ELXVRO Scan",
-            brand = "ELXVRO",
-            title = "ELXVRO Scan",
-            description = "QR ve barkodları hızlıca tara",
-            cta = "TARA",
-            backgroundPresetId = "midnight_blue_frame"
-        ),
-        FreeQrBrandPreset(
-            id = "tara_kesfet",
-            label = "Tara • Keşfet",
-            brand = "ELXVRO",
-            title = "Tara • Keşfet",
-            description = "Bağlantıyı aç, içeriğe ulaş",
-            cta = "AÇ",
-            backgroundPresetId = "royal_violet_rings"
-        ),
-        FreeQrBrandPreset(
-            id = "tek_taramada",
-            label = "Tek Taramada",
-            brand = "ELXVRO",
-            title = "Tek taramada bağlan",
-            description = "Hızlı, sade ve doğrudan",
-            cta = "TARA",
-            backgroundPresetId = "emerald_noir_horizon"
-        ),
-        FreeQrBrandPreset(
-            id = "dijital_kart",
-            label = "Dijital Kart",
-            brand = "ELXVRO",
-            title = "Dijital dünyana açılan kod",
-            description = "elxvro.com",
-            cta = "KEŞFET",
-            backgroundPresetId = "copper_smoke_facets"
-        ),
-        FreeQrBrandPreset(
-            id = "people_places",
-            label = "ELXVRO Signature",
-            brand = "ELXVRO",
-            title = "People • Places • Possibilities",
-            description = "Scan. Connect. Discover.",
-            cta = "TARA",
-            backgroundPresetId = "arctic_navy_diagonal"
-        )
+    private data class CopySet(
+        val title: String,
+        val description: String,
+        val cta: String
     )
+
+    private val copySets = listOf(
+        CopySet("elxvro.com", "Dijital dünyanı keşfet", "TARA"),
+        CopySet("ELXVRO Scan", "QR ve barkodları hızlıca tara", "TARA"),
+        CopySet("Tara • Keşfet", "Bağlantıyı aç, içeriğe ulaş", "AÇ"),
+        CopySet("Tek taramada bağlan", "Hızlı, sade ve doğrudan", "TARA"),
+        CopySet("Dijital dünyana açılan kod", "elxvro.com", "KEŞFET"),
+        CopySet("People • Places • Possibilities", "Scan. Connect. Discover.", "TARA"),
+        CopySet("Bağlantın burada", "Kodu tara ve devam et", "AÇ"),
+        CopySet("ELXVRO ile keşfet", "Tek kod, hızlı erişim", "TARA"),
+        CopySet("Daha hızlı bağlan", "QR ile anında eriş", "TARA"),
+        CopySet("Scan smarter", "Connect faster with ELXVRO", "AÇ")
+    )
+
+    val all: List<FreeQrBrandPreset> = FixedCardLibrary.free.mapIndexed { index, card ->
+        val copy = copySets[index % copySets.size]
+        FreeQrBrandPreset(
+            id = "free_brand_${index + 1}",
+            label = "ELXVRO ${index + 1}",
+            brand = "ELXVRO",
+            title = copy.title,
+            description = copy.description,
+            cta = copy.cta,
+            backgroundPresetId = card.id
+        )
+    }
 
     val default: FreeQrBrandPreset = all.first()
 
