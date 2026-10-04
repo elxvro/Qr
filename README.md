@@ -2,6 +2,25 @@
 
 Native Android QR & barcode scanner and QR generator.
 
+## v3.1.0-test — Two QR Card Types
+
+QR Card Studio is simplified into two consistent card systems across every supported ratio:
+
+- Type 1: “Sabit Arka Plan” keeps one shared black/gold premium background language across 1:1, 16:9, 1.586:1, 4:5 and 9:16
+- Fixed-background cards keep the selected photo inside the designed photo panel instead of replacing the whole card
+- Type 2: “Değişen Arka Plan” lets the selected image cover the complete card background
+- Changing-background cards keep the same QR/text/CTA design language while the full background image can vary
+- Each of the five ratios has exactly one fixed-background and one full-background implementation
+- The editor now shows only the two user-facing card types, then the ratio; internal preset names are hidden
+- Switching ratio preserves the currently selected card type
+- Switching card type preserves the selected ratio and immediately maps to the matching layout
+- The fixed family shares the same premium color theme across all ratios
+- The full-background family uses one consistent dark/gold overlay treatment across all ratios
+- Existing card photo picker, content types, custom colors, custom logo/no-logo and high-resolution export remain available
+- PRO test mode remains enabled in debuggable builds for pre-release validation
+- Added unit coverage for the two card modes, per-ratio mapping and fixed/full image placement
+- Version bumped to 3.1.0-test / versionCode 33
+
 ## v3.0.0-test — Professional QR Card Studio
 
 ELXVRO Scan 3.0 rebuilds the PRO QR Card editor around ratio-specific professional layouts:
