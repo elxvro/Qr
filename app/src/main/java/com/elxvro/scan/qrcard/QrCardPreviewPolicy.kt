@@ -20,7 +20,7 @@ object QrCardPreviewPolicy {
 
         return model.copy(
             payload = model.payload.ifBlank { "https://elxvro.com" },
-            title = model.title.ifBlank { defaultTitle(model.template) },
+            title = if (model.designPreset != null) model.title else model.title.ifBlank { defaultTitle(model.template) },
             wifiSsid = model.wifiSsid.ifBlank { "ELXVRO Wi-Fi" },
             socialHandle = model.socialHandle.ifBlank { "@elxvro" },
             eventDate = model.eventDate.ifBlank { "Etkinlik tarihi" },
