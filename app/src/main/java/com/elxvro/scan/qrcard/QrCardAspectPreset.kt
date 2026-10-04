@@ -5,7 +5,8 @@ enum class QrCardAspectPreset(val label: String) {
     SQUARE("1:1"),
     WIDE("16:9"),
     CARD("Kart"),
-    PORTRAIT("4:5");
+    PORTRAIT("4:5"),
+    STORY("9:16");
 
     fun resolve(template: QrCardTemplate): Float = when (this) {
         DEFAULT -> template.defaults().cardAspectRatio
@@ -13,5 +14,6 @@ enum class QrCardAspectPreset(val label: String) {
         WIDE -> 16f / 9f
         CARD -> 1.586f
         PORTRAIT -> 0.8f
+        STORY -> 9f / 16f
     }
 }
