@@ -16,6 +16,7 @@ ELXVRO Scan 2.9 makes structured QR and barcode results easier to read while kee
 - Product barcodes show the product code and exact barcode format prominently
 - Malformed or incomplete structured payloads fall back to the existing raw-result presentation instead of failing
 - Raw scanned content remains visible, selectable, copyable and shareable
+- Structured cards are additive: unsupported fields and formats continue to use the existing raw-result flow
 - Settings/About now reads the installed app version dynamically instead of showing the old hard-coded 2.1.0 value
 - All parsing remains local/offline and does not send scanned content to a server
 - Added unit coverage for Wi-Fi, vCard, MECARD, VEVENT, mailto, SMS, geo, product and malformed-data fallback parsing
