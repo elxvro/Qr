@@ -14,11 +14,11 @@ object QrCardOutputSizePolicy {
 
         return if (aspectRatio >= 1f) {
             val width = requestedLongEdge
-            val height = (requestedLongEdge / aspectRatio).roundToInt().coerceAtLeast(512)
+            val height = (requestedLongEdge / aspectRatio).roundToInt().coerceAtLeast(1)
             QrCardOutputSize(width, height)
         } else {
             val height = requestedLongEdge
-            val width = (requestedLongEdge * aspectRatio).roundToInt().coerceAtLeast(512)
+            val width = (requestedLongEdge * aspectRatio).roundToInt().coerceAtLeast(1)
             QrCardOutputSize(width, height)
         }
     }
