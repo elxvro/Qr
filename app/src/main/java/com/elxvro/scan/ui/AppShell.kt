@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -42,6 +43,7 @@ import com.elxvro.scan.AppPrefs
 import com.elxvro.scan.ScanStore
 import com.elxvro.scan.billing.BillingProducts
 import com.elxvro.scan.billing.BillingRepository
+import com.elxvro.scan.pro.ProTestMode
 import com.elxvro.scan.ui.screens.BarcodeCreateScreen
 import com.elxvro.scan.ui.screens.BatchScanScreen
 import com.elxvro.scan.ui.screens.CreateScreen
@@ -69,6 +71,10 @@ fun ElxvroScanApp() {
     val billing = remember { BillingRepository(context.applicationContext) }
     val entitlement by billing.entitlement.collectAsStateWithLifecycle()
     val offers by billing.offers.collectAsStateWithLifecycle()
+    val proTestMode = remember(context) {
+        context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+    }
+    val effectiveEntitlement = ProTestMode.resolve(entitlement, proTestMode)
 
     var tab by remember { mutableStateOf(AppTab.SCAN) }
     var showPaywall by remember { mutableStateOf(false) }
@@ -108,7 +114,7 @@ fun ElxvroScanApp() {
         ) {
             when {
                 showPaywall -> ProPaywallScreen(
-                    entitlement = entitlement,
+                    entitlement = effectiveEntitlement,
                     offers = offers,
                     onPurchase = { offer ->
                         context.findActivity()?.let { activity ->
@@ -129,7 +135,7 @@ fun ElxvroScanApp() {
                     onBack = { showBatchScan = false }
                 )
                 showQrCard -> QrCardEditorScreen(
-                    entitlement = entitlement,
+                    entitlement = effectiveEntitlement,
                     initialPayload = qrCardPayload,
                     onOpenPaywall = { showPaywall = true },
                     onBack = { showQrCard = false }
@@ -142,7 +148,7 @@ fun ElxvroScanApp() {
                         onOpenBatchScan = { showBatchScan = true }
                     )
                     AppTab.CREATE -> CreateScreen(
-                        entitlement = entitlement,
+                        entitlement = effectiveEntitlement,
                         onOpenPaywall = { showPaywall = true },
                         onOpenQrCard = { payload ->
                             qrCardPayload = payload
@@ -155,7 +161,8 @@ fun ElxvroScanApp() {
                     AppTab.SETTINGS -> SettingsScreen(
                         store = store,
                         prefs = prefs,
-                        entitlement = entitlement,
+                        entitlement = effectiveEntitlement,
+                        proTestMode = proTestMode,
                         onUpgradePro = { showPaywall = true },
                         onManageSubscription = ::manageSubscription,
                         onRestorePurchases = billing::restorePurchases,
