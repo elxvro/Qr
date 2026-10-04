@@ -36,7 +36,7 @@ object FreeQrBrandPresetCatalog {
         val copy = copySets[index % copySets.size]
         FreeQrBrandPreset(
             id = "free_brand_${index + 1}",
-            label = "ELXVRO ${index + 1}",
+            label = card.label,
             brand = "ELXVRO",
             title = copy.title,
             description = copy.description,
