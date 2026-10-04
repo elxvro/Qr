@@ -2,6 +2,26 @@
 
 Native Android QR & barcode scanner and QR generator.
 
+## v3.0.0-test — Professional QR Card Studio
+
+ELXVRO Scan 3.0 rebuilds the PRO QR Card editor around ratio-specific professional layouts:
+
+- Five production card ratios: 1:1, 16:9, classic 1.586:1, 4:5 and new 9:16 Story
+- Ten professional visual presets, exactly two distinct layouts per ratio
+- Each ratio has its own QR, text, CTA and photo geometry instead of stretching one generic layout
+- Professional black/gold, editorial, cinematic, executive, campaign and story-oriented visual treatments
+- Card photo picker with center-crop rendering; photo can be changed or removed at any time
+- Large gallery photos are sampled near 2048 px to keep editor memory usage controlled
+- Preset themes use separate title/body/accent colors for stronger typography hierarchy
+- Manual card, accent, text and QR color choices continue to work with the professional renderer
+- Decorative curves, premium QR frames, gradient CTA button and photo overlays are rendered directly into exported cards
+- 4096/3072/2048 card export remains available to PRO; requested resolution now represents the long edge so 9:16 exports keep correct geometry without excessive memory use
+- Legacy QR Card renderer remains available for models without a v3 visual preset
+- Existing custom QR logo / no-logo modes and QR safety rules remain unchanged
+- PRO test mode from v2.9.1 remains enabled in debuggable builds so all v3 card features can be evaluated without a Play purchase
+- Added unit coverage for 9:16, design catalog, ratio-specific geometry, color overrides, safe photo sampling and long-edge output sizing
+- Version bumped to 3.0.0-test / versionCode 32
+
 ## v2.9.1-test — PRO production validation build
 
 This build is intended only for pre-release device testing of PRO features:
