@@ -66,6 +66,7 @@ import com.elxvro.scan.qrcard.QrCardModel
 import com.elxvro.scan.qrcard.QrCardPreviewPolicy
 import com.elxvro.scan.qrcard.QrCardRenderer
 import com.elxvro.scan.qrcard.QrCardTemplate
+import com.elxvro.scan.qrcard.QrCardTextColorPolicy
 import com.elxvro.scan.qrcard.QrCardValidator
 import com.elxvro.scan.qrcard.QrLogoComposer
 import com.elxvro.scan.qrcard.QrPosition
@@ -94,9 +95,12 @@ fun QrCardEditorScreen(
     val isPro = entitlement is ProEntitlement.Pro
     var tab by remember { mutableStateOf(QrCardEditorTab.DESIGN) }
     var template by remember { mutableStateOf(QrCardTemplate.MINIMAL) }
-    var title by remember { mutableStateOf("ELXVRO") }
-    var subtitle by remember { mutableStateOf("Premium QR Card") }
-    var contactLine by remember { mutableStateOf("People • Places • Possibilities") }
+    var brandText by remember { mutableStateOf("ELXVRO") }
+    var title by remember { mutableStateOf("Bizi Keşfet") }
+    var descriptionText by remember { mutableStateOf("Kartını tara ve keşfet") }
+    var ctaText by remember { mutableStateOf("TARA") }
+    var subtitle by remember { mutableStateOf("") }
+    var contactLine by remember { mutableStateOf("") }
     var payload by remember { mutableStateOf(initialPayload.ifBlank { "https://elxvro.com" }) }
     var wifiSsid by remember { mutableStateOf("ELXVRO Wi-Fi") }
     var socialHandle by remember { mutableStateOf("@elxvro") }
@@ -113,7 +117,12 @@ fun QrCardEditorScreen(
     var qrPosition by remember { mutableStateOf(QrPosition.CENTER) }
     var cardBackground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().backgroundArgb) }
     var accent by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().accentArgb) }
+    var brandTextColor by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().accentArgb) }
     var textColor by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().titleArgb) }
+    var bodyTextColor by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().bodyArgb) }
+    var ctaTextColor by remember {
+        mutableIntStateOf(QrCardTextColorPolicy.readableOn(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().accentArgb))
+    }
     var qrForeground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().qrForegroundArgb) }
     var qrBackground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().qrBackgroundArgb) }
 
@@ -168,32 +177,35 @@ fun QrCardEditorScreen(
         val theme = next.theme()
         cardBackground = theme.backgroundArgb
         accent = theme.accentArgb
+        brandTextColor = theme.accentArgb
         textColor = theme.titleArgb
+        bodyTextColor = theme.bodyArgb
+        ctaTextColor = QrCardTextColorPolicy.readableOn(theme.accentArgb)
         qrForeground = theme.qrForegroundArgb
         qrBackground = theme.qrBackgroundArgb
     }
 
     fun currentModel(): QrCardModel = QrCardModel(
-        template = template,
+        template = QrCardTemplate.MINIMAL,
         designPreset = designPreset,
         payload = payload.trim(),
-        title = title.trim(),
-        subtitle = subtitle.trim(),
-        contactLine = contactLine.trim(),
-        wifiSsid = wifiSsid.trim(),
-        socialHandle = socialHandle.trim(),
-        eventDate = eventDate.trim(),
-        eventLocation = eventLocation.trim(),
+        brandText = brandText,
+        title = title,
+        descriptionText = descriptionText,
+        ctaText = ctaText,
         cardBackgroundArgb = cardBackground,
         accentArgb = accent,
         textArgb = textColor,
+        brandTextArgb = brandTextColor,
+        bodyTextArgb = bodyTextColor,
+        ctaTextArgb = ctaTextColor,
         qrForegroundArgb = qrForeground,
         qrBackgroundArgb = qrBackground,
         logoMode = logoMode,
         logoScaleFraction = logoScale,
         quietZoneModules = 4,
         qrPosition = qrPosition,
-        cardAspectRatio = aspectPreset.resolve(template)
+        cardAspectRatio = aspectPreset.resolve(QrCardTemplate.MINIMAL)
     )
 
     fun logoBitmap(mode: LogoMode): Bitmap? = when (mode) {
@@ -383,33 +395,43 @@ fun QrCardEditorScreen(
                         )
                     }
 
-                    SectionTitle("İçerik türü")
-                    TemplateSelector(template, ::applyTemplate)
+                    Text(
+                        text = "Kart görünümü ortaktır; marka, yazılar, renkler ve görseller İçerik/Stil sekmelerinden tamamen değiştirilebilir.",
+                        color = ScanTokens.Muted,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 14.dp)
+                    )
                 }
                 QrCardEditorTab.CONTENT -> {
                     EditorField("QR içeriği", payload, isPro, onOpenPaywall) { payload = it }
+                    EditorField("Marka / isim", brandText, isPro, onOpenPaywall) { brandText = it }
                     EditorField("Başlık", title, isPro, onOpenPaywall) { title = it }
-                    EditorField("Alt açıklama", subtitle, isPro, onOpenPaywall) { subtitle = it }
-                    when (template) {
-                        QrCardTemplate.MINIMAL,
-                        QrCardTemplate.CORPORATE,
-                        QrCardTemplate.BUSINESS,
-                        QrCardTemplate.PROMO -> EditorField("İletişim / kısa bilgi", contactLine, isPro, onOpenPaywall) { contactLine = it }
-                        QrCardTemplate.WIFI -> EditorField("Wi-Fi adı (SSID)", wifiSsid, isPro, onOpenPaywall) { wifiSsid = it }
-                        QrCardTemplate.SOCIAL -> EditorField("Sosyal medya hesabı", socialHandle, isPro, onOpenPaywall) { socialHandle = it }
-                        QrCardTemplate.EVENT, QrCardTemplate.TICKET -> {
-                            EditorField("Tarih", eventDate, isPro, onOpenPaywall) { eventDate = it }
-                            EditorField("Konum", eventLocation, isPro, onOpenPaywall) { eventLocation = it }
-                        }
-                    }
+                    EditorField("Açıklama", descriptionText, isPro, onOpenPaywall) { descriptionText = it }
+                    EditorField("Buton metni", ctaText, isPro, onOpenPaywall) { ctaText = it }
+                    Text(
+                        text = "Marka / isim alanını boş bırakırsan kartta marka yazısı gösterilmez.",
+                        color = ScanTokens.Muted,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                    )
                 }
                 QrCardEditorTab.STYLE -> {
                     SectionTitle("Kart rengi")
                     CardColorSwatches(cardBackground, isPro, onOpenPaywall) { cardBackground = it }
-                    SectionTitle("Vurgu rengi")
+                    SectionTitle("Vurgu / buton rengi")
                     CardColorSwatches(accent, isPro, onOpenPaywall) { accent = it }
-                    SectionTitle("Yazı rengi")
+                    SectionTitle("Marka yazı rengi")
+                    CardColorSwatches(brandTextColor, isPro, onOpenPaywall) { brandTextColor = it }
+                    SectionTitle("Başlık rengi")
                     CardColorSwatches(textColor, isPro, onOpenPaywall) { textColor = it }
+                    SectionTitle("Açıklama rengi")
+                    CardColorSwatches(bodyTextColor, isPro, onOpenPaywall) { bodyTextColor = it }
+                    SectionTitle("Buton yazı rengi")
+                    CardColorSwatches(ctaTextColor, isPro, onOpenPaywall) { ctaTextColor = it }
                     SectionTitle("QR rengi")
                     CardColorSwatches(qrForeground, isPro, onOpenPaywall) { qrForeground = it }
                 }
