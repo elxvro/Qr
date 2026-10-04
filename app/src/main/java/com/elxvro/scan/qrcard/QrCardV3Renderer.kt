@@ -33,10 +33,11 @@ object QrCardV3Renderer {
         val canvas = Canvas(output)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
         val layout = QrCardV3LayoutPolicy.resolve(size.width, size.height, preset)
+        val imageRect = QrCardImagePlacementPolicy.resolve(size.width, size.height, preset, layout)
         val short = min(size.width, size.height).toFloat()
 
         drawBackground(canvas, paint, theme, size.width.toFloat(), size.height.toFloat())
-        drawHero(canvas, paint, heroBitmap, layout.imageRect.toRectF(), theme, preset, short)
+        drawHero(canvas, paint, heroBitmap, imageRect.toRectF(), theme, preset, short)
         drawDecor(canvas, paint, theme, preset, size.width.toFloat(), size.height.toFloat(), short)
         drawQr(canvas, paint, qrBitmap, layout.qrRect.toRectF(), theme, short)
         drawText(canvas, paint, model, theme, layout.textRect, short)
@@ -102,12 +103,10 @@ object QrCardV3Renderer {
             }
         }
 
-        val overlayAlpha = when (preset) {
-            QrCardDesignPreset.SQUARE_PHOTO,
-            QrCardDesignPreset.WIDE_CINEMATIC,
-            QrCardDesignPreset.PORTRAIT_CAMPAIGN,
-            QrCardDesignPreset.STORY_LUXURY -> theme.photoOverlayAlpha
-            else -> theme.photoOverlayAlpha * 0.45f
+        val overlayAlpha = if (preset.fullBleedPhoto) {
+            theme.photoOverlayAlpha
+        } else {
+            theme.photoOverlayAlpha * 0.45f
         }
         if (overlayAlpha > 0f) {
             paint.color = withAlpha(0xFF000000.toInt(), overlayAlpha)
