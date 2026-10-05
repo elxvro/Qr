@@ -101,7 +101,7 @@ class ScannerController(
         }, mainExecutor)
     }
 
-    @OptIn(ExperimentalGetImage::class)
+    @ExperimentalGetImage
     private fun analyze(
         proxy: ImageProxy,
         previewView: PreviewView,
