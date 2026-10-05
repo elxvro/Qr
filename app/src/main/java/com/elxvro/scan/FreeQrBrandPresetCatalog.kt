@@ -23,14 +23,14 @@ object FreeQrBrandPresetCatalog {
     private val copySets = listOf(
         CopySet("elxvro.com", "Dijital dünyanı keşfet", "TARA"),
         CopySet("ELXVRO Scan", "QR ve barkodları hızlıca tara", "TARA"),
-        CopySet("Tara • Keşfet", "Bağlantıyı aç, içeriğe ulaş", "AÇ"),
+        CopySet("Tara • Keşfet", "Bağlantıyı aç, içeriğe ulaş", "TARA"),
         CopySet("Tek taramada bağlan", "Hızlı, sade ve doğrudan", "TARA"),
-        CopySet("Dijital dünyana açılan kod", "elxvro.com", "KEŞFET"),
+        CopySet("Dijital dünyana açılan kod", "elxvro.com", "TARA"),
         CopySet("People • Places • Possibilities", "Scan. Connect. Discover.", "TARA"),
-        CopySet("Bağlantın burada", "Kodu tara ve devam et", "AÇ"),
+        CopySet("Bağlantın burada", "Kodu tara ve devam et", "TARA"),
         CopySet("ELXVRO ile keşfet", "Tek kod, hızlı erişim", "TARA"),
         CopySet("Daha hızlı bağlan", "QR ile anında eriş", "TARA"),
-        CopySet("Scan smarter", "Connect faster with ELXVRO", "AÇ")
+        CopySet("Scan smarter", "Connect faster with ELXVRO", "TARA")
     )
 
     val all: List<FreeQrBrandPreset> = ProfessionalCardCatalog.free.mapIndexed { index, card ->
