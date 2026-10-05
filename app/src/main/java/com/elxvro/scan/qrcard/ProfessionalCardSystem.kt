@@ -190,11 +190,11 @@ data class ProfessionalCardLayout(
 object ProfessionalCardLayoutEngine {
     fun resolve(width: Int, height: Int, composition: ProfessionalCardComposition): ProfessionalCardLayout {
         require(width > 0 && height > 0)
-        return if (width.toFloat() / height >= 1.12f) {
+        return (if (width.toFloat() / height >= 1.12f) {
             landscape(width, height, composition)
         } else {
             portrait(width, height, composition)
-        }
+        }).normalizeCta(width.toFloat(), height.toFloat())
     }
 
     private fun landscape(width: Int, height: Int, c: ProfessionalCardComposition): ProfessionalCardLayout {
@@ -218,6 +218,36 @@ object ProfessionalCardLayoutEngine {
             ProfessionalCardComposition.HERO_BAND -> ProfessionalCardLayout(rect(.04f,.50f,.96f,.94f), rect(.08f,.56f,.48f,.63f), rect(.08f,.65f,.50f,.77f), rect(.08f,.78f,.50f,.88f), qr(.77f,.69f,.29f), rect(.60f,.86f,.92f,.93f), FixedCardTextAlignment.LEFT)
             ProfessionalCardComposition.SIGNATURE -> ProfessionalCardLayout(rect(.06f,.08f,.94f,.92f), rect(.08f,.13f,.47f,.21f), rect(.08f,.25f,.49f,.43f), rect(.08f,.46f,.49f,.60f), qr(.75f,.44f,.39f), rect(.59f,.70f,.91f,.82f), FixedCardTextAlignment.LEFT)
         }
+    }
+
+    private fun ProfessionalCardLayout.normalizeCta(width: Float, height: Float): ProfessionalCardLayout {
+        val ctaWidth = (qrRect.width * 0.92f)
+            .coerceAtMost(width * 0.34f)
+            .coerceAtLeast(width * 0.18f)
+        val ctaHeight = (qrRect.height * 0.20f)
+            .coerceIn(height * 0.052f, height * 0.085f)
+        val gap = (height * 0.022f).coerceAtLeast(10f)
+        val desiredLeft = (qrRect.left + qrRect.right - ctaWidth) / 2f
+        val horizontalPadding = width * 0.03f
+        val left = desiredLeft.coerceIn(
+            horizontalPadding,
+            width - horizontalPadding - ctaWidth
+        )
+        var top = qrRect.bottom + gap
+        var bottom = top + ctaHeight
+        val maxBottom = minOf(height * 0.94f, panelRect.bottom - height * 0.015f)
+        if (bottom > maxBottom) {
+            bottom = maxBottom
+            top = bottom - ctaHeight
+        }
+        return copy(
+            ctaRect = LayoutRect(
+                left = left,
+                top = top,
+                right = left + ctaWidth,
+                bottom = bottom
+            )
+        )
     }
 
     private fun portrait(width: Int, height: Int, c: ProfessionalCardComposition): ProfessionalCardLayout {
