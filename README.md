@@ -1,3 +1,13 @@
+## v3.8.0-test — Professional Card System
+
+- Replaced the active fixed-card rendering path with a new independent `ProfessionalCardCatalog` + `ProfessionalCardRenderer` system.
+- 50 FREE and 50 PRO fixed cards remain, now built from separate visual scene families with five genuinely different compositions per category instead of palette-only variants.
+- QR, brand, title/body copy and CTA use explicit safe zones; QR stays inside the card and does not overlap copy or CTA across supported aspect ratios.
+- FREE and PRO card pickers continue to render the real QR payload in their thumbnails.
+- Existing PRO full-background/photo mode and continuous color picker remain on their existing editable rendering path.
+- Existing back-navigation behaviour, brand/privacy/support content and ELXVRO logo assets remain untouched.
+- Version 3.8.0-test / versionCode 40.
+
 # ELXVRO Scan
 
 Native Android QR & barcode scanner and QR generator.
