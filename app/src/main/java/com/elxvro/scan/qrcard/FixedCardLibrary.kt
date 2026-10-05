@@ -18,6 +18,30 @@ enum class FixedCardPattern(val label: String) {
     CUT("Cut")
 }
 
+enum class FixedCardVisualScene(val categoryLabel: String) {
+    FREE_TRAVEL_MOUNTAINS("Seyahat"),
+    FREE_CAFE_TABLE("Kafe"),
+    FREE_TECH_NEON("Teknoloji"),
+    FREE_CITY_NIGHT("Şehir"),
+    FREE_NATURE_FOREST("Doğa"),
+    FREE_BUSINESS_DESK("İş"),
+    FREE_EVENT_STAGE("Etkinlik"),
+    FREE_MINIMAL_INTERIOR("Minimal"),
+    FREE_CREATIVE_PET("Yaratıcı"),
+    FREE_ABSTRACT_FLOW("Soyut"),
+
+    PRO_LUXURY_COAST("Lüks Seyahat"),
+    PRO_FINE_DINING("Fine Dining"),
+    PRO_CORPORATE_TOWER("Kurumsal"),
+    PRO_FASHION_EDITORIAL("Moda"),
+    PRO_NIGHTLIFE_STAGE("Gece"),
+    PRO_WELLNESS_RETREAT("Wellness"),
+    PRO_HOTEL_RESORT("Otel"),
+    PRO_PREMIUM_TECH("Premium Tech"),
+    PRO_REAL_ESTATE("Emlak"),
+    PRO_BEAUTY_PRODUCT("Beauty")
+}
+
 enum class FixedCardLayoutVariant {
     TEXT_LEFT_QR_RIGHT,
     QR_LEFT_TEXT_RIGHT,
@@ -28,13 +52,21 @@ enum class FixedCardLayoutVariant {
     FLOATING_QR,
     SIDE_RAIL,
     EDITORIAL,
-    SIGNATURE
+    SIGNATURE,
+    HERO_TOP,
+    HERO_BOTTOM,
+    OFFSET_LEFT,
+    OFFSET_RIGHT,
+    MAGAZINE
 }
 
 data class FixedCardPreset(
     val id: String,
     val label: String,
     val tier: FixedCardTier,
+    val category: String,
+    val scene: FixedCardVisualScene,
+    val sceneVariant: Int,
     val startArgb: Int,
     val endArgb: Int,
     val accentArgb: Int,
@@ -46,6 +78,8 @@ data class FixedCardPreset(
 ) {
     val visualFingerprint: String
         get() = listOf(
+            scene.name,
+            sceneVariant,
             startArgb,
             endArgb,
             accentArgb,
@@ -58,9 +92,9 @@ data class FixedCardPreset(
 }
 
 object FixedCardLibrary {
-    private data class Palette(
-        val id: String,
-        val label: String,
+    private data class SceneStyle(
+        val scene: FixedCardVisualScene,
+        val name: String,
         val start: Int,
         val end: Int,
         val accent: Int,
@@ -69,34 +103,34 @@ object FixedCardLibrary {
         val ctaText: Int
     )
 
-    private val freePalettes = listOf(
-        Palette("electric_blue", "Electric Blue", 0xFF061222.toInt(), 0xFF0A2F58.toInt(), 0xFF2F9BFF.toInt(), 0xFFFFFFFF.toInt(), 0xFFC4DDF6.toInt(), 0xFF06121F.toInt()),
-        Palette("ocean_teal", "Ocean Teal", 0xFF061819.toInt(), 0xFF0B4043.toInt(), 0xFF45D5D0.toInt(), 0xFFF7FFFF.toInt(), 0xFFBDE2E2.toInt(), 0xFF061516.toInt()),
-        Palette("violet_night", "Violet Night", 0xFF100B1F.toInt(), 0xFF38236A.toInt(), 0xFFB18BFF.toInt(), 0xFFFFFFFF.toInt(), 0xFFD8C8F4.toInt(), 0xFF130C22.toInt()),
-        Palette("ruby_glow", "Ruby Glow", 0xFF19090D.toInt(), 0xFF551A27.toInt(), 0xFFFF6A86.toInt(), 0xFFFFFAFB.toInt(), 0xFFF0C6CF.toInt(), 0xFF1A0910.toInt()),
-        Palette("emerald_link", "Emerald Link", 0xFF06130E.toInt(), 0xFF16462F.toInt(), 0xFF4CDF95.toInt(), 0xFFF8FFFB.toInt(), 0xFFC4E7D4.toInt(), 0xFF07140D.toInt()),
-        Palette("sunset_orange", "Sunset Orange", 0xFF1C0C07.toInt(), 0xFF5A2A15.toInt(), 0xFFFF9A52.toInt(), 0xFFFFFBF7.toInt(), 0xFFF2CEB5.toInt(), 0xFF1C0D07.toInt()),
-        Palette("ice_blue", "Ice Blue", 0xFF06131B.toInt(), 0xFF123848.toInt(), 0xFF79D8F7.toInt(), 0xFFF8FDFF.toInt(), 0xFFC6E5F0.toInt(), 0xFF07151C.toInt()),
-        Palette("magenta_flux", "Magenta Flux", 0xFF19091B.toInt(), 0xFF51205A.toInt(), 0xFFF06DFF.toInt(), 0xFFFFF8FF.toInt(), 0xFFEBC6EE.toInt(), 0xFF1B0A1D.toInt()),
-        Palette("lime_signal", "Lime Signal", 0xFF0D1508.toInt(), 0xFF2F491C.toInt(), 0xFFA6E65F.toInt(), 0xFFFBFFF7.toInt(), 0xFFD8EAC7.toInt(), 0xFF0D1508.toInt()),
-        Palette("steel_blue", "Steel Blue", 0xFF0A111A.toInt(), 0xFF253A54.toInt(), 0xFF80AEE8.toInt(), 0xFFF8FBFF.toInt(), 0xFFC9D6E7.toInt(), 0xFF0B121B.toInt())
+    private val freeStyles = listOf(
+        SceneStyle(FixedCardVisualScene.FREE_TRAVEL_MOUNTAINS, "Alpine Escape", 0xFF0A2B49.toInt(), 0xFF4D9ED0.toInt(), 0xFF36A8FF.toInt(), 0xFFFFFFFF.toInt(), 0xFFE2F4FF.toInt(), 0xFFFFFFFF.toInt()),
+        SceneStyle(FixedCardVisualScene.FREE_CAFE_TABLE, "Roast & Co.", 0xFF2B160B.toInt(), 0xFF8D5A31.toInt(), 0xFFF3C57C.toInt(), 0xFFFFF8EF.toInt(), 0xFFF0D8BF.toInt(), 0xFF261409.toInt()),
+        SceneStyle(FixedCardVisualScene.FREE_TECH_NEON, "Nova Grid", 0xFF09072A.toInt(), 0xFF26125C.toInt(), 0xFF7E5CFF.toInt(), 0xFFFFFFFF.toInt(), 0xFFD5CEFF.toInt(), 0xFFFFFFFF.toInt()),
+        SceneStyle(FixedCardVisualScene.FREE_CITY_NIGHT, "City Lights", 0xFF071423.toInt(), 0xFF17385F.toInt(), 0xFF00A8FF.toInt(), 0xFFFFFFFF.toInt(), 0xFFC7DDF4.toInt(), 0xFFFFFFFF.toInt()),
+        SceneStyle(FixedCardVisualScene.FREE_NATURE_FOREST, "Green Path", 0xFF082616.toInt(), 0xFF2C7046.toInt(), 0xFF62D982.toInt(), 0xFFFFFFFF.toInt(), 0xFFD7F2DF.toInt(), 0xFF08200F.toInt()),
+        SceneStyle(FixedCardVisualScene.FREE_BUSINESS_DESK, "Studio Desk", 0xFFECE7DE.toInt(), 0xFFB7A58F.toInt(), 0xFF183C6B.toInt(), 0xFF101820.toInt(), 0xFF39424B.toInt(), 0xFFFFFFFF.toInt()),
+        SceneStyle(FixedCardVisualScene.FREE_EVENT_STAGE, "Pulse Stage", 0xFF160526.toInt(), 0xFF4F1268.toInt(), 0xFFFF39A5.toInt(), 0xFFFFFFFF.toInt(), 0xFFEBC7E7.toInt(), 0xFFFFFFFF.toInt()),
+        SceneStyle(FixedCardVisualScene.FREE_MINIMAL_INTERIOR, "Soft Space", 0xFFF3ECE1.toInt(), 0xFFDCCAB5.toInt(), 0xFFB98F5D.toInt(), 0xFF191713.toInt(), 0xFF5E554B.toInt(), 0xFFFFFFFF.toInt()),
+        SceneStyle(FixedCardVisualScene.FREE_CREATIVE_PET, "Happy Studio", 0xFFFFE4CA.toInt(), 0xFFFFA974.toInt(), 0xFFFF6B4A.toInt(), 0xFF402017.toInt(), 0xFF6D4336.toInt(), 0xFFFFFFFF.toInt()),
+        SceneStyle(FixedCardVisualScene.FREE_ABSTRACT_FLOW, "Color Flow", 0xFF07152A.toInt(), 0xFF173F7A.toInt(), 0xFFFF792E.toInt(), 0xFFFFFFFF.toInt(), 0xFFD9E6FF.toInt(), 0xFFFFFFFF.toInt())
     )
 
-    private val proPalettes = listOf(
-        Palette("obsidian_gold", "Obsidian Gold", 0xFF050608.toInt(), 0xFF16191F.toInt(), 0xFFE4B660.toInt(), 0xFFFFFEFA.toInt(), 0xFFD8C8A8.toInt(), 0xFF12100A.toInt()),
-        Palette("carbon_platinum", "Carbon Platinum", 0xFF090A0C.toInt(), 0xFF252A30.toInt(), 0xFFD6DEE8.toInt(), 0xFFFFFFFF.toInt(), 0xFFD4D9E0.toInt(), 0xFF111418.toInt()),
-        Palette("imperial_burgundy", "Imperial Burgundy", 0xFF13070B.toInt(), 0xFF3C111D.toInt(), 0xFFE6B967.toInt(), 0xFFFFFAF7.toInt(), 0xFFE8C7B9.toInt(), 0xFF180B0D.toInt()),
-        Palette("royal_emerald", "Royal Emerald", 0xFF04100B.toInt(), 0xFF123328.toInt(), 0xFF72D6A8.toInt(), 0xFFF8FFFB.toInt(), 0xFFC4E2D3.toInt(), 0xFF07130E.toInt()),
-        Palette("midnight_sapphire", "Midnight Sapphire", 0xFF050A14.toInt(), 0xFF112A52.toInt(), 0xFF73A9FF.toInt(), 0xFFF8FBFF.toInt(), 0xFFC5D5EE.toInt(), 0xFF07101E.toInt()),
-        Palette("royal_amethyst", "Royal Amethyst", 0xFF0D0718.toInt(), 0xFF2D184F.toInt(), 0xFFC19BFF.toInt(), 0xFFFFFAFF.toInt(), 0xFFDCCBED.toInt(), 0xFF12091D.toInt()),
-        Palette("copper_noir", "Copper Noir", 0xFF120B08.toInt(), 0xFF35241D.toInt(), 0xFFE3A06E.toInt(), 0xFFFFFBF7.toInt(), 0xFFE4C9B9.toInt(), 0xFF160D09.toInt()),
-        Palette("arctic_graphite", "Arctic Graphite", 0xFF081014.toInt(), 0xFF20343C.toInt(), 0xFFA8DDE6.toInt(), 0xFFF8FEFF.toInt(), 0xFFD1E4E7.toInt(), 0xFF091216.toInt()),
-        Palette("champagne_noir", "Champagne Noir", 0xFF100D08.toInt(), 0xFF332B1D.toInt(), 0xFFF0D18B.toInt(), 0xFFFFFCF6.toInt(), 0xFFE7D9BB.toInt(), 0xFF17130B.toInt()),
-        Palette("black_crimson", "Black Crimson", 0xFF0D0608.toInt(), 0xFF301016.toInt(), 0xFFFF6D7F.toInt(), 0xFFFFFAFB.toInt(), 0xFFEBC8CE.toInt(), 0xFF16090C.toInt())
+    private val proStyles = listOf(
+        SceneStyle(FixedCardVisualScene.PRO_LUXURY_COAST, "Azure Reserve", 0xFF061421.toInt(), 0xFF1D5570.toInt(), 0xFFE4B660.toInt(), 0xFFFFFBF1.toInt(), 0xFFE9D9B4.toInt(), 0xFF101820.toInt()),
+        SceneStyle(FixedCardVisualScene.PRO_FINE_DINING, "Maison Noire", 0xFF120A07.toInt(), 0xFF4A2615.toInt(), 0xFFE7BA66.toInt(), 0xFFFFFBF6.toInt(), 0xFFEBD3B8.toInt(), 0xFF171009.toInt()),
+        SceneStyle(FixedCardVisualScene.PRO_CORPORATE_TOWER, "Apex Black", 0xFF05080D.toInt(), 0xFF162237.toInt(), 0xFFD6B76C.toInt(), 0xFFFFFFFF.toInt(), 0xFFD5D8DE.toInt(), 0xFF0B0E12.toInt()),
+        SceneStyle(FixedCardVisualScene.PRO_FASHION_EDITORIAL, "Velora", 0xFF130B0B.toInt(), 0xFF4B2B25.toInt(), 0xFFE5B890.toInt(), 0xFFFFF8F3.toInt(), 0xFFE7CEC0.toInt(), 0xFF1A0E0C.toInt()),
+        SceneStyle(FixedCardVisualScene.PRO_NIGHTLIFE_STAGE, "Afterglow", 0xFF090015.toInt(), 0xFF30004A.toInt(), 0xFFFF25D0.toInt(), 0xFFFFFFFF.toInt(), 0xFFF0C7EB.toInt(), 0xFFFFFFFF.toInt()),
+        SceneStyle(FixedCardVisualScene.PRO_WELLNESS_RETREAT, "Seren", 0xFFE7D7B6.toInt(), 0xFF7B9A69.toInt(), 0xFF2C6043.toInt(), 0xFF18241C.toInt(), 0xFF405447.toInt(), 0xFFFFFFFF.toInt()),
+        SceneStyle(FixedCardVisualScene.PRO_HOTEL_RESORT, "Altura", 0xFF0B1E2E.toInt(), 0xFF587F97.toInt(), 0xFFE1B56C.toInt(), 0xFFFFFCF5.toInt(), 0xFFE0D5C5.toInt(), 0xFF101820.toInt()),
+        SceneStyle(FixedCardVisualScene.PRO_PREMIUM_TECH, "VYLO", 0xFF040815.toInt(), 0xFF071F50.toInt(), 0xFF356DFF.toInt(), 0xFFFFFFFF.toInt(), 0xFFC8D8FF.toInt(), 0xFFFFFFFF.toInt()),
+        SceneStyle(FixedCardVisualScene.PRO_REAL_ESTATE, "Horizon", 0xFF101820.toInt(), 0xFF55758D.toInt(), 0xFFE1B56C.toInt(), 0xFFFFFFFF.toInt(), 0xFFE5E7EA.toInt(), 0xFF101820.toInt()),
+        SceneStyle(FixedCardVisualScene.PRO_BEAUTY_PRODUCT, "Lumière", 0xFFF2E8D6.toInt(), 0xFFCAB898.toInt(), 0xFFB88A4A.toInt(), 0xFF2A241B.toInt(), 0xFF625747.toInt(), 0xFFFFFFFF.toInt())
     )
 
-    val free: List<FixedCardPreset> = build(FixedCardTier.FREE, freePalettes, offset = 0)
-    val pro: List<FixedCardPreset> = build(FixedCardTier.PRO, proPalettes, offset = 5)
+    val free: List<FixedCardPreset> = build(FixedCardTier.FREE, freeStyles, offset = 0)
+    val pro: List<FixedCardPreset> = build(FixedCardTier.PRO, proStyles, offset = 7)
     val all: List<FixedCardPreset> = free + pro
 
     val defaultFree: FixedCardPreset = free.first()
@@ -108,30 +142,53 @@ object FixedCardLibrary {
     fun forTier(tier: FixedCardTier): List<FixedCardPreset> =
         if (tier == FixedCardTier.FREE) free else pro
 
+    fun categories(tier: FixedCardTier): List<String> =
+        forTier(tier).map { it.category }.distinct()
+
+    fun byCategory(tier: FixedCardTier, category: String): List<FixedCardPreset> =
+        forTier(tier).filter { it.category == category }
+
     private fun build(
         tier: FixedCardTier,
-        palettes: List<Palette>,
+        styles: List<SceneStyle>,
         offset: Int
-    ): List<FixedCardPreset> = palettes.flatMapIndexed { paletteIndex, palette ->
-        (0 until 5).map { variantIndex ->
-            val serial = paletteIndex * 5 + variantIndex
+    ): List<FixedCardPreset> = styles.flatMapIndexed { sceneIndex, style ->
+        (0 until 5).map { variant ->
+            val serial = sceneIndex * 5 + variant
             val pattern = FixedCardPattern.entries[(serial + offset) % FixedCardPattern.entries.size]
             val layout = FixedCardLayoutVariant.entries[
-                (paletteIndex + variantIndex * 3 + offset) % FixedCardLayoutVariant.entries.size
+                (sceneIndex * 2 + variant * 3 + offset) % FixedCardLayoutVariant.entries.size
             ]
             FixedCardPreset(
-                id = "${tier.name.lowercase()}_${palette.id}_${variantIndex + 1}",
-                label = "${palette.label} ${variantIndex + 1}",
+                id = "${tier.name.lowercase()}_${style.scene.name.lowercase()}_${variant + 1}",
+                label = "${style.name} ${variant + 1}",
                 tier = tier,
-                startArgb = palette.start,
-                endArgb = palette.end,
-                accentArgb = palette.accent,
-                titleArgb = palette.title,
-                bodyArgb = palette.body,
-                ctaTextArgb = palette.ctaText,
+                category = style.scene.categoryLabel,
+                scene = style.scene,
+                sceneVariant = variant,
+                startArgb = tune(style.start, variant, lighten = variant % 2 == 0),
+                endArgb = tune(style.end, variant, lighten = variant % 2 != 0),
+                accentArgb = tune(style.accent, variant, lighten = true),
+                titleArgb = style.title,
+                bodyArgb = style.body,
+                ctaTextArgb = style.ctaText,
                 pattern = pattern,
                 layout = layout
             )
         }
+    }
+
+    private fun tune(color: Int, variant: Int, lighten: Boolean): Int {
+        if (variant == 0) return color
+        val factor = 0.035f * variant
+        fun channel(shift: Int): Int {
+            val c = (color shr shift) and 0xFF
+            val target = if (lighten) 255 else 0
+            return (c + (target - c) * factor).toInt().coerceIn(0, 255)
+        }
+        return (0xFF shl 24) or
+            (channel(16) shl 16) or
+            (channel(8) shl 8) or
+            channel(0)
     }
 }
