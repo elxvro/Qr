@@ -2,6 +2,24 @@
 
 Native Android QR & barcode scanner and QR generator.
 
+## v3.6.0-test — Visual Scene Card Engine
+
+- Replaced the fixed-card color/pattern approach with a visual scene engine.
+- Free and PRO fixed-card libraries still contain 50 cards each, but are now built from separate scene families instead of repeating one background with color changes.
+- Free visual categories: Travel, Cafe, Technology, City, Nature, Business, Event, Minimal, Creative and Abstract.
+- PRO visual categories: Luxury Travel, Fine Dining, Corporate, Fashion, Nightlife, Wellness, Hotel, Premium Tech, Real Estate and Beauty.
+- Every visual category contains five variations for 50 cards per tier.
+- Added illustrated scene rendering for mountains/lake, cafe table, neon tech, city skyline, forest foliage, business desk, stage lighting, minimal interior, creative pet, abstract flow, luxury coast, fine dining, corporate towers, fashion editorial, nightlife, wellness, resort, premium device, modern real estate and beauty product scenes.
+- Expanded fixed-card composition system from 10 to 15 layout variants.
+- Fixed cards now carry explicit text alignment (left/center/right); text alignment is no longer guessed from aspect ratio.
+- QR, title and CTA geometry is kept separate by policy tests across landscape, square and portrait outputs.
+- Free and PRO card pickers are now category-first: choose a visual family, then choose among five real QR previews.
+- Card thumbnails remain real rendered cards with the QR visible before selection.
+- Free ELXVRO copy is matched to its visual category instead of cycling unrelated copy.
+- Existing PRO full-background/photo mode and section-based continuous color picker remain available.
+- Existing v3.5 ELXVRO launcher/in-app identity remains unchanged.
+- Version 3.6.0-test / versionCode 38.
+
 ## v3.5.0-test — 100 Unique Cards, Live QR Picker & New ELXVRO Identity
 
 - Rebuilt fixed-card selection as two separate libraries: 50 Free ELXVRO cards + 50 PRO fixed cards.
