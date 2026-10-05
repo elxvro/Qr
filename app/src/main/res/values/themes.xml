@@ -4,7 +4,6 @@
         <item name="colorSecondary">#0070F8</item>
         <item name="android:fontFamily">sans</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowLightNavigationBar">false</item>
         <item name="android:navigationBarColor">#090E15</item>
         <item name="android:statusBarColor">#090E15</item>
         <item name="android:windowBackground">#090E15</item>
