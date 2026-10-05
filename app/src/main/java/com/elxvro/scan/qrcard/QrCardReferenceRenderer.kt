@@ -22,6 +22,13 @@ object QrCardReferenceRenderer {
         val preset = requireNotNull(model.designPreset)
         val aspect = preset.aspectPreset
         val mode = preset.backgroundMode
+        if (mode == QrCardBackgroundMode.FIXED_BACKGROUND) {
+            return ProfessionalCardRenderer.render(
+                model = model,
+                qrBitmap = qrBitmap,
+                requestedLongEdge = requestedLongEdge
+            )
+        }
         val fixedPreset = FixedCardLibrary.find(model.backgroundPresetId)
         val editableTheme = QrCardDesignColorPolicy.resolve(
             preset = preset,
