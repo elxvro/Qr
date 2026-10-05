@@ -865,10 +865,20 @@ private fun FixedCardPresetSelector(
     previewFor: (FixedCardPreset) -> Bitmap?,
     onSelect: (FixedCardPreset) -> Unit
 ) {
-    val selectedIndex = FixedCardLibrary.pro.indexOfFirst { it.id == selectedId }
+    val categories = FixedCardLibrary.categories(com.elxvro.scan.qrcard.FixedCardTier.PRO)
+    val selectedPreset = FixedCardLibrary.pro.firstOrNull { it.id == selectedId }
+    var category by remember(selectedPreset?.category) {
+        mutableStateOf(selectedPreset?.category ?: categories.first())
+    }
+    val categoryCards = FixedCardLibrary.byCategory(
+        com.elxvro.scan.qrcard.FixedCardTier.PRO,
+        category
+    )
+    val globalIndex = FixedCardLibrary.pro.indexOfFirst { it.id == selectedId }
+
     Text(
-        text = if (selectedIndex >= 0) {
-            "Seçili: ${selectedIndex + 1}/50 • ${FixedCardLibrary.pro[selectedIndex].label}"
+        text = if (globalIndex >= 0) {
+            "Seçili: ${globalIndex + 1}/50 • ${FixedCardLibrary.pro[globalIndex].label}"
         } else {
             "50 PRO kart"
         },
@@ -877,14 +887,37 @@ private fun FixedCardPresetSelector(
         fontWeight = FontWeight.SemiBold,
         modifier = Modifier.fillMaxWidth().padding(bottom = 7.dp)
     )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+        categories.forEach { item ->
+            ReferenceChip(
+                text = item,
+                selected = category == item,
+                onClick = { category = item }
+            )
+        }
+    }
+
+    Text(
+        text = "$category • 5 tasarım",
+        color = ScanTokens.Muted,
+        style = MaterialTheme.typography.labelSmall,
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 6.dp)
+    )
+
     LazyRow(
         modifier = Modifier
             .fillMaxWidth()
-            .height(150.dp),
+            .height(166.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         items(
-            items = FixedCardLibrary.pro,
+            items = categoryCards,
             key = { it.id }
         ) { preset ->
             val selected = preset.id == selectedId
@@ -893,7 +926,7 @@ private fun FixedCardPresetSelector(
             }
             Column(
                 modifier = Modifier
-                    .width(154.dp)
+                    .width(174.dp)
                     .clickable {
                         if (enabled) onSelect(preset) else onLocked()
                     },
@@ -902,12 +935,12 @@ private fun FixedCardPresetSelector(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(104.dp)
-                        .background(Color(0xFFF2F4F7), RoundedCornerShape(12.dp))
+                        .height(118.dp)
+                        .background(Color(0xFFF2F4F7), RoundedCornerShape(13.dp))
                         .border(
                             if (selected) 2.dp else 1.dp,
                             if (selected) ScanTokens.Blue else ScanTokens.Divider,
-                            RoundedCornerShape(12.dp)
+                            RoundedCornerShape(13.dp)
                         )
                         .padding(5.dp),
                     contentAlignment = Alignment.Center
