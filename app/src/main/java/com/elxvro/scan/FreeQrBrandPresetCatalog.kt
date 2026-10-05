@@ -1,6 +1,6 @@
 package com.elxvro.scan
 
-import com.elxvro.scan.qrcard.FixedCardLibrary
+import com.elxvro.scan.qrcard.ProfessionalCardCatalog
 
 data class FreeQrBrandPreset(
     val id: String,
@@ -33,7 +33,7 @@ object FreeQrBrandPresetCatalog {
         CopySet("Scan smarter", "Connect faster with ELXVRO", "AÇ")
     )
 
-    val all: List<FreeQrBrandPreset> = FixedCardLibrary.free.mapIndexed { index, card ->
+    val all: List<FreeQrBrandPreset> = ProfessionalCardCatalog.free.mapIndexed { index, card ->
         val copy = copySets[(index / 5).coerceIn(0, copySets.lastIndex)]
         FreeQrBrandPreset(
             id = "free_brand_${index + 1}",
