@@ -2,6 +2,18 @@
 
 Native Android QR & barcode scanner and QR generator.
 
+## v3.7.0-test — Fixed Card Composition Rebuild
+
+- Rebuilt fixed-card information architecture after device review.
+- Reduced fixed-card placement to five curated professional compositions instead of scattering QR/copy/CTA across fifteen experimental layouts.
+- Every visual family now keeps one consistent composition across its five artwork variants.
+- QR, brand/title/description and CTA are treated as one card composition.
+- Portrait cards use a disciplined centered stack; landscape cards use balanced two-column or editorial compositions.
+- QR plates use a thinner accent edge, white scan-safe surface and restrained shadow instead of the previous heavy blue frame.
+- CTA placement is locked to the composition and no longer floats independently.
+- Added regression tests requiring large QR geometry, no QR/copy/CTA overlap and one composition per visual category.
+- Version 3.7.0-test / versionCode 39.
+
 ## v3.6.0-test — Visual Scene Card Engine
 
 - Replaced the fixed-card color/pattern approach with a visual scene engine.
