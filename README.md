@@ -1,3 +1,11 @@
+## v3.8.1-test — Color Fixed Card Refresh
+
+- Fixed cards now use color-first backgrounds with gradients, glow, abstract layers and subtle texture instead of scene-like artwork.
+- Every fixed card displays a fixed **TARA** CTA directly below the QR.
+- Brand, title and description remain in separate safe zones so copy does not crowd the QR/CTA group.
+- Existing PRO full-background/photo mode, color picker, back navigation, branding, privacy/support content and ELXVRO logo are preserved.
+- Version 3.8.1-test / versionCode 41.
+
 ## v3.8.0-test — Professional Card System
 
 - Replaced the active fixed-card rendering path with a new independent `ProfessionalCardCatalog` + `ProfessionalCardRenderer` system.
