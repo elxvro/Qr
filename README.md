@@ -1,3 +1,14 @@
+## v3.8.1 — Production release candidate
+
+- Final store candidate targets Android 16 / API 36.
+- Android build tooling is upgraded for API 36 support.
+- Fixed cards use non-flat color compositions with gradients, glow and abstract texture.
+- Every fixed-card CTA is standardized as **TARA** directly below the QR.
+- Fixed-card editor copy now matches the final color-based design.
+- Local scan-history backup is disabled and cleartext app traffic is disabled in the production manifest.
+- Release CI runs unit tests, release lint, debug APK, release APK and release AAB builds.
+- Production version: 3.8.1 / versionCode 42.
+
 ## v3.8.1-test — Color Fixed Card Refresh
 
 - Fixed cards now use color-first backgrounds with gradients, glow, abstract layers and subtle texture instead of scene-like artwork.
