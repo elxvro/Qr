@@ -6,14 +6,14 @@ plugins {
 
 android {
     namespace = "com.elxvro.scan"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.elxvro.scan"
         minSdk = 24
-        targetSdk = 35
-        versionCode = 41
-        versionName = "3.8.1-test"
+        targetSdk = 36
+        versionCode = 42
+        versionName = "3.8.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
