@@ -34,7 +34,7 @@ object FreeQrBrandPresetCatalog {
     )
 
     val all: List<FreeQrBrandPreset> = FixedCardLibrary.free.mapIndexed { index, card ->
-        val copy = copySets[index % copySets.size]
+        val copy = copySets[(index / 5).coerceIn(0, copySets.lastIndex)]
         FreeQrBrandPreset(
             id = "free_brand_${index + 1}",
             label = card.label,
