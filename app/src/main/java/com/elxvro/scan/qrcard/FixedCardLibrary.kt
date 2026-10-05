@@ -156,9 +156,16 @@ object FixedCardLibrary {
         (0 until 5).map { variant ->
             val serial = sceneIndex * 5 + variant
             val pattern = FixedCardPattern.entries[(serial + offset) % FixedCardPattern.entries.size]
-            val layout = FixedCardLayoutVariant.entries[
-                (sceneIndex * 2 + variant * 3 + offset) % FixedCardLayoutVariant.entries.size
-            ]
+            val curatedLayouts = listOf(
+                FixedCardLayoutVariant.TEXT_LEFT_QR_RIGHT,
+                FixedCardLayoutVariant.QR_LEFT_TEXT_RIGHT,
+                FixedCardLayoutVariant.CENTER_STACK,
+                FixedCardLayoutVariant.EDITORIAL,
+                FixedCardLayoutVariant.SIGNATURE
+            )
+            // One disciplined composition per visual family. The five variants
+            // change the artwork, not the information architecture.
+            val layout = curatedLayouts[(sceneIndex + offset) % curatedLayouts.size]
             FixedCardPreset(
                 id = "${tier.name.lowercase()}_${style.scene.name.lowercase()}_${variant + 1}",
                 label = "${style.name} ${variant + 1}",
