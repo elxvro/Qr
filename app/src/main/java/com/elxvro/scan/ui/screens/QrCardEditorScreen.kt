@@ -372,7 +372,7 @@ fun QrCardEditorScreen(
 
                     Text(
                         text = if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
-                            "Hazır görsel kart kütüphanesi kullanılır. Arka plan; sahne, kompozisyon ve dekoruyla birlikte tasarlanmıştır; sen metinleri ve logoyu değiştirirsin."
+                            "Hazır renkli kart kütüphanesi kullanılır. Arka plan; degrade geçişler, ışık ve soyut dokularla tasarlanmıştır; QR ve TARA düzeni sabit kalır, sen marka ve metinleri değiştirirsin."
                         } else {
                             "Seçtiğin görsel kartın tamamını kaplar. Aynı sade kart düzeni tüm oranlarda korunur."
                         },
@@ -449,7 +449,18 @@ fun QrCardEditorScreen(
                     EditorField("Marka / isim", brandText, isPro, onOpenPaywall) { brandText = it }
                     EditorField("Başlık", title, isPro, onOpenPaywall) { title = it }
                     EditorField("Açıklama", descriptionText, isPro, onOpenPaywall) { descriptionText = it }
-                    EditorField("Buton metni", ctaText, isPro, onOpenPaywall) { ctaText = it }
+                    if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
+                        Text(
+                            text = "Sabit kartlarda buton metni TARA olarak sabittir ve QR'ın hemen altında gösterilir.",
+                            color = ScanTokens.Muted,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp)
+                        )
+                    } else {
+                        EditorField("Buton metni", ctaText, isPro, onOpenPaywall) { ctaText = it }
+                    }
                     Text(
                         text = "Marka / isim alanını boş bırakırsan kartta marka yazısı gösterilmez.",
                         color = ScanTokens.Muted,
@@ -462,7 +473,7 @@ fun QrCardEditorScreen(
                 QrCardEditorTab.STYLE -> {
                     if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
                         Text(
-                            text = "Sabit PRO kartlarda tasarımın kendi premium renkleri korunur. Sen yalnız metinleri ve logoyu değiştirirsin.",
+                            text = "Sabit PRO kartlarda hazır degrade, ışık ve doku kompozisyonu korunur. QR ve TARA yerleşimi sabittir; marka, başlık, açıklama ve logonu değiştirebilirsin.",
                             color = ScanTokens.Muted,
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier
