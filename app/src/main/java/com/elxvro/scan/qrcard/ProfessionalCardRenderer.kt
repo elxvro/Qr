@@ -27,70 +27,220 @@ object ProfessionalCardRenderer {
         drawContentPanel(canvas, paint, preset, layout.panelRect.toRectF(), short)
         drawCopy(canvas, paint, preset, copy, layout, short)
         drawQrPlate(canvas, paint, preset, qrBitmap, layout.qrRect.toRectF(), short)
-        drawCta(canvas, paint, preset, copy.cta, layout.ctaRect.toRectF(), short)
+        drawCta(canvas, paint, preset, "TARA", layout.ctaRect.toRectF(), short)
         drawMicroDetail(canvas, paint, preset, size.width.toFloat(), size.height.toFloat(), short)
         return output
     }
 
-    private fun drawScene(canvas: Canvas, paint: Paint, preset: ProfessionalCardPreset, width: Float, height: Float, short: Float) {
-        paint.shader = LinearGradient(0f, 0f, width, height, preset.backgroundStartArgb, preset.backgroundEndArgb, Shader.TileMode.CLAMP)
+    private fun drawScene(
+        canvas: Canvas,
+        paint: Paint,
+        preset: ProfessionalCardPreset,
+        width: Float,
+        height: Float,
+        short: Float
+    ) {
+        paint.shader = LinearGradient(
+            0f,
+            0f,
+            width,
+            height,
+            preset.backgroundStartArgb,
+            preset.backgroundEndArgb,
+            Shader.TileMode.CLAMP
+        )
         canvas.drawRect(0f, 0f, width, height, paint)
         paint.shader = null
 
-        when (preset.scene) {
-            ProfessionalCardScene.FREE_ALPINE -> mountains(canvas, paint, preset, width, height, short, premium = false)
-            ProfessionalCardScene.PRO_COAST -> mountains(canvas, paint, preset, width, height, short, premium = true)
-            ProfessionalCardScene.FREE_COFFEE -> tabletop(canvas, paint, preset, width, height, short, dining = false)
-            ProfessionalCardScene.PRO_DINING -> tabletop(canvas, paint, preset, width, height, short, dining = true)
-            ProfessionalCardScene.FREE_NEON_TECH -> tech(canvas, paint, preset, width, height, short, premium = false)
-            ProfessionalCardScene.PRO_TECH_LAUNCH -> tech(canvas, paint, preset, width, height, short, premium = true)
-            ProfessionalCardScene.FREE_METRO -> skyline(canvas, paint, preset, width, height, short, corporate = false)
-            ProfessionalCardScene.PRO_ARCHITECTURE -> skyline(canvas, paint, preset, width, height, short, corporate = true)
-            ProfessionalCardScene.FREE_BOTANICAL -> botanical(canvas, paint, preset, width, height, short, wellness = false)
-            ProfessionalCardScene.PRO_WELLNESS -> botanical(canvas, paint, preset, width, height, short, wellness = true)
-            ProfessionalCardScene.FREE_STUDIO -> workspace(canvas, paint, preset, width, height, short, estate = false)
-            ProfessionalCardScene.PRO_PROPERTY -> workspace(canvas, paint, preset, width, height, short, estate = true)
-            ProfessionalCardScene.FREE_STAGE -> stage(canvas, paint, preset, width, height, short, fashion = false)
-            ProfessionalCardScene.PRO_NIGHT -> stage(canvas, paint, preset, width, height, short, fashion = false, night = true)
-            ProfessionalCardScene.PRO_FASHION -> stage(canvas, paint, preset, width, height, short, fashion = true)
-            ProfessionalCardScene.FREE_INTERIOR -> interior(canvas, paint, preset, width, height, short, resort = false)
-            ProfessionalCardScene.PRO_RESORT -> interior(canvas, paint, preset, width, height, short, resort = true)
-            ProfessionalCardScene.FREE_CREATIVE -> creative(canvas, paint, preset, width, height, short, beauty = false)
-            ProfessionalCardScene.PRO_BEAUTY -> creative(canvas, paint, preset, width, height, short, beauty = true)
-            ProfessionalCardScene.FREE_FLOW -> flow(canvas, paint, preset, width, height, short)
-        }
+        drawAmbientGlow(canvas, paint, preset, width, height, short)
+        drawAbstractLayers(canvas, paint, preset, width, height, short)
+        drawTextureGrid(canvas, paint, preset, width, height, short)
+        drawAccentRibbon(canvas, paint, preset, width, height)
+    }
 
-        when (preset.artVariant) {
+    private fun drawAmbientGlow(
+        canvas: Canvas,
+        paint: Paint,
+        preset: ProfessionalCardPreset,
+        width: Float,
+        height: Float,
+        short: Float
+    ) {
+        val glowAlpha = if (preset.tier == ProfessionalCardTier.PRO) 0.30f else 0.22f
+        paint.shader = RadialGradient(
+            width * (0.72f + preset.artVariant * 0.035f),
+            height * (0.16f + preset.artVariant * 0.025f),
+            short * 0.58f,
+            withAlpha(preset.accentArgb, glowAlpha),
+            0x00000000,
+            Shader.TileMode.CLAMP
+        )
+        canvas.drawRect(0f, 0f, width, height, paint)
+        paint.shader = null
+
+        paint.shader = RadialGradient(
+            width * 0.10f,
+            height * 0.90f,
+            short * 0.42f,
+            withAlpha(0xFFFFFFFF.toInt(), if (isLight(preset.backgroundStartArgb)) 0.08f else 0.10f),
+            0x00000000,
+            Shader.TileMode.CLAMP
+        )
+        canvas.drawRect(0f, 0f, width, height, paint)
+        paint.shader = null
+    }
+
+    private fun drawAbstractLayers(
+        canvas: Canvas,
+        paint: Paint,
+        preset: ProfessionalCardPreset,
+        width: Float,
+        height: Float,
+        short: Float
+    ) {
+        when (preset.scene.ordinal % 5) {
             0 -> {
-                paint.color = withAlpha(preset.accentArgb, 0.18f)
-                canvas.drawCircle(width * .90f, height * .12f, short * .18f, paint)
+                repeat(3) { index ->
+                    paint.color = withAlpha(
+                        if (index % 2 == 0) preset.accentArgb else 0xFFFFFFFF.toInt(),
+                        0.10f + index * 0.045f
+                    )
+                    canvas.drawOval(
+                        RectF(
+                            width * (0.48f + index * 0.08f),
+                            height * (0.07f + index * 0.10f),
+                            width * (0.94f + index * 0.01f),
+                            height * (0.34f + index * 0.14f)
+                        ),
+                        paint
+                    )
+                }
             }
             1 -> {
                 paint.style = Paint.Style.STROKE
-                paint.strokeWidth = max(2f, short * .006f)
-                paint.color = withAlpha(preset.accentArgb, .34f)
-                canvas.drawRoundRect(RectF(width*.055f,height*.07f,width*.945f,height*.93f), short*.035f, short*.035f, paint)
-                paint.style = Paint.Style.FILL
-            }
-            2 -> {
-                paint.color = withAlpha(preset.accentArgb, .14f)
-                val path = Path().apply { moveTo(0f,height*.82f); lineTo(width*.44f,height*.55f); lineTo(width*.68f,height); close() }
-                canvas.drawPath(path, paint)
-            }
-            3 -> {
-                paint.color = withAlpha(preset.accentArgb, .20f)
-                repeat(3) { i -> canvas.drawCircle(width*(.80f+i*.06f), height*(.12f+i*.06f), short*(.045f+i*.018f), paint) }
-            }
-            else -> {
-                paint.style = Paint.Style.STROKE
-                paint.strokeWidth = max(2f, short*.005f)
-                repeat(4) { i ->
-                    paint.color = withAlpha(preset.accentArgb, .12f + i*.05f)
-                    canvas.drawLine(width*(.08f+i*.08f), 0f, width*(.44f+i*.08f), height, paint)
+                paint.strokeWidth = max(4f, short * 0.012f)
+                paint.strokeCap = Paint.Cap.ROUND
+                repeat(4) { index ->
+                    paint.color = withAlpha(preset.accentArgb, 0.12f + index * 0.045f)
+                    val path = Path().apply {
+                        moveTo(-width * 0.08f, height * (0.76f - index * 0.12f))
+                        cubicTo(
+                            width * 0.24f,
+                            height * (0.52f - index * 0.07f),
+                            width * 0.70f,
+                            height * (0.92f - index * 0.06f),
+                            width * 1.06f,
+                            height * (0.60f - index * 0.08f)
+                        )
+                    }
+                    canvas.drawPath(path, paint)
                 }
                 paint.style = Paint.Style.FILL
             }
+            2 -> {
+                repeat(4) { index ->
+                    paint.color = withAlpha(
+                        if (index % 2 == 0) 0xFFFFFFFF.toInt() else preset.accentArgb,
+                        0.08f + index * 0.035f
+                    )
+                    canvas.drawRoundRect(
+                        RectF(
+                            width * (0.58f + (index % 2) * 0.10f),
+                            height * (0.09f + index * 0.12f),
+                            width * (0.86f + (index % 2) * 0.09f),
+                            height * (0.22f + index * 0.12f)
+                        ),
+                        short * 0.04f,
+                        short * 0.04f,
+                        paint
+                    )
+                }
+            }
+            3 -> {
+                repeat(5) { index ->
+                    paint.color = withAlpha(preset.accentArgb, 0.08f + index * 0.028f)
+                    val shape = Path().apply {
+                        moveTo(width * (0.48f + index * 0.075f), height * (0.08f + index * 0.095f))
+                        lineTo(width * (0.70f + index * 0.055f), height * (0.29f + index * 0.095f))
+                        lineTo(width * (0.46f + index * 0.065f), height * (0.37f + index * 0.095f))
+                        close()
+                    }
+                    canvas.drawPath(shape, paint)
+                }
+            }
+            else -> {
+                repeat(4) { index ->
+                    paint.color = withAlpha(
+                        if (index % 2 == 0) preset.accentArgb else 0xFFFFFFFF.toInt(),
+                        0.08f + index * 0.035f
+                    )
+                    canvas.drawCircle(
+                        width * (0.62f + index * 0.08f),
+                        height * (0.16f + index * 0.11f),
+                        short * (0.10f + index * 0.028f),
+                        paint
+                    )
+                }
+            }
         }
+    }
+
+    private fun drawTextureGrid(
+        canvas: Canvas,
+        paint: Paint,
+        preset: ProfessionalCardPreset,
+        width: Float,
+        height: Float,
+        short: Float
+    ) {
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = max(1f, short * 0.0022f)
+        paint.color = withAlpha(
+            0xFFFFFFFF.toInt(),
+            if (preset.tier == ProfessionalCardTier.PRO) 0.075f else 0.055f
+        )
+        val step = short * 0.085f
+        var x = 0f
+        while (x <= width) {
+            canvas.drawLine(x, 0f, x, height, paint)
+            x += step
+        }
+        var y = 0f
+        while (y <= height) {
+            canvas.drawLine(0f, y, width, y, paint)
+            y += step
+        }
+        paint.style = Paint.Style.FILL
+    }
+
+    private fun drawAccentRibbon(
+        canvas: Canvas,
+        paint: Paint,
+        preset: ProfessionalCardPreset,
+        width: Float,
+        height: Float
+    ) {
+        paint.shader = LinearGradient(
+            width * 0.40f,
+            height,
+            width,
+            height * 0.36f,
+            withAlpha(
+                preset.accentArgb,
+                if (preset.tier == ProfessionalCardTier.PRO) 0.32f else 0.22f
+            ),
+            0x00000000,
+            Shader.TileMode.CLAMP
+        )
+        val ribbon = Path().apply {
+            moveTo(width * 0.33f, height)
+            lineTo(width * 0.82f, height)
+            lineTo(width, height * 0.43f)
+            lineTo(width * 0.70f, height * 0.43f)
+            close()
+        }
+        canvas.drawPath(ribbon, paint)
+        paint.shader = null
     }
 
     private fun mountains(canvas: Canvas, paint: Paint, preset: ProfessionalCardPreset, width: Float, height: Float, short: Float, premium: Boolean) {
