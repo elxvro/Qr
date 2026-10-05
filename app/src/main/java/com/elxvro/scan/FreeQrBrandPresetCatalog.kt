@@ -6,6 +6,7 @@ data class FreeQrBrandPreset(
     val id: String,
     val label: String,
     val brand: String,
+    val category: String,
     val title: String,
     val description: String,
     val cta: String,
@@ -38,6 +39,7 @@ object FreeQrBrandPresetCatalog {
             id = "free_brand_${index + 1}",
             label = card.label,
             brand = "ELXVRO",
+            category = card.category,
             title = copy.title,
             description = copy.description,
             cta = copy.cta,
@@ -49,4 +51,10 @@ object FreeQrBrandPresetCatalog {
 
     fun find(id: String): FreeQrBrandPreset =
         all.firstOrNull { it.id == id } ?: default
+
+    fun categories(): List<String> =
+        all.map { it.category }.distinct()
+
+    fun byCategory(category: String): List<FreeQrBrandPreset> =
+        all.filter { it.category == category }
 }
