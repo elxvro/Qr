@@ -372,7 +372,7 @@ fun QrCardEditorScreen(
 
                     Text(
                         text = if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
-                            "Referanstaki sade koyu-altın arka plan kullanılır. Fotoğraf kartın içine eklenmez."
+                            "Hazır görsel kart kütüphanesi kullanılır. Arka plan; sahne, kompozisyon ve dekoruyla birlikte tasarlanmıştır; sen metinleri ve logoyu değiştirirsin."
                         } else {
                             "Seçtiğin görsel kartın tamamını kaplar. Aynı sade kart düzeni tüm oranlarda korunur."
                         },
@@ -394,7 +394,7 @@ fun QrCardEditorScreen(
                     }
 
                     if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
-                        SectionTitle("PRO sabit kartlar • 50 benzersiz tasarım")
+                        SectionTitle("PRO hazır görsel kartlar • 50 tasarım")
                         FixedCardPresetSelector(
                             selectedId = backgroundPresetId,
                             enabled = isPro,
