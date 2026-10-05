@@ -65,8 +65,8 @@ import com.elxvro.scan.pro.QrGenerationPolicy
 import com.elxvro.scan.pro.QrPremiumPolicy
 import com.elxvro.scan.qrcard.CardColorPickerPolicy
 import com.elxvro.scan.qrcard.ElxvroBrandLogo
-import com.elxvro.scan.qrcard.FixedCardLibrary
-import com.elxvro.scan.qrcard.FixedCardPreset
+import com.elxvro.scan.qrcard.ProfessionalCardCatalog
+import com.elxvro.scan.qrcard.ProfessionalCardPreset
 import com.elxvro.scan.qrcard.LogoMode
 import com.elxvro.scan.qrcard.QrCardAspectPreset
 import com.elxvro.scan.qrcard.QrCardBackgroundMode
@@ -135,7 +135,7 @@ fun QrCardEditorScreen(
     var logoScale by remember { mutableFloatStateOf(0.18f) }
     var exportSize by remember { mutableIntStateOf(1200) }
     var backgroundMode by remember { mutableStateOf(QrCardBackgroundMode.FIXED_BACKGROUND) }
-    var backgroundPresetId by remember { mutableStateOf(FixedCardLibrary.defaultPro.id) }
+    var backgroundPresetId by remember { mutableStateOf(ProfessionalCardCatalog.defaultPro.id) }
     var aspectPreset by remember { mutableStateOf(QrCardAspectPreset.CARD) }
     var designPreset by remember { mutableStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE) }
     var qrPosition by remember { mutableStateOf(QrPosition.CENTER) }
@@ -363,9 +363,9 @@ fun QrCardEditorScreen(
                         backgroundMode = selectedMode
                         if (
                             selectedMode == QrCardBackgroundMode.FIXED_BACKGROUND &&
-                            FixedCardLibrary.pro.none { it.id == backgroundPresetId }
+                            ProfessionalCardCatalog.pro.none { it.id == backgroundPresetId }
                         ) {
-                            backgroundPresetId = FixedCardLibrary.defaultPro.id
+                            backgroundPresetId = ProfessionalCardCatalog.defaultPro.id
                         }
                         applyDesign(QrCardDesignCatalog.defaultFor(aspectPreset, selectedMode))
                     }
@@ -394,8 +394,8 @@ fun QrCardEditorScreen(
                     }
 
                     if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
-                        SectionTitle("PRO hazır görsel kartlar • 50 tasarım")
-                        FixedCardPresetSelector(
+                        SectionTitle("PRO profesyonel kartlar • 50 tasarım")
+                        ProfessionalCardPresetSelector(
                             selectedId = backgroundPresetId,
                             enabled = isPro,
                             onLocked = onOpenPaywall,
@@ -857,28 +857,28 @@ private fun ResolutionSelector(
 }
 
 @Composable
-private fun FixedCardPresetSelector(
+private fun ProfessionalCardPresetSelector(
     selectedId: String,
     enabled: Boolean,
     onLocked: () -> Unit,
     previewKey: Any,
-    previewFor: (FixedCardPreset) -> Bitmap?,
-    onSelect: (FixedCardPreset) -> Unit
+    previewFor: (ProfessionalCardPreset) -> Bitmap?,
+    onSelect: (ProfessionalCardPreset) -> Unit
 ) {
-    val categories = FixedCardLibrary.categories(com.elxvro.scan.qrcard.FixedCardTier.PRO)
-    val selectedPreset = FixedCardLibrary.pro.firstOrNull { it.id == selectedId }
+    val categories = ProfessionalCardCatalog.categories(com.elxvro.scan.qrcard.ProfessionalCardTier.PRO)
+    val selectedPreset = ProfessionalCardCatalog.pro.firstOrNull { it.id == selectedId }
     var category by remember(selectedPreset?.category) {
         mutableStateOf(selectedPreset?.category ?: categories.first())
     }
-    val categoryCards = FixedCardLibrary.byCategory(
-        com.elxvro.scan.qrcard.FixedCardTier.PRO,
+    val categoryCards = ProfessionalCardCatalog.byCategory(
+        com.elxvro.scan.qrcard.ProfessionalCardTier.PRO,
         category
     )
-    val globalIndex = FixedCardLibrary.pro.indexOfFirst { it.id == selectedId }
+    val globalIndex = ProfessionalCardCatalog.pro.indexOfFirst { it.id == selectedId }
 
     Text(
         text = if (globalIndex >= 0) {
-            "Seçili: ${globalIndex + 1}/50 • ${FixedCardLibrary.pro[globalIndex].label}"
+            "Seçili: ${globalIndex + 1}/50 • ${ProfessionalCardCatalog.pro[globalIndex].label}"
         } else {
             "50 PRO kart"
         },
