@@ -331,25 +331,26 @@ object QrCardReferenceRenderer {
         theme: QrCardDesignTheme,
         short: Float
     ) {
-        val outer = short * 0.018f
-        val radius = short * 0.028f
+        val shadow = short * 0.010f
+        val border = short * 0.006f
+        val radius = short * 0.026f
 
         paint.style = Paint.Style.FILL
-        paint.color = withAlpha(0xFF000000.toInt(), 0.24f)
+        paint.color = withAlpha(0xFF000000.toInt(), 0.20f)
         canvas.drawRoundRect(
-            RectF(rect.left + outer, rect.top + outer, rect.right + outer, rect.bottom + outer),
+            RectF(rect.left + shadow, rect.top + shadow, rect.right + shadow, rect.bottom + shadow),
             radius,
             radius,
             paint
         )
 
-        paint.color = theme.accentArgb
-        canvas.drawRoundRect(expand(rect, outer), radius * 1.14f, radius * 1.14f, paint)
+        paint.color = withAlpha(theme.accentArgb, 0.88f)
+        canvas.drawRoundRect(expand(rect, border), radius * 1.06f, radius * 1.06f, paint)
 
         paint.color = 0xFFFFFFFF.toInt()
         canvas.drawRoundRect(rect, radius, radius, paint)
 
-        val inset = short * 0.018f
+        val inset = short * 0.022f
         canvas.drawBitmap(
             qrBitmap,
             null,
@@ -456,12 +457,19 @@ object QrCardReferenceRenderer {
         if (copy.cta.isBlank()) return
 
         paint.style = Paint.Style.FILL
+        paint.color = withAlpha(0xFF000000.toInt(), 0.18f)
+        canvas.drawRoundRect(
+            RectF(rect.left + short * 0.006f, rect.top + short * 0.006f, rect.right + short * 0.006f, rect.bottom + short * 0.006f),
+            rect.height() / 2f,
+            rect.height() / 2f,
+            paint
+        )
         paint.color = theme.accentArgb
         canvas.drawRoundRect(rect, rect.height() / 2f, rect.height() / 2f, paint)
 
         paint.color = colors.ctaArgb
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        paint.textSize = max(13f, min(short * 0.034f, rect.height() * 0.43f))
+        paint.textSize = max(13f, min(short * 0.030f, rect.height() * 0.40f))
         paint.textAlign = Paint.Align.CENTER
         val baseline = rect.centerY() - (paint.ascent() + paint.descent()) / 2f
         val label = QrCardTextLayout.wrap(copy.cta, rect.width() * 0.82f, 1, paint::measureText)
