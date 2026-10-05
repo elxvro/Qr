@@ -96,7 +96,7 @@ object FixedCardLayoutPolicy {
             FixedCardLayoutVariant.CORNER_QR ->
                 FixedCardLayout(rect(.08f,.07f,.92f,.13f), rect(.08f,.15f,.92f,.30f), qr(.68f,.56f,.36f), rect(.10f,.72f,.49f,.79f), FixedCardTextAlignment.LEFT)
             FixedCardLayoutVariant.FLOATING_QR ->
-                FixedCardLayout(rect(.09f,.08f,.91f,.14f), rect(.09f,.16f,.91f,.29f), qr(.36f,.55f,.38f), rect(.52f,.68f,.89f,.75f), FixedCardTextAlignment.LEFT)
+                FixedCardLayout(rect(.09f,.08f,.91f,.14f), rect(.09f,.16f,.91f,.29f), qr(.36f,.55f,.38f), rect(.52f,.73f,.89f,.80f), FixedCardTextAlignment.LEFT)
             FixedCardLayoutVariant.SIDE_RAIL ->
                 FixedCardLayout(rect(.16f,.08f,.90f,.14f), rect(.16f,.16f,.90f,.30f), qr(.52f,.55f,.41f), rect(.19f,.77f,.81f,.84f), FixedCardTextAlignment.LEFT)
             FixedCardLayoutVariant.EDITORIAL ->
@@ -108,9 +108,9 @@ object FixedCardLayoutPolicy {
             FixedCardLayoutVariant.HERO_BOTTOM ->
                 FixedCardLayout(rect(.10f,.08f,.90f,.14f), rect(.10f,.16f,.90f,.30f), qr(.50f,.69f,.38f), rect(.22f,.87f,.78f,.93f), FixedCardTextAlignment.CENTER)
             FixedCardLayoutVariant.OFFSET_LEFT ->
-                FixedCardLayout(rect(.14f,.08f,.88f,.14f), rect(.14f,.16f,.88f,.31f), qr(.34f,.57f,.36f), rect(.48f,.71f,.88f,.78f), FixedCardTextAlignment.LEFT)
+                FixedCardLayout(rect(.14f,.08f,.88f,.14f), rect(.14f,.16f,.88f,.31f), qr(.34f,.57f,.36f), rect(.48f,.73f,.88f,.80f), FixedCardTextAlignment.LEFT)
             FixedCardLayoutVariant.OFFSET_RIGHT ->
-                FixedCardLayout(rect(.12f,.08f,.86f,.14f), rect(.12f,.16f,.86f,.31f), qr(.67f,.57f,.36f), rect(.12f,.71f,.52f,.78f), FixedCardTextAlignment.RIGHT)
+                FixedCardLayout(rect(.12f,.08f,.86f,.14f), rect(.12f,.16f,.86f,.31f), qr(.67f,.57f,.36f), rect(.12f,.73f,.52f,.80f), FixedCardTextAlignment.RIGHT)
             FixedCardLayoutVariant.MAGAZINE ->
                 FixedCardLayout(rect(.08f,.07f,.92f,.13f), rect(.08f,.15f,.76f,.29f), qr(.66f,.54f,.38f), rect(.10f,.72f,.54f,.79f), FixedCardTextAlignment.LEFT)
         }
