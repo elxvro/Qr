@@ -71,6 +71,14 @@ class ProfessionalCardSystemV38Test {
                 assertFalse("QR/CTA collision for $composition", layout.qrRect.overlaps(layout.ctaRect))
                 assertFalse("title/CTA collision for $composition", layout.titleRect.overlaps(layout.ctaRect))
                 assertFalse("body/CTA collision for $composition", layout.bodyRect.overlaps(layout.ctaRect))
+                assertTrue("CTA must stay below QR for $composition", layout.ctaRect.top >= layout.qrRect.bottom)
+                assertTrue(
+                    "CTA should remain centered under QR for $composition",
+                    abs(
+                        ((layout.ctaRect.left + layout.ctaRect.right) / 2f) -
+                            ((layout.qrRect.left + layout.qrRect.right) / 2f)
+                    ) <= width * 0.08f
+                )
             }
         }
     }
