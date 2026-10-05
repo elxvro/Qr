@@ -26,9 +26,9 @@ class FixedCardLibraryV35Test {
     }
 
     @Test
-    fun libraryUsesAtLeastTenDistinctLayouts() {
+    fun libraryUsesFiveCuratedProfessionalLayouts() {
         val all = FixedCardLibrary.free + FixedCardLibrary.pro
-        assertTrue(all.map { it.layout }.toSet().size >= 10)
+        assertEquals(5, all.map { it.layout }.toSet().size)
     }
 
     @Test
