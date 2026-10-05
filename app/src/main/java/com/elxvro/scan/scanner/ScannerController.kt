@@ -101,7 +101,7 @@ class ScannerController(
         }, mainExecutor)
     }
 
-    @ExperimentalGetImage
+    @androidx.annotation.OptIn(markerClass = [ExperimentalGetImage::class])
     private fun analyze(
         proxy: ImageProxy,
         previewView: PreviewView,
