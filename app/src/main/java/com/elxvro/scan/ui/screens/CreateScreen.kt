@@ -544,7 +544,14 @@ private fun FreeBrandPresetSelector(
     onSelect: (FreeQrBrandPreset) -> Unit,
     onPlain: () -> Unit
 ) {
+    val categories = FreeQrBrandPresetCatalog.categories()
+    val selectedPreset = FreeQrBrandPresetCatalog.all.firstOrNull { it.id == selectedId }
+    var category by remember(selectedPreset?.category) {
+        mutableStateOf(selectedPreset?.category ?: categories.first())
+    }
+    val categoryCards = FreeQrBrandPresetCatalog.byCategory(category)
     val selectedIndex = FreeQrBrandPresetCatalog.all.indexOfFirst { it.id == selectedId }
+
     Text(
         text = if (usePlainQr && isPro) {
             "Seçili: Sade QR"
@@ -558,14 +565,37 @@ private fun FreeBrandPresetSelector(
         fontWeight = FontWeight.SemiBold,
         modifier = Modifier.fillMaxWidth().padding(bottom = 7.dp)
     )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+        categories.forEach { item ->
+            ReferenceChip(
+                text = item,
+                selected = category == item,
+                onClick = { category = item }
+            )
+        }
+    }
+
+    Text(
+        text = "$category • 5 tasarım",
+        color = ScanTokens.Muted,
+        style = MaterialTheme.typography.labelSmall,
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 6.dp)
+    )
+
     LazyRow(
         modifier = Modifier
             .fillMaxWidth()
-            .height(150.dp),
+            .height(166.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         items(
-            items = FreeQrBrandPresetCatalog.all,
+            items = categoryCards,
             key = { it.id }
         ) { preset ->
             val selected = !usePlainQr && selectedId == preset.id
@@ -574,19 +604,19 @@ private fun FreeBrandPresetSelector(
             }
             Column(
                 modifier = Modifier
-                    .width(154.dp)
+                    .width(174.dp)
                     .clickable { onSelect(preset) },
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(104.dp)
-                        .background(Color(0xFFF2F4F7), RoundedCornerShape(12.dp))
+                        .height(118.dp)
+                        .background(Color(0xFFF2F4F7), RoundedCornerShape(13.dp))
                         .border(
                             if (selected) 2.dp else 1.dp,
                             if (selected) ScanTokens.Blue else ScanTokens.Divider,
-                            RoundedCornerShape(12.dp)
+                            RoundedCornerShape(13.dp)
                         )
                         .padding(5.dp),
                     contentAlignment = Alignment.Center
@@ -614,19 +644,19 @@ private fun FreeBrandPresetSelector(
             item(key = "plain") {
                 Column(
                     modifier = Modifier
-                        .width(110.dp)
+                        .width(118.dp)
                         .clickable(onClick = onPlain),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(104.dp)
-                            .background(Color.White, RoundedCornerShape(12.dp))
+                            .height(118.dp)
+                            .background(Color.White, RoundedCornerShape(13.dp))
                             .border(
                                 if (usePlainQr) 2.dp else 1.dp,
                                 if (usePlainQr) ScanTokens.Blue else ScanTokens.Divider,
-                                RoundedCornerShape(12.dp)
+                                RoundedCornerShape(13.dp)
                             ),
                         contentAlignment = Alignment.Center
                     ) {
@@ -634,7 +664,7 @@ private fun FreeBrandPresetSelector(
                             Icons.Outlined.QrCode2,
                             contentDescription = null,
                             tint = ScanTokens.Text,
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(40.dp)
                         )
                     }
                     Text(
