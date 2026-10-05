@@ -1,4 +1,4 @@
-name: Android APK
+name: Android Release
 
 on:
   push:
@@ -25,15 +25,15 @@ jobs:
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.7'
+          gradle-version: '8.11.1'
       - name: Test and build once
-        run: gradle testDebugUnitTest assembleDebug --stacktrace --console=plain --build-cache --parallel
+        run: gradle testDebugUnitTest lintRelease assembleDebug assembleRelease bundleRelease --stacktrace --console=plain --build-cache
       - name: Package source ZIP
-        run: git archive --format=zip --output=ELXVRO-Scan-v3.8.1-test-source.zip HEAD
+        run: git archive --format=zip --output=ELXVRO-Scan-v3.8.1-source.zip HEAD
       - name: Upload APK and source
         uses: actions/upload-artifact@v4
         with:
-          name: ELXVRO-Scan-v3.8.1-test-package
+          name: ELXVRO-Scan-v3.8.1-release-package
           path: |
             app/build/outputs/apk/debug/app-debug.apk
             ELXVRO-Scan-v3.8.1-test-source.zip
