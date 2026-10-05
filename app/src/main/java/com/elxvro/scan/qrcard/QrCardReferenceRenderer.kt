@@ -65,17 +65,19 @@ object QrCardReferenceRenderer {
         val output = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
-        val layout = if (mode == QrCardBackgroundMode.FIXED_BACKGROUND) {
-            val fixed = FixedCardLayoutPolicy.resolve(size.width, size.height, fixedPreset.layout)
+        val fixedLayout = if (mode == QrCardBackgroundMode.FIXED_BACKGROUND) {
+            FixedCardLayoutPolicy.resolve(size.width, size.height, fixedPreset.layout)
+        } else {
+            null
+        }
+        val layout = fixedLayout?.let { fixed ->
             QrCardReferenceLayout(
                 brandRect = fixed.brandRect,
                 titleRect = fixed.titleRect,
                 qrRect = fixed.qrRect,
                 ctaRect = fixed.ctaRect
             )
-        } else {
-            QrCardReferenceLayoutPolicy.resolve(size.width, size.height, aspect)
-        }
+        } ?: QrCardReferenceLayoutPolicy.resolve(size.width, size.height, aspect)
         val background = QrCardReferenceBackgroundPolicy.resolve(mode)
         val short = min(size.width, size.height).toFloat()
 
@@ -91,7 +93,16 @@ object QrCardReferenceRenderer {
             short = short
         )
         drawQr(canvas, paint, qrBitmap, layout.qrRect.toRectF(), theme, short)
-        drawCopy(canvas, paint, copy, textColors, layout, aspect, short)
+        drawCopy(
+            canvas = canvas,
+            paint = paint,
+            copy = copy,
+            colors = textColors,
+            layout = layout,
+            aspect = aspect,
+            short = short,
+            fixedAlignment = fixedLayout?.textAlignment
+        )
         drawCta(canvas, paint, copy, textColors, theme, layout.ctaRect.toRectF(), short)
 
         return output
@@ -109,24 +120,12 @@ object QrCardReferenceRenderer {
         short: Float
     ) {
         if (background.useFixedDarkGold) {
-            paint.shader = LinearGradient(
-                0f,
-                0f,
-                width,
-                height,
-                fixedPreset.startArgb,
-                fixedPreset.endArgb,
-                Shader.TileMode.CLAMP
-            )
-            canvas.drawRect(0f, 0f, width, height, paint)
-            paint.shader = null
-            drawPremiumPattern(
+            FixedCardVisualSceneRenderer.draw(
                 canvas = canvas,
                 paint = paint,
                 preset = fixedPreset,
                 width = width,
-                height = height,
-                short = short
+                height = height
             )
             return
         }
@@ -366,17 +365,29 @@ object QrCardReferenceRenderer {
         colors: QrCardTextColors,
         layout: QrCardReferenceLayout,
         aspect: QrCardAspectPreset,
-        short: Float
+        short: Float,
+        fixedAlignment: FixedCardTextAlignment?
     ) {
-        val centered = aspect == QrCardAspectPreset.SQUARE ||
+        val resolvedAlignment = fixedAlignment ?: if (
+            aspect == QrCardAspectPreset.SQUARE ||
             aspect == QrCardAspectPreset.PORTRAIT ||
             aspect == QrCardAspectPreset.STORY
-
-        val align = if (centered) Paint.Align.CENTER else Paint.Align.LEFT
-        val x = if (centered) {
-            (layout.brandRect.left + layout.brandRect.right) / 2f
+        ) {
+            FixedCardTextAlignment.CENTER
         } else {
-            layout.brandRect.left
+            FixedCardTextAlignment.LEFT
+        }
+
+        val align = when (resolvedAlignment) {
+            FixedCardTextAlignment.LEFT -> Paint.Align.LEFT
+            FixedCardTextAlignment.CENTER -> Paint.Align.CENTER
+            FixedCardTextAlignment.RIGHT -> Paint.Align.RIGHT
+        }
+        val centered = resolvedAlignment == FixedCardTextAlignment.CENTER
+        val x = when (resolvedAlignment) {
+            FixedCardTextAlignment.LEFT -> layout.brandRect.left
+            FixedCardTextAlignment.CENTER -> (layout.brandRect.left + layout.brandRect.right) / 2f
+            FixedCardTextAlignment.RIGHT -> layout.brandRect.right
         }
 
         if (copy.brand.isNotBlank()) {
@@ -394,10 +405,10 @@ object QrCardReferenceRenderer {
             canvas.drawText(line, x, baseline, paint)
         }
 
-        val titleX = if (centered) {
-            (layout.titleRect.left + layout.titleRect.right) / 2f
-        } else {
-            layout.titleRect.left
+        val titleX = when (resolvedAlignment) {
+            FixedCardTextAlignment.LEFT -> layout.titleRect.left
+            FixedCardTextAlignment.CENTER -> (layout.titleRect.left + layout.titleRect.right) / 2f
+            FixedCardTextAlignment.RIGHT -> layout.titleRect.right
         }
         var y = layout.titleRect.top
 
