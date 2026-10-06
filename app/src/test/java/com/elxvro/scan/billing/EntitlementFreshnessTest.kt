@@ -8,22 +8,20 @@ class EntitlementFreshnessTest {
     private val now = 1_000_000_000L
 
     @Test
-    fun verifiedProInsideOfflineGraceIsFresh() {
-        val verifiedAt = now - EntitlementFreshness.DEFAULT_GRACE_MILLIS + 1L
+    fun verifiedLifetimeProRemainsFreshOffline() {
+        val verifiedLongAgo = 1L
 
-        assertTrue(EntitlementFreshness.isFresh(true, verifiedAt, now))
-    }
-
-    @Test
-    fun verifiedProPastOfflineGraceExpires() {
-        val verifiedAt = now - EntitlementFreshness.DEFAULT_GRACE_MILLIS - 1L
-
-        assertFalse(EntitlementFreshness.isFresh(true, verifiedAt, now))
+        assertTrue(EntitlementFreshness.isFresh(true, verifiedLongAgo, now))
     }
 
     @Test
     fun unverifiedEntitlementIsNeverFresh() {
         assertFalse(EntitlementFreshness.isFresh(false, now, now))
+    }
+
+    @Test
+    fun missingVerificationTimestampIsRejected() {
+        assertFalse(EntitlementFreshness.isFresh(true, 0L, now))
     }
 
     @Test
