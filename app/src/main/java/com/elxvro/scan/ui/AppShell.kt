@@ -3,9 +3,7 @@ package com.elxvro.scan.ui
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
-import android.content.Intent
 import android.content.pm.ApplicationInfo
-import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -42,7 +40,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elxvro.scan.AppPrefs
 import com.elxvro.scan.ScanStore
-import com.elxvro.scan.billing.BillingProducts
 import com.elxvro.scan.billing.BillingRepository
 import com.elxvro.scan.pro.ProTestMode
 import com.elxvro.scan.ui.screens.BarcodeCreateScreen
@@ -71,7 +68,7 @@ fun ElxvroScanApp() {
     val prefs = remember { AppPrefs(context.applicationContext) }
     val billing = remember { BillingRepository(context.applicationContext) }
     val entitlement by billing.entitlement.collectAsStateWithLifecycle()
-    val offers by billing.offers.collectAsStateWithLifecycle()
+    val offer by billing.offer.collectAsStateWithLifecycle()
     val proTestMode = remember(context) {
         context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
     }
@@ -87,15 +84,6 @@ fun ElxvroScanApp() {
     DisposableEffect(billing) {
         billing.start()
         onDispose { billing.close() }
-    }
-
-    fun manageSubscription() {
-        val uri = Uri.parse(
-            "https://play.google.com/store/account/subscriptions?sku=${BillingProducts.PRODUCT_ID}&package=${context.packageName}"
-        )
-        runCatching {
-            context.startActivity(Intent(Intent.ACTION_VIEW, uri))
-        }
     }
 
     val childScreenOpen = showPaywall || showQrCard || showBarcodeCreate || showBatchScan
@@ -135,14 +123,13 @@ fun ElxvroScanApp() {
             when {
                 showPaywall -> ProPaywallScreen(
                     entitlement = effectiveEntitlement,
-                    offers = offers,
+                    offer = offer,
                     onPurchase = { offer ->
                         context.findActivity()?.let { activity ->
                             billing.launchPurchase(activity, offer)
                         }
                     },
                     onRestore = billing::restorePurchases,
-                    onManageSubscription = ::manageSubscription,
                     onClose = { showPaywall = false }
                 )
                 showBarcodeCreate -> BarcodeCreateScreen(
@@ -184,7 +171,6 @@ fun ElxvroScanApp() {
                         entitlement = effectiveEntitlement,
                         proTestMode = proTestMode,
                         onUpgradePro = { showPaywall = true },
-                        onManageSubscription = ::manageSubscription,
                         onRestorePurchases = billing::restorePurchases,
                         onRetryBilling = billing::refreshPurchases,
                         onBack = { tab = AppTab.SCAN }
