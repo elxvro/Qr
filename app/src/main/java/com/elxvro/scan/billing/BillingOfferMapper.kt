@@ -5,7 +5,7 @@ object BillingOfferMapper {
         return rawOffers
             .minWithOrNull(
                 compareBy<RawOneTimeOffer> { it.priceAmountMicros }
-                    .thenBy { it.offerToken }
+                    .thenBy { it.offerToken.orEmpty() }
             )
             ?.let {
                 OneTimePurchaseOffer(
