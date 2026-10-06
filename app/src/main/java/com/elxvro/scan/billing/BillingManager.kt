@@ -19,7 +19,7 @@ import com.android.billingclient.api.QueryPurchasesParams
 
 class BillingManager(
     context: Context,
-    private val onOffers: (List<SubscriptionOffer>) -> Unit,
+    private val onOffer: (OneTimePurchaseOffer?) -> Unit,
     private val onPurchaseSnapshot: (Boolean, PurchaseSnapshot?) -> Unit
 ) {
     private var productDetails: ProductDetails? = null
@@ -44,17 +44,17 @@ class BillingManager(
 
     fun start() {
         if (billingClient.isReady) {
-            queryOffers()
+            queryOffer()
             refreshPurchases()
             return
         }
         billingClient.startConnection(object : BillingClientStateListener {
             override fun onBillingSetupFinished(billingResult: BillingResult) {
                 if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                    queryOffers()
+                    queryOffer()
                     refreshPurchases()
                 } else {
-                    onOffers(emptyList())
+                    onOffer(null)
                     onPurchaseSnapshot(false, null)
                 }
             }
@@ -71,7 +71,7 @@ class BillingManager(
             return
         }
         val params = QueryPurchasesParams.newBuilder()
-            .setProductType(BillingClient.ProductType.SUBS)
+            .setProductType(BillingClient.ProductType.INAPP)
             .build()
         billingClient.queryPurchasesAsync(
             params,
@@ -90,17 +90,19 @@ class BillingManager(
         )
     }
 
-    fun launchPurchase(activity: Activity, offer: SubscriptionOffer): BillingResult? {
+    fun launchPurchase(activity: Activity, offer: OneTimePurchaseOffer): BillingResult? {
         val details = productDetails ?: return null
         if (!billingClient.isReady) return null
-        val params = BillingFlowParams.ProductDetailsParams.newBuilder()
+
+        val productParams = BillingFlowParams.ProductDetailsParams.newBuilder()
             .setProductDetails(details)
             .setOfferToken(offer.offerToken)
             .build()
+
         return billingClient.launchBillingFlow(
             activity,
             BillingFlowParams.newBuilder()
-                .setProductDetailsParamsList(listOf(params))
+                .setProductDetailsParamsList(listOf(productParams))
                 .build()
         )
     }
@@ -109,10 +111,10 @@ class BillingManager(
         billingClient.endConnection()
     }
 
-    private fun queryOffers() {
+    private fun queryOffer() {
         val product = QueryProductDetailsParams.Product.newBuilder()
             .setProductId(BillingProducts.PRODUCT_ID)
-            .setProductType(BillingClient.ProductType.SUBS)
+            .setProductType(BillingClient.ProductType.INAPP)
             .build()
         val params = QueryProductDetailsParams.newBuilder()
             .setProductList(listOf(product))
@@ -127,26 +129,28 @@ class BillingManager(
                 ) {
                     if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
                         productDetails = null
-                        onOffers(emptyList())
+                        onOffer(null)
                         return
                     }
+
                     val details = result.productDetailsList.firstOrNull {
                         it.productId == BillingProducts.PRODUCT_ID
                     }
                     productDetails = details
-                    val rawOffers = details?.subscriptionOfferDetails.orEmpty().mapNotNull { offer ->
-                        val phase = offer.pricingPhases.pricingPhaseList.lastOrNull()
-                            ?: return@mapNotNull null
-                        RawSubscriptionOffer(
-                            basePlanId = offer.basePlanId,
-                            offerToken = offer.offerToken,
-                            formattedPrice = phase.formattedPrice,
-                            priceAmountMicros = phase.priceAmountMicros,
-                            priceCurrencyCode = phase.priceCurrencyCode,
-                            offerId = offer.offerId
-                        )
-                    }
-                    onOffers(BillingOfferMapper.mapOffers(rawOffers))
+
+                    val rawOffers = details
+                        ?.oneTimePurchaseOfferDetailsList
+                        .orEmpty()
+                        .map { offer ->
+                            RawOneTimeOffer(
+                                offerToken = offer.offerToken,
+                                formattedPrice = offer.formattedPrice,
+                                priceAmountMicros = offer.priceAmountMicros,
+                                priceCurrencyCode = offer.priceCurrencyCode
+                            )
+                        }
+
+                    onOffer(BillingOfferMapper.selectOneTimeOffer(rawOffers))
                 }
             }
         )
@@ -163,11 +167,13 @@ class BillingManager(
             }
             return
         }
+
         val pending = candidates.firstOrNull { it.purchaseState == Purchase.PurchaseState.PENDING }
         if (pending != null) {
             onPurchaseSnapshot(true, pending.toSnapshot(PurchaseStatus.PENDING, false))
             return
         }
+
         onPurchaseSnapshot(true, null)
     }
 
