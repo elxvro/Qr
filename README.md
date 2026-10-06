@@ -1,3 +1,14 @@
+## v3.8.2-test — Lifetime PRO purchase
+
+- PRO billing changed from recurring subscriptions to a single non-consumable Google Play one-time product.
+- Play product ID: `elxvro_scan_pro_lifetime`.
+- Billing queries and restores now use `INAPP` instead of `SUBS`.
+- The lifetime product is acknowledged but never consumed, so ownership remains attached to the Google Play account.
+- The paywall now shows one **Ömür Boyu PRO** purchase and removes monthly/yearly subscription choices.
+- Subscription management UI was removed; purchase restore remains available.
+- Eligible one-time purchase offers are read from Google Play and the lowest eligible price is selected.
+- Version 3.8.2-test / versionCode 43.
+
 ## v3.8.1 — Production release candidate
 
 - Final store candidate targets Android 16 / API 36.
