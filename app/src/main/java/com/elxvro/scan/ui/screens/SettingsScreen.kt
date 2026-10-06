@@ -27,7 +27,6 @@ import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.FlashlightOn
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.ManageAccounts
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.PrivacyTip
@@ -78,7 +77,6 @@ fun SettingsScreen(
     entitlement: ProEntitlement,
     proTestMode: Boolean = false,
     onUpgradePro: () -> Unit,
-    onManageSubscription: () -> Unit,
     onRestorePurchases: () -> Unit,
     onRetryBilling: () -> Unit,
     onBack: () -> Unit
@@ -118,18 +116,9 @@ fun SettingsScreen(
                     LinkSettingRow(
                         icon = Icons.Outlined.WorkspacePremium,
                         title = "PRO'ya Geç",
-                        subtitle = "Kendi logo, QR Kart ve yüksek çözünürlük",
+                        subtitle = "Tek ödeme ile ömür boyu PRO erişimi",
                         iconColor = ScanTokens.Warning,
                         onClick = onUpgradePro
-                    )
-                }
-                if (proState.showManage) {
-                    DividerLine()
-                    LinkSettingRow(
-                        icon = Icons.Outlined.ManageAccounts,
-                        title = "Aboneliği Yönet",
-                        subtitle = "Google Play abonelik ayarlarını aç",
-                        onClick = onManageSubscription
                     )
                 }
                 if (proState.showRestore) {
@@ -146,7 +135,7 @@ fun SettingsScreen(
                     LinkSettingRow(
                         icon = Icons.Outlined.Refresh,
                         title = "Google Play'i Yeniden Dene",
-                        subtitle = "Abonelik durumunu tekrar kontrol et",
+                        subtitle = "PRO satın alım durumunu tekrar kontrol et",
                         onClick = onRetryBilling
                     )
                 }
