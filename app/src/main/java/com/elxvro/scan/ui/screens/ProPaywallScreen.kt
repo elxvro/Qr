@@ -20,16 +20,14 @@ import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.elxvro.scan.billing.BillingProducts
+import com.elxvro.scan.billing.OneTimePurchaseOffer
 import com.elxvro.scan.billing.ProEntitlement
-import com.elxvro.scan.billing.SubscriptionOffer
 import com.elxvro.scan.pro.ProPaywallPolicy
 import com.elxvro.scan.ui.components.ReferenceHeader
 import com.elxvro.scan.ui.components.ReferencePrimaryButton
@@ -38,10 +36,9 @@ import com.elxvro.scan.ui.theme.ScanTokens
 @Composable
 fun ProPaywallScreen(
     entitlement: ProEntitlement,
-    offers: List<SubscriptionOffer>,
-    onPurchase: (SubscriptionOffer) -> Unit,
+    offer: OneTimePurchaseOffer?,
+    onPurchase: (OneTimePurchaseOffer) -> Unit,
     onRestore: () -> Unit,
-    onManageSubscription: () -> Unit,
     onClose: () -> Unit
 ) {
     val canStartPurchase = ProPaywallPolicy.canStartPurchase(entitlement)
@@ -71,72 +68,56 @@ fun ProPaywallScreen(
                 )
                 Column(Modifier.weight(1f)) {
                     Text(
-                        text = "QR'larını markana dönüştür",
+                        text = "Ömür Boyu ELXVRO Scan PRO",
                         color = ScanTokens.Text,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
-                        text = "Kendi logon, QR Kart tasarımları ve yüksek çözünürlüklü dışa aktarma PRO ile açılır.",
+                        text = "Tek sefer ödeme yap, PRO özelliklerini kalıcı olarak aç. Aylık veya yıllık abonelik yok.",
                         color = ScanTokens.Muted,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
             }
 
+            FeatureRow("Tek seferlik ödeme • ömür boyu kullanım")
             FeatureRow("Kendi logonu ekle")
-            FeatureRow("Minimal, Kurumsal, Wi-Fi, Sosyal ve Etkinlik QR Kartları")
+            FeatureRow("Premium QR Kart tasarımları")
             FeatureRow("1200 px ve 2048 px yüksek çözünürlüklü çıktı")
             FeatureRow("Gelişmiş renkler, arka plan ve premium stiller")
 
             when (entitlement) {
-                ProEntitlement.Pro -> StatusCard("PRO aktif", ScanTokens.Success)
+                ProEntitlement.Pro -> StatusCard("Ömür Boyu PRO aktif", ScanTokens.Success)
                 ProEntitlement.Pending -> StatusCard("Satın alma beklemede", ScanTokens.Warning)
                 ProEntitlement.Unknown -> StatusCard("Google Play durumu kontrol ediliyor", ScanTokens.Muted)
                 is ProEntitlement.Error -> StatusCard("Google Play'e şu anda ulaşılamıyor", ScanTokens.Danger)
                 ProEntitlement.Free -> Unit
             }
 
-            if (canStartPurchase) {
-                offers.forEach { offer ->
-                    val title = when (offer.basePlanId) {
-                        BillingProducts.MONTHLY_BASE_PLAN_ID -> "Aylık PRO"
-                        BillingProducts.YEARLY_BASE_PLAN_ID -> "Yıllık PRO"
-                        else -> return@forEach
-                    }
-                    PlanCard(
-                        title = title,
-                        price = offer.formattedPrice,
-                        onClick = { onPurchase(offer) }
-                    )
-                }
+            if (canStartPurchase && offer != null) {
+                LifetimePurchaseCard(
+                    price = offer.formattedPrice,
+                    onClick = { onPurchase(offer) }
+                )
             }
 
-            if (canStartPurchase && offers.isEmpty()) {
+            if (canStartPurchase && offer == null) {
                 Text(
-                    text = "Abonelik seçenekleri Google Play'den yüklenemedi. Tarama ve ücretsiz QR özellikleri kullanılmaya devam eder.",
+                    text = "Ömür Boyu PRO ürünü Google Play'den yüklenemedi. Ücretsiz özellikleri kullanmaya devam edebilirsin.",
                     color = ScanTokens.Muted,
                     style = MaterialTheme.typography.bodySmall
                 )
             }
 
             ReferencePrimaryButton(
-                text = "Satın alımları geri yükle",
+                text = "Satın Alımı Geri Yükle",
                 onClick = onRestore,
                 modifier = Modifier.fillMaxWidth()
             )
 
-            if (entitlement is ProEntitlement.Pro) {
-                TextButton(
-                    onClick = onManageSubscription,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                ) {
-                    Text("Aboneliği yönet", color = ScanTokens.Blue)
-                }
-            }
-
             Text(
-                text = "Fiyat ve dönem bilgileri Google Play tarafından gösterilir. Abonelik Google Play hesabından yönetilebilir.",
+                text = "Satın alma Google Play hesabına bağlıdır. PRO ürünü tüketilmez; aynı hesapta yeniden kurulum sonrası geri yüklenebilir.",
                 color = ScanTokens.Muted,
                 style = MaterialTheme.typography.bodySmall
             )
@@ -185,22 +166,27 @@ private fun StatusCard(text: String, accent: Color) {
 }
 
 @Composable
-private fun PlanCard(title: String, price: String, onClick: () -> Unit) {
+private fun LifetimePurchaseCard(price: String, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(ScanTokens.Card, RoundedCornerShape(ScanTokens.RadiusCard))
-            .border(ScanTokens.BorderWidth, ScanTokens.Divider, RoundedCornerShape(ScanTokens.RadiusCard))
+            .border(ScanTokens.BorderWidth, ScanTokens.Warning.copy(alpha = 0.42f), RoundedCornerShape(ScanTokens.RadiusCard))
             .clickable(onClick = onClick)
             .padding(ScanTokens.Space4),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.weight(1f)) {
             Text(
-                text = title,
+                text = "Ömür Boyu PRO",
                 color = ScanTokens.Text,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = "Tek seferlik ödeme",
+                color = ScanTokens.Muted,
+                style = MaterialTheme.typography.bodySmall
             )
             Text(
                 text = price,
@@ -210,7 +196,7 @@ private fun PlanCard(title: String, price: String, onClick: () -> Unit) {
             )
         }
         Text(
-            text = "Seç",
+            text = "Satın Al",
             color = ScanTokens.Blue,
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.SemiBold
