@@ -14,17 +14,14 @@ enum class PurchaseStatus {
     NONE
 }
 
-data class RawSubscriptionOffer(
-    val basePlanId: String,
+data class RawOneTimeOffer(
     val offerToken: String,
     val formattedPrice: String,
     val priceAmountMicros: Long,
-    val priceCurrencyCode: String,
-    val offerId: String? = null
+    val priceCurrencyCode: String
 )
 
-data class SubscriptionOffer(
-    val basePlanId: String,
+data class OneTimePurchaseOffer(
     val offerToken: String,
     val formattedPrice: String,
     val priceAmountMicros: Long,
