@@ -1,62 +1,28 @@
 package com.elxvro.scan.billing
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BillingOfferMapperTest {
     @Test
-    fun mapsConfiguredMonthlyAndYearlyPlansInStableOrder() {
-        val mapped = BillingOfferMapper.mapOffers(
+    fun selectsLowestEligibleOneTimeOffer() {
+        val selected = BillingOfferMapper.selectOneTimeOffer(
             listOf(
-                RawSubscriptionOffer("yearly", "year-token", "₺999,99", 999_990_000L, "TRY"),
-                RawSubscriptionOffer("legacy", "legacy-token", "₺1,00", 1_000_000L, "TRY"),
-                RawSubscriptionOffer("monthly", "month-token", "₺99,99", 99_990_000L, "TRY")
+                RawOneTimeOffer("standard-token", "₺199,99", 199_990_000L, "TRY"),
+                RawOneTimeOffer("discount-token", "₺149,99", 149_990_000L, "TRY")
             )
         )
 
-        assertEquals(listOf("monthly", "yearly"), mapped.map { it.basePlanId })
-        assertEquals("₺99,99", mapped.first().formattedPrice)
-        assertEquals("year-token", mapped.last().offerToken)
+        assertEquals("discount-token", selected?.offerToken)
+        assertEquals("₺149,99", selected?.formattedPrice)
+        assertEquals("TRY", selected?.priceCurrencyCode)
     }
 
     @Test
-    fun missingBasePlanIsAllowedWithoutInventingPrice() {
-        val mapped = BillingOfferMapper.mapOffers(
-            listOf(RawSubscriptionOffer("monthly", "month-token", "€4.99", 4_990_000L, "EUR"))
-        )
-
-        assertEquals(1, mapped.size)
-        assertEquals(BillingProducts.MONTHLY_BASE_PLAN_ID, mapped.single().basePlanId)
-        assertEquals("€4.99", mapped.single().formattedPrice)
-    }
-
-    @Test
-    fun basePlanOfferWinsOverPromotionalOfferForSamePlan() {
-        val mapped = BillingOfferMapper.mapOffers(
-            listOf(
-                RawSubscriptionOffer(
-                    basePlanId = "monthly",
-                    offerToken = "trial-token",
-                    formattedPrice = "₺0,00",
-                    priceAmountMicros = 0L,
-                    priceCurrencyCode = "TRY",
-                    offerId = "trial"
-                ),
-                RawSubscriptionOffer(
-                    basePlanId = "monthly",
-                    offerToken = "base-token",
-                    formattedPrice = "₺99,99",
-                    priceAmountMicros = 99_990_000L,
-                    priceCurrencyCode = "TRY",
-                    offerId = null
-                )
-            )
-        )
-
-        assertEquals(1, mapped.size)
-        assertEquals("base-token", mapped.single().offerToken)
-        assertEquals("₺99,99", mapped.single().formattedPrice)
+    fun emptyOneTimeOfferListReturnsNull() {
+        assertNull(BillingOfferMapper.selectOneTimeOffer(emptyList()))
     }
 
     @Test
@@ -71,7 +37,7 @@ class BillingOfferMapperTest {
     }
 
     @Test
-    fun purchasedSubscriptionRequiresAcknowledgementBeforePro() {
+    fun purchasedLifetimeProductRequiresAcknowledgementBeforePro() {
         val unacknowledged = BillingOfferMapper.mapEntitlement(
             hasConfiguredProduct = true,
             purchaseStatus = PurchaseStatus.PURCHASED,
