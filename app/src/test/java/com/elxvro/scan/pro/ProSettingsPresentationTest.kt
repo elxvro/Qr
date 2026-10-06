@@ -12,17 +12,15 @@ class ProSettingsPresentationTest {
 
         assertTrue(state.showUpgrade)
         assertTrue(state.showRestore)
-        assertFalse(state.showManage)
         assertFalse(state.showRetry)
     }
 
     @Test
-    fun proStateShowsManageAndRestore() {
+    fun lifetimeProOnlyShowsRestore() {
         val state = ProSettingsPresentation.from(ProEntitlement.Pro)
 
         assertFalse(state.showUpgrade)
         assertTrue(state.showRestore)
-        assertTrue(state.showManage)
         assertFalse(state.showRetry)
     }
 
@@ -32,6 +30,5 @@ class ProSettingsPresentationTest {
 
         assertTrue(state.showRetry)
         assertTrue(state.showRestore)
-        assertFalse(state.showManage)
     }
 }
