@@ -22,7 +22,7 @@ data class RawOneTimeOffer(
 )
 
 data class OneTimePurchaseOffer(
-    val offerToken: String,
+    val offerToken: String?,
     val formattedPrice: String,
     val priceAmountMicros: Long,
     val priceCurrencyCode: String
