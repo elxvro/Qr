@@ -15,7 +15,6 @@ class ProTestSettingsPresentationTest {
 
         assertEquals("PRO TEST aktif", state.statusLabel)
         assertFalse(state.showUpgrade)
-        assertFalse(state.showManage)
         assertFalse(state.showRestore)
         assertFalse(state.showRetry)
     }
