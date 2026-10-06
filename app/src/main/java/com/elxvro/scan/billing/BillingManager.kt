@@ -94,10 +94,12 @@ class BillingManager(
         val details = productDetails ?: return null
         if (!billingClient.isReady) return null
 
-        val productParams = BillingFlowParams.ProductDetailsParams.newBuilder()
+        val productParamsBuilder = BillingFlowParams.ProductDetailsParams.newBuilder()
             .setProductDetails(details)
-            .setOfferToken(offer.offerToken)
-            .build()
+        offer.offerToken
+            ?.takeIf { it.isNotBlank() }
+            ?.let(productParamsBuilder::setOfferToken)
+        val productParams = productParamsBuilder.build()
 
         return billingClient.launchBillingFlow(
             activity,
