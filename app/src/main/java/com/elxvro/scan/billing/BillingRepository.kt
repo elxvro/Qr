@@ -10,14 +10,14 @@ import kotlinx.coroutines.flow.asStateFlow
 class BillingRepository(context: Context) {
     private val cache = EntitlementCache(context)
     private val _entitlement = MutableStateFlow<ProEntitlement>(ProEntitlement.Unknown)
-    private val _offers = MutableStateFlow<List<SubscriptionOffer>>(emptyList())
+    private val _offer = MutableStateFlow<OneTimePurchaseOffer?>(null)
 
     val entitlement: StateFlow<ProEntitlement> = _entitlement.asStateFlow()
-    val offers: StateFlow<List<SubscriptionOffer>> = _offers.asStateFlow()
+    val offer: StateFlow<OneTimePurchaseOffer?> = _offer.asStateFlow()
 
     private val manager = BillingManager(
         context = context.applicationContext,
-        onOffers = { _offers.value = it },
+        onOffer = { _offer.value = it },
         onPurchaseSnapshot = ::applySnapshot
     )
 
@@ -30,7 +30,7 @@ class BillingRepository(context: Context) {
         manager.refreshPurchases()
     }
 
-    fun launchPurchase(activity: Activity, offer: SubscriptionOffer) {
+    fun launchPurchase(activity: Activity, offer: OneTimePurchaseOffer) {
         val result = manager.launchPurchase(activity, offer)
         if (result == null || result.responseCode != BillingClient.BillingResponseCode.OK) {
             _entitlement.value = EntitlementPolicy.resolve(
