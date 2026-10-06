@@ -1,32 +1,20 @@
 package com.elxvro.scan.billing
 
 object BillingOfferMapper {
-    private val supportedPlanIds = setOf(
-        BillingProducts.MONTHLY_BASE_PLAN_ID,
-        BillingProducts.YEARLY_BASE_PLAN_ID
-    )
-
-    fun mapOffers(rawOffers: List<RawSubscriptionOffer>): List<SubscriptionOffer> {
+    fun selectOneTimeOffer(rawOffers: List<RawOneTimeOffer>): OneTimePurchaseOffer? {
         return rawOffers
-            .asSequence()
-            .filter { it.basePlanId in supportedPlanIds }
-            .groupBy { it.basePlanId }
-            .values
-            .asSequence()
-            .mapNotNull { offers ->
-                offers.minByOrNull { if (it.offerId == null) 0 else 1 }
-            }
-            .map {
-                SubscriptionOffer(
-                    basePlanId = it.basePlanId,
+            .minWithOrNull(
+                compareBy<RawOneTimeOffer> { it.priceAmountMicros }
+                    .thenBy { it.offerToken }
+            )
+            ?.let {
+                OneTimePurchaseOffer(
                     offerToken = it.offerToken,
                     formattedPrice = it.formattedPrice,
                     priceAmountMicros = it.priceAmountMicros,
                     priceCurrencyCode = it.priceCurrencyCode
                 )
             }
-            .sortedBy { if (it.basePlanId == BillingProducts.MONTHLY_BASE_PLAN_ID) 0 else 1 }
-            .toList()
     }
 
     fun mapEntitlement(
