@@ -92,10 +92,8 @@ fun ElxvroScanApp() {
     }
 
     DisposableEffect(interstitialAds, adsEnabled) {
-        if (adsEnabled) interstitialAds.preload()
-        onDispose {
-            if (!adsEnabled) interstitialAds.clear()
-        }
+        if (adsEnabled) interstitialAds.preload() else interstitialAds.clear()
+        onDispose { }
     }
 
     fun onAdEligibleAction() {
