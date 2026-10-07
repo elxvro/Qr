@@ -42,18 +42,18 @@ jobs:
         run: gradle testDebugUnitTest lintRelease assembleDebug assembleRelease bundleRelease --stacktrace --console=plain --build-cache
 
       - name: Package source ZIP
-        run: git archive --format=zip --output=ELXVRO-Scan-v3.9.0-source.zip HEAD
+        run: git archive --format=zip --output=ELXVRO-Scan-v3.9.1-source.zip HEAD
 
       - name: Upload release package
         uses: actions/upload-artifact@v4
         with:
-          name: ELXVRO-Scan-v3.9.0-release-package
+          name: ELXVRO-Scan-v3.9.1-release-package
           path: |
             app/build/outputs/apk/debug/app-debug.apk
             app/build/outputs/apk/release/*.apk
             app/build/outputs/bundle/release/app-release.aab
             app/build/reports/lint-results-release.html
-            ELXVRO-Scan-v3.9.0-source.zip
+            ELXVRO-Scan-v3.9.1-source.zip
             .github/workflows/android.yml
           if-no-files-found: error
           retention-days: 14
