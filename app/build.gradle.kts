@@ -92,6 +92,7 @@ dependencies {
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
     implementation("com.google.zxing:core:3.5.3")
     implementation("com.android.billingclient:billing-ktx:9.1.0")
+    implementation("com.google.android.gms:play-services-ads:25.5.0")
 
     testImplementation("junit:junit:4.13.2")
 }
