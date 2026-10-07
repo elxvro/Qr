@@ -374,7 +374,7 @@ fun QrCardEditorScreen(
                         text = if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
                             "Hazır renkli kart kütüphanesi kullanılır. Arka plan; degrade geçişler, ışık ve soyut dokularla tasarlanmıştır; QR ve TARA düzeni sabit kalır, sen marka ve metinleri değiştirirsin."
                         } else {
-                            "Seçtiğin görsel kartın tamamını kaplar. Aynı sade kart düzeni tüm oranlarda korunur."
+                            "Seçtiğin renk kartı tüm arka planı kaplar. Yumuşak tonlar ve temiz kompozisyon tüm oranlarda korunur."
                         },
                         color = ScanTokens.Muted,
                         style = MaterialTheme.typography.bodySmall,
@@ -415,7 +415,7 @@ fun QrCardEditorScreen(
                     }
 
                     if (backgroundMode == QrCardBackgroundMode.FULL_BACKGROUND) {
-                        SectionTitle("Tam arka plan görseli")
+                        SectionTitle("Tam arka plan")
                         ReferencePrimaryButton(
                             text = if (heroImage == null) "Arka Plan Görseli Seç" else "Arka Planı Değiştir",
                             onClick = {
