@@ -77,7 +77,7 @@ fun ElxvroScanApp() {
         context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
     }
     val effectiveEntitlement = ProTestMode.resolve(entitlement, proTestMode)
-    val adsEnabled = entitlement is ProEntitlement.Free || entitlement is ProEntitlement.Error
+    val adsEnabled = if (proTestMode) true else entitlement is ProEntitlement.Free || entitlement is ProEntitlement.Error
 
     var tab by remember { mutableStateOf(AppTab.SCAN) }
     var showPaywall by remember { mutableStateOf(false) }
