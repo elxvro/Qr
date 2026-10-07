@@ -1,3 +1,11 @@
+## v3.8.5-test — ELXVRO AdMob IDs
+
+- Release builds now use AdMob App ID `ca-app-pub-1306515175084399~4280405132`.
+- Release banner uses `ca-app-pub-1306515175084399/6105367552`.
+- Debug/test APKs continue to use Google's demo banner so development testing cannot generate real ad traffic.
+- Interstitial remains on Google's demo ID until the ELXVRO interstitial ad-unit ID is supplied.
+- Version 3.8.5-test / versionCode 46.
+
 ## v3.8.4-test — Restrained ads
 
 - Added Google Mobile Ads SDK 25.5.0 with Google demo IDs for safe development testing.
