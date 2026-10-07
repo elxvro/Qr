@@ -442,7 +442,6 @@ fun CreateScreen(
                 SecondaryAction(Icons.Outlined.Share, "Paylaş", Modifier.weight(1f), generated != null) {
                     generated?.let { bitmap ->
                         runCatching { QrImageActions.share(context, bitmap) }
-                            .onSuccess { onAdEligibleAction() }
                             .onFailure { toast("QR paylaşılamadı") }
                     }
                 }
