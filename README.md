@@ -1,3 +1,16 @@
+## v3.9.0 — Final lifetime PRO + ads release
+
+- Finalized the lifetime PRO paywall with Google Play price, one-time purchase wording, restore/check actions and no subscription/automatic renewal language.
+- PRO remains a non-consumable Google Play one-time product: `elxvro_scan_pro_lifetime`.
+- Added Google UMP privacy/consent flow. Ads are requested only when `canRequestAds()` permits it.
+- Added an in-app Advertising Privacy Preferences entry when Google requires a privacy-options entry point.
+- FREE banner remains outside the live scanner on Create, History and Settings.
+- Interstitial ads are limited to natural completed-save transitions: every 4 eligible saves and at least 8 minutes apart.
+- Share actions no longer trigger an interstitial over the Android share chooser.
+- PRO is fully ad-free and any preloaded interstitial is cleared when PRO becomes active.
+- Release AdMob IDs are wired; debug builds continue using Google test IDs.
+- Version 3.9.0 / versionCode 49.
+
 ## v3.8.7-test — ELXVRO interstitial AdMob ID
 
 - Release builds now use interstitial ad unit `ca-app-pub-1306515175084399/8914618865`.
