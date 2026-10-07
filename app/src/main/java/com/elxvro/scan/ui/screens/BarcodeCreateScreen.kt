@@ -57,6 +57,7 @@ import com.elxvro.scan.ui.theme.ScanTokens
 @Composable
 fun BarcodeCreateScreen(
     store: ScanStore,
+    onAdEligibleAction: () -> Unit,
     onBack: () -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -240,7 +241,10 @@ fun BarcodeCreateScreen(
                 ) {
                     generated?.let { bitmap ->
                         runCatching { BarcodeImageActions.save(context, bitmap) }
-                            .onSuccess(::toast)
+                            .onSuccess { message ->
+                                toast(message)
+                                onAdEligibleAction()
+                            }
                             .onFailure { toast("Barkod kaydedilemedi") }
                     }
                 }
