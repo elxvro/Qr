@@ -28,6 +28,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,6 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elxvro.scan.AppPrefs
 import com.elxvro.scan.ScanStore
 import com.elxvro.scan.ads.AdBanner
+import com.elxvro.scan.ads.AdsConsentManager
 import com.elxvro.scan.ads.InterstitialAdController
 import com.elxvro.scan.billing.BillingRepository
 import com.elxvro.scan.billing.ProEntitlement
@@ -72,12 +74,16 @@ fun ElxvroScanApp() {
     val billing = remember { BillingRepository(context.applicationContext) }
     val entitlement by billing.entitlement.collectAsStateWithLifecycle()
     val offer by billing.offer.collectAsStateWithLifecycle()
+    val adConsent = remember(context) { AdsConsentManager.getInstance(context.applicationContext) }
+    val canRequestAds by adConsent.canRequestAds.collectAsStateWithLifecycle()
+    val privacyOptionsRequired by adConsent.privacyOptionsRequired.collectAsStateWithLifecycle()
     val interstitialAds = remember(context) { InterstitialAdController(context.applicationContext) }
     val proTestMode = remember(context) {
         context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
     }
     val effectiveEntitlement = ProTestMode.resolve(entitlement, proTestMode)
-    val adsEnabled = if (proTestMode) true else entitlement is ProEntitlement.Free || entitlement is ProEntitlement.Error
+    val adEligible = if (proTestMode) true else entitlement is ProEntitlement.Free || entitlement is ProEntitlement.Error
+    val adsEnabled = adEligible && canRequestAds
 
     var tab by remember { mutableStateOf(AppTab.SCAN) }
     var showPaywall by remember { mutableStateOf(false) }
@@ -89,6 +95,12 @@ fun ElxvroScanApp() {
     DisposableEffect(billing) {
         billing.start()
         onDispose { billing.close() }
+    }
+
+    LaunchedEffect(adEligible) {
+        if (adEligible) {
+            context.findActivity()?.let(adConsent::gatherConsent)
+        }
     }
 
     DisposableEffect(interstitialAds, adsEnabled) {
@@ -150,10 +162,12 @@ fun ElxvroScanApp() {
                         }
                     },
                     onRestore = billing::restorePurchases,
+                    onRetry = billing::refreshPurchases,
                     onClose = { showPaywall = false }
                 )
                 showBarcodeCreate -> BarcodeCreateScreen(
                     store = store,
+                    onAdEligibleAction = ::onAdEligibleAction,
                     onBack = { showBarcodeCreate = false }
                 )
                 showBatchScan -> BatchScanScreen(
@@ -194,6 +208,10 @@ fun ElxvroScanApp() {
                         onUpgradePro = { showPaywall = true },
                         onRestorePurchases = billing::restorePurchases,
                         onRetryBilling = billing::refreshPurchases,
+                        showAdPrivacyOptions = adEligible && privacyOptionsRequired,
+                        onAdPrivacyOptions = {
+                            context.findActivity()?.let(adConsent::showPrivacyOptionsForm)
+                        },
                         onBack = { tab = AppTab.SCAN }
                     )
                 }
