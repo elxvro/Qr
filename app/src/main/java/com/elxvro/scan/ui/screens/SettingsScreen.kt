@@ -79,6 +79,8 @@ fun SettingsScreen(
     onUpgradePro: () -> Unit,
     onRestorePurchases: () -> Unit,
     onRetryBilling: () -> Unit,
+    showAdPrivacyOptions: Boolean,
+    onAdPrivacyOptions: () -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -241,6 +243,15 @@ fun SettingsScreen(
                     subtitle = "ELXVRO'nun yerel işleme ve kullanıcı kontrolü yaklaşımı",
                     onClick = { privacyOpen = true }
                 )
+                if (showAdPrivacyOptions) {
+                    DividerLine()
+                    LinkSettingRow(
+                        icon = Icons.Outlined.PrivacyTip,
+                        title = "Reklam Gizlilik Tercihleri",
+                        subtitle = "Google reklam gizlilik ve izin tercihlerini yönet",
+                        onClick = onAdPrivacyOptions
+                    )
+                }
                 DividerLine()
                 LinkSettingRow(
                     icon = Icons.Outlined.Info,
