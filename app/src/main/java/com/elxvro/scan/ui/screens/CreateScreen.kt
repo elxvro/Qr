@@ -90,6 +90,7 @@ fun CreateScreen(
     onOpenPaywall: () -> Unit,
     onOpenQrCard: (String) -> Unit,
     onOpenBarcodeCreate: () -> Unit,
+    onAdEligibleAction: () -> Unit,
     onBack: () -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -431,13 +432,17 @@ fun CreateScreen(
                 SecondaryAction(Icons.Outlined.Download, "Kaydet", Modifier.weight(1f), generated != null) {
                     generated?.let { bitmap ->
                         runCatching { QrImageActions.save(context, bitmap) }
-                            .onSuccess(::toast)
+                            .onSuccess { message ->
+                                toast(message)
+                                onAdEligibleAction()
+                            }
                             .onFailure { toast("QR kaydedilemedi") }
                     }
                 }
                 SecondaryAction(Icons.Outlined.Share, "Paylaş", Modifier.weight(1f), generated != null) {
                     generated?.let { bitmap ->
                         runCatching { QrImageActions.share(context, bitmap) }
+                            .onSuccess { onAdEligibleAction() }
                             .onFailure { toast("QR paylaşılamadı") }
                     }
                 }
