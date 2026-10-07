@@ -1,3 +1,12 @@
+## v3.9.1 — Google Play review access
+
+- Added reusable reviewer access for Google Play policy review without requiring a paid PRO purchase.
+- Reviewer path: Settings -> long-press the ELXVRO Scan version card -> enter the review code.
+- Valid reviewer access unlocks PRO features and disables ads for the review installation.
+- Normal users still use the real Google Play lifetime PRO purchase flow.
+- Review code is stored only as a SHA-256 verifier in the app.
+- Version 3.9.1 / versionCode 50.
+
 ## v3.9.0 — Final lifetime PRO + ads release
 
 - Finalized the lifetime PRO paywall with Google Play price, one-time purchase wording, restore/check actions and no subscription/automatic renewal language.
