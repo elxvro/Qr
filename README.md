@@ -1,3 +1,11 @@
+## v3.8.7-test — ELXVRO interstitial AdMob ID
+
+- Release builds now use interstitial ad unit `ca-app-pub-1306515175084399/8914618865`.
+- Debug/test builds continue to use Google's demo interstitial.
+- Existing restrained frequency remains unchanged: every 4 eligible completed actions with at least 8 minutes between full-screen ads.
+- PRO remains fully ad-free.
+- Version 3.8.7-test / versionCode 48.
+
 ## v3.8.6-test — Banner visibility fix
 
 - Debug/test builds now show demo ads even while PRO test mode is active.
