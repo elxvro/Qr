@@ -5,27 +5,27 @@ import kotlin.math.min
 enum class ProfessionalCardTier { FREE, PRO }
 
 enum class ProfessionalCardScene(val categoryLabel: String) {
-    FREE_ALPINE("Seyahat"),
-    FREE_COFFEE("Kafe"),
-    FREE_NEON_TECH("Teknoloji"),
-    FREE_METRO("Şehir"),
-    FREE_BOTANICAL("Doğa"),
-    FREE_STUDIO("İş"),
-    FREE_STAGE("Etkinlik"),
-    FREE_INTERIOR("Minimal"),
-    FREE_CREATIVE("Yaratıcı"),
-    FREE_FLOW("Soyut"),
+    FREE_ALPINE("Sisli Mavi"),
+    FREE_COFFEE("Toprak & Kahve"),
+    FREE_NEON_TECH("Gece Moru"),
+    FREE_METRO("Petrol Tonları"),
+    FREE_BOTANICAL("Adaçayı"),
+    FREE_STUDIO("Taş & Gri"),
+    FREE_STAGE("Mürdüm"),
+    FREE_INTERIOR("Krem & Vizon"),
+    FREE_CREATIVE("Şeftali"),
+    FREE_FLOW("Derin Okyanus"),
 
-    PRO_COAST("Lüks Seyahat"),
-    PRO_DINING("Fine Dining"),
-    PRO_ARCHITECTURE("Kurumsal"),
-    PRO_FASHION("Moda"),
-    PRO_NIGHT("Gece"),
-    PRO_WELLNESS("Wellness"),
-    PRO_RESORT("Otel"),
-    PRO_TECH_LAUNCH("Premium Tech"),
-    PRO_PROPERTY("Emlak"),
-    PRO_BEAUTY("Beauty")
+    PRO_COAST("Lacivert Altın"),
+    PRO_DINING("Espresso"),
+    PRO_ARCHITECTURE("Grafit"),
+    PRO_FASHION("Rose Taupe"),
+    PRO_NIGHT("Gece Işığı"),
+    PRO_WELLNESS("Zeytin & Bej"),
+    PRO_RESORT("Arduvaz Mavi"),
+    PRO_TECH_LAUNCH("Safir"),
+    PRO_PROPERTY("Çelik Mavi"),
+    PRO_BEAUTY("İpeksi Nude")
 }
 
 enum class ProfessionalCardComposition(val label: String) {
@@ -89,29 +89,29 @@ object ProfessionalCardCatalog {
     )
 
     private val freeStyles = listOf(
-        SceneStyle(ProfessionalCardScene.FREE_ALPINE, "Alpine Route", 0xFF0D2D46.toInt(), 0xFF6DA8C7.toInt(), 0xFFFFD166.toInt(), 0xFFFFFFFF.toInt(), 0xFFE4F2F7.toInt(), 0xFF111820.toInt(), ProfessionalPanelStyle.GLASS, ProfessionalQrPlateStyle.CLEAN),
-        SceneStyle(ProfessionalCardScene.FREE_COFFEE, "Roastery", 0xFF2A170F.toInt(), 0xFF9A6A45.toInt(), 0xFFF3C982.toInt(), 0xFFFFF8EF.toInt(), 0xFFF2DDC6.toInt(), 0xFF2A170F.toInt(), ProfessionalPanelStyle.SOFT, ProfessionalQrPlateStyle.CLEAN),
-        SceneStyle(ProfessionalCardScene.FREE_NEON_TECH, "Nova Circuit", 0xFF080A24.toInt(), 0xFF342B75.toInt(), 0xFF62D7FF.toInt(), 0xFFFFFFFF.toInt(), 0xFFD8E7FF.toInt(), 0xFF07121C.toInt(), ProfessionalPanelStyle.GLASS, ProfessionalQrPlateStyle.BORDERED),
-        SceneStyle(ProfessionalCardScene.FREE_METRO, "Metro Afterdark", 0xFF071827.toInt(), 0xFF315470.toInt(), 0xFFFFB454.toInt(), 0xFFFFFFFF.toInt(), 0xFFD7E5F0.toInt(), 0xFF111820.toInt(), ProfessionalPanelStyle.GLASS, ProfessionalQrPlateStyle.INK_EDGE),
-        SceneStyle(ProfessionalCardScene.FREE_BOTANICAL, "Field Notes", 0xFF0D3020.toInt(), 0xFF6D9A73.toInt(), 0xFFE9D17B.toInt(), 0xFFFFFFFF.toInt(), 0xFFE1F0E3.toInt(), 0xFF173020.toInt(), ProfessionalPanelStyle.SOFT, ProfessionalQrPlateStyle.CLEAN),
-        SceneStyle(ProfessionalCardScene.FREE_STUDIO, "Workday", 0xFFE9E4DB.toInt(), 0xFFBBAF9F.toInt(), 0xFF0E4D92.toInt(), 0xFF141A21.toInt(), 0xFF48515B.toInt(), 0xFFFFFFFF.toInt(), ProfessionalPanelStyle.SOLID, ProfessionalQrPlateStyle.BORDERED),
-        SceneStyle(ProfessionalCardScene.FREE_STAGE, "Live Signal", 0xFF170521.toInt(), 0xFF601D70.toInt(), 0xFFFF4E9A.toInt(), 0xFFFFFFFF.toInt(), 0xFFF1CDE4.toInt(), 0xFFFFFFFF.toInt(), ProfessionalPanelStyle.GLASS, ProfessionalQrPlateStyle.BORDERED),
-        SceneStyle(ProfessionalCardScene.FREE_INTERIOR, "Soft Form", 0xFFF3EEE7.toInt(), 0xFFD8C7B5.toInt(), 0xFF9A6D43.toInt(), 0xFF1D1B18.toInt(), 0xFF5A524A.toInt(), 0xFFFFFFFF.toInt(), ProfessionalPanelStyle.SOFT, ProfessionalQrPlateStyle.CLEAN),
-        SceneStyle(ProfessionalCardScene.FREE_CREATIVE, "Play Studio", 0xFFFFE2CA.toInt(), 0xFFFFA36D.toInt(), 0xFFE94D3D.toInt(), 0xFF402019.toInt(), 0xFF6A4034.toInt(), 0xFFFFFFFF.toInt(), ProfessionalPanelStyle.SOFT, ProfessionalQrPlateStyle.CLEAN),
-        SceneStyle(ProfessionalCardScene.FREE_FLOW, "Motion Field", 0xFF06172B.toInt(), 0xFF174982.toInt(), 0xFFFF7A35.toInt(), 0xFFFFFFFF.toInt(), 0xFFDCEAFF.toInt(), 0xFFFFFFFF.toInt(), ProfessionalPanelStyle.GLASS, ProfessionalQrPlateStyle.INK_EDGE)
+        SceneStyle(ProfessionalCardScene.FREE_ALPINE, "Kuzey Mavi", 0xFF20384C.toInt(), 0xFF7A96AB.toInt(), 0xFFDCEAF4.toInt(), 0xFFFFFFFF.toInt(), 0xFFE6EEF4.toInt(), 0xFF12202D.toInt(), ProfessionalPanelStyle.SOFT, ProfessionalQrPlateStyle.CLEAN),
+        SceneStyle(ProfessionalCardScene.FREE_COFFEE, "Kakao Kum", 0xFF483329.toInt(), 0xFFA98772.toInt(), 0xFFF3E0C8.toInt(), 0xFFFFFAF6.toInt(), 0xFFF2E5D9.toInt(), 0xFF2E2018.toInt(), ProfessionalPanelStyle.SOFT, ProfessionalQrPlateStyle.CLEAN),
+        SceneStyle(ProfessionalCardScene.FREE_NEON_TECH, "Gece Lavanta", 0xFF221D39.toInt(), 0xFF6B6499.toInt(), 0xFFD9D5F2.toInt(), 0xFFFFFFFF.toInt(), 0xFFE7E4F7.toInt(), 0xFF18142A.toInt(), ProfessionalPanelStyle.GLASS, ProfessionalQrPlateStyle.BORDERED),
+        SceneStyle(ProfessionalCardScene.FREE_METRO, "Petrol Sis", 0xFF18313C.toInt(), 0xFF5A7D85.toInt(), 0xFFD7E6E8.toInt(), 0xFFFFFFFF.toInt(), 0xFFDDE9EB.toInt(), 0xFF15242A.toInt(), ProfessionalPanelStyle.GLASS, ProfessionalQrPlateStyle.INK_EDGE),
+        SceneStyle(ProfessionalCardScene.FREE_BOTANICAL, "Adaçayı Bahçe", 0xFF304239.toInt(), 0xFF91A88C.toInt(), 0xFFE8F0E4.toInt(), 0xFFFFFFFF.toInt(), 0xFFE5EEE2.toInt(), 0xFF1E2A22.toInt(), ProfessionalPanelStyle.SOFT, ProfessionalQrPlateStyle.CLEAN),
+        SceneStyle(ProfessionalCardScene.FREE_STUDIO, "Taş Gri", 0xFFCFCCC6.toInt(), 0xFF9B9B97.toInt(), 0xFFF5F2ED.toInt(), 0xFF202329.toInt(), 0xFF565A63.toInt(), 0xFFFFFFFF.toInt(), ProfessionalPanelStyle.SOLID, ProfessionalQrPlateStyle.BORDERED),
+        SceneStyle(ProfessionalCardScene.FREE_STAGE, "Mürdüm Pus", 0xFF41263F.toInt(), 0xFF8C6691.toInt(), 0xFFF1DFEF.toInt(), 0xFFFFFFFF.toInt(), 0xFFEEDFF0.toInt(), 0xFF241626.toInt(), ProfessionalPanelStyle.GLASS, ProfessionalQrPlateStyle.BORDERED),
+        SceneStyle(ProfessionalCardScene.FREE_INTERIOR, "Krem Vizon", 0xFFF2ECE2.toInt(), 0xFFD0C0AD.toInt(), 0xFFFBF7F1.toInt(), 0xFF2A261F.toInt(), 0xFF6A6156.toInt(), 0xFFFFFFFF.toInt(), ProfessionalPanelStyle.SOFT, ProfessionalQrPlateStyle.CLEAN),
+        SceneStyle(ProfessionalCardScene.FREE_CREATIVE, "Şeftali Toz", 0xFFF0C7B2.toInt(), 0xFFD98A74.toInt(), 0xFFFFF0E8.toInt(), 0xFF3B2520.toInt(), 0xFF70463C.toInt(), 0xFFFFFFFF.toInt(), ProfessionalPanelStyle.SOFT, ProfessionalQrPlateStyle.CLEAN),
+        SceneStyle(ProfessionalCardScene.FREE_FLOW, "Derin Okyanus", 0xFF1B3047.toInt(), 0xFF5E7D99.toInt(), 0xFFDDE7F0.toInt(), 0xFFFFFFFF.toInt(), 0xFFE4EDF4.toInt(), 0xFF132130.toInt(), ProfessionalPanelStyle.GLASS, ProfessionalQrPlateStyle.INK_EDGE)
     )
 
     private val proStyles = listOf(
-        SceneStyle(ProfessionalCardScene.PRO_COAST, "Azure Reserve", 0xFF041824.toInt(), 0xFF316B82.toInt(), 0xFFE7BE6B.toInt(), 0xFFFFFCF5.toInt(), 0xFFEADDBB.toInt(), 0xFF101820.toInt(), ProfessionalPanelStyle.GLASS, ProfessionalQrPlateStyle.INK_EDGE),
-        SceneStyle(ProfessionalCardScene.PRO_DINING, "Maison Noire", 0xFF130B08.toInt(), 0xFF4A2819.toInt(), 0xFFE9BC69.toInt(), 0xFFFFFBF5.toInt(), 0xFFEBD3B8.toInt(), 0xFF171009.toInt(), ProfessionalPanelStyle.SOLID, ProfessionalQrPlateStyle.INK_EDGE),
-        SceneStyle(ProfessionalCardScene.PRO_ARCHITECTURE, "Apex House", 0xFF05080D.toInt(), 0xFF1A293D.toInt(), 0xFFD9B96E.toInt(), 0xFFFFFFFF.toInt(), 0xFFD6DBE2.toInt(), 0xFF0B0E12.toInt(), ProfessionalPanelStyle.GLASS, ProfessionalQrPlateStyle.INK_EDGE),
-        SceneStyle(ProfessionalCardScene.PRO_FASHION, "Velora Edit", 0xFF170E0E.toInt(), 0xFF56342D.toInt(), 0xFFE8B992.toInt(), 0xFFFFF9F5.toInt(), 0xFFE9D0C3.toInt(), 0xFF1A0E0C.toInt(), ProfessionalPanelStyle.OUTLINE, ProfessionalQrPlateStyle.CLEAN),
-        SceneStyle(ProfessionalCardScene.PRO_NIGHT, "Afterglow", 0xFF090014.toInt(), 0xFF32004D.toInt(), 0xFFFF3BCB.toInt(), 0xFFFFFFFF.toInt(), 0xFFF1C8EA.toInt(), 0xFFFFFFFF.toInt(), ProfessionalPanelStyle.GLASS, ProfessionalQrPlateStyle.BORDERED),
-        SceneStyle(ProfessionalCardScene.PRO_WELLNESS, "Seren", 0xFFE8D9BA.toInt(), 0xFF78936B.toInt(), 0xFF2D5E43.toInt(), 0xFF17231C.toInt(), 0xFF3F5346.toInt(), 0xFFFFFFFF.toInt(), ProfessionalPanelStyle.SOFT, ProfessionalQrPlateStyle.CLEAN),
-        SceneStyle(ProfessionalCardScene.PRO_RESORT, "Altura", 0xFF0A1D2C.toInt(), 0xFF5F8398.toInt(), 0xFFE3B871.toInt(), 0xFFFFFCF6.toInt(), 0xFFE1D5C5.toInt(), 0xFF101820.toInt(), ProfessionalPanelStyle.GLASS, ProfessionalQrPlateStyle.INK_EDGE),
-        SceneStyle(ProfessionalCardScene.PRO_TECH_LAUNCH, "VYLO", 0xFF030815.toInt(), 0xFF08265C.toInt(), 0xFF4C7BFF.toInt(), 0xFFFFFFFF.toInt(), 0xFFCAD9FF.toInt(), 0xFFFFFFFF.toInt(), ProfessionalPanelStyle.GLASS, ProfessionalQrPlateStyle.BORDERED),
-        SceneStyle(ProfessionalCardScene.PRO_PROPERTY, "Horizon Estate", 0xFF101820.toInt(), 0xFF5A788C.toInt(), 0xFFE1B66B.toInt(), 0xFFFFFFFF.toInt(), 0xFFE6E8EA.toInt(), 0xFF101820.toInt(), ProfessionalPanelStyle.SOLID, ProfessionalQrPlateStyle.INK_EDGE),
-        SceneStyle(ProfessionalCardScene.PRO_BEAUTY, "Lumière", 0xFFF1E7D6.toInt(), 0xFFCDBB9C.toInt(), 0xFFB9894D.toInt(), 0xFF2B241C.toInt(), 0xFF625647.toInt(), 0xFFFFFFFF.toInt(), ProfessionalPanelStyle.SOFT, ProfessionalQrPlateStyle.CLEAN)
+        SceneStyle(ProfessionalCardScene.PRO_COAST, "Lacivert Altın", 0xFF132737.toInt(), 0xFF4F6B7E.toInt(), 0xFFE2C28B.toInt(), 0xFFFFFCF8.toInt(), 0xFFE7DAC0.toInt(), 0xFF101820.toInt(), ProfessionalPanelStyle.GLASS, ProfessionalQrPlateStyle.INK_EDGE),
+        SceneStyle(ProfessionalCardScene.PRO_DINING, "Espresso Gold", 0xFF241713.toInt(), 0xFF6A4A3D.toInt(), 0xFFE3C18F.toInt(), 0xFFFFFBF7.toInt(), 0xFFEEDFCC.toInt(), 0xFF17110D.toInt(), ProfessionalPanelStyle.SOLID, ProfessionalQrPlateStyle.INK_EDGE),
+        SceneStyle(ProfessionalCardScene.PRO_ARCHITECTURE, "Grafit İnci", 0xFF20262D.toInt(), 0xFF697887.toInt(), 0xFFE4E8EC.toInt(), 0xFFFFFFFF.toInt(), 0xFFE3E8ED.toInt(), 0xFF11161A.toInt(), ProfessionalPanelStyle.GLASS, ProfessionalQrPlateStyle.INK_EDGE),
+        SceneStyle(ProfessionalCardScene.PRO_FASHION, "Rose Taupe", 0xFF5A4343.toInt(), 0xFFB58D86.toInt(), 0xFFF1DDD5.toInt(), 0xFFFFFBF8.toInt(), 0xFFF1E2DD.toInt(), 0xFF251A18.toInt(), ProfessionalPanelStyle.OUTLINE, ProfessionalQrPlateStyle.CLEAN),
+        SceneStyle(ProfessionalCardScene.PRO_NIGHT, "Gece Işığı", 0xFF1C1530.toInt(), 0xFF5D447A.toInt(), 0xFFE6D4FF.toInt(), 0xFFFFFFFF.toInt(), 0xFFEADEF7.toInt(), 0xFF181226.toInt(), ProfessionalPanelStyle.GLASS, ProfessionalQrPlateStyle.BORDERED),
+        SceneStyle(ProfessionalCardScene.PRO_WELLNESS, "Zeytin Bej", 0xFF6E7864.toInt(), 0xFFD1C5AE.toInt(), 0xFFF5F1E7.toInt(), 0xFF1B231B.toInt(), 0xFF4E594D.toInt(), 0xFFFFFFFF.toInt(), ProfessionalPanelStyle.SOFT, ProfessionalQrPlateStyle.CLEAN),
+        SceneStyle(ProfessionalCardScene.PRO_RESORT, "Arduvaz Sahil", 0xFF253748.toInt(), 0xFF7D95A6.toInt(), 0xFFE8D5B3.toInt(), 0xFFFFFCF8.toInt(), 0xFFE9E0CF.toInt(), 0xFF101820.toInt(), ProfessionalPanelStyle.GLASS, ProfessionalQrPlateStyle.INK_EDGE),
+        SceneStyle(ProfessionalCardScene.PRO_TECH_LAUNCH, "Safir Sis", 0xFF1A2441.toInt(), 0xFF556C9C.toInt(), 0xFFDDE6FF.toInt(), 0xFFFFFFFF.toInt(), 0xFFE5EBFA.toInt(), 0xFF121A2D.toInt(), ProfessionalPanelStyle.GLASS, ProfessionalQrPlateStyle.BORDERED),
+        SceneStyle(ProfessionalCardScene.PRO_PROPERTY, "Çelik Mavi", 0xFF2C3946.toInt(), 0xFF71879C.toInt(), 0xFFE7E8EA.toInt(), 0xFFFFFFFF.toInt(), 0xFFE7ECF0.toInt(), 0xFF131A20.toInt(), ProfessionalPanelStyle.SOLID, ProfessionalQrPlateStyle.INK_EDGE),
+        SceneStyle(ProfessionalCardScene.PRO_BEAUTY, "İpeksi Nude", 0xFFE8DDD4.toInt(), 0xFFCDB6A9.toInt(), 0xFFFFF6F0.toInt(), 0xFF322720.toInt(), 0xFF6E6056.toInt(), 0xFFFFFFFF.toInt(), ProfessionalPanelStyle.SOFT, ProfessionalQrPlateStyle.CLEAN)
     )
 
     private val variantNames = listOf("Editorial", "Campaign", "Studio", "Signature", "Poster")
