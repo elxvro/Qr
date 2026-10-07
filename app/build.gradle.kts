@@ -34,14 +34,16 @@ android {
         applicationId = "com.elxvro.scan"
         minSdk = 24
         targetSdk = 36
-        versionCode = 45
-        versionName = "3.8.4-test"
+        versionCode = 46
+        versionName = "3.8.5-test"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            manifestPlaceholders["admobAppId"] = "ca-app-pub-1306515175084399~4280405132"
             if (hasReleaseSigning) {
                 signingConfig = signingConfigs.getByName("release")
             }
