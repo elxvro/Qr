@@ -1,3 +1,10 @@
+## v3.8.6-test — Banner visibility fix
+
+- Debug/test builds now show demo ads even while PRO test mode is active.
+- Release behavior is unchanged: confirmed lifetime PRO remains ad-free.
+- Added a debug-only banner diagnostic message when Google test ads fail to load, making VPN/network blocking visible instead of leaving an unexplained blank area.
+- Version 3.8.6-test / versionCode 47.
+
 ## v3.8.5-test — ELXVRO AdMob IDs
 
 - Release builds now use AdMob App ID `ca-app-pub-1306515175084399~4280405132`.
