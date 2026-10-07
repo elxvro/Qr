@@ -82,6 +82,7 @@ fun ProPaywallScreen(
             }
 
             FeatureRow("Tek seferlik ödeme • ömür boyu kullanım")
+            FeatureRow("Reklamsız kullanım")
             FeatureRow("Kendi logonu ekle")
             FeatureRow("Premium QR Kart tasarımları")
             FeatureRow("1200 px ve 2048 px yüksek çözünürlüklü çıktı")
