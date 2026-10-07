@@ -34,8 +34,8 @@ android {
         applicationId = "com.elxvro.scan"
         minSdk = 24
         targetSdk = 36
-        versionCode = 43
-        versionName = "3.8.2-test"
+        versionCode = 44
+        versionName = "3.8.3-test"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
