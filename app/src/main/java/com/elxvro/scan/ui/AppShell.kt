@@ -40,7 +40,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elxvro.scan.AppPrefs
 import com.elxvro.scan.ScanStore
+import com.elxvro.scan.ads.AdBanner
+import com.elxvro.scan.ads.InterstitialAdController
 import com.elxvro.scan.billing.BillingRepository
+import com.elxvro.scan.billing.ProEntitlement
 import com.elxvro.scan.pro.ProTestMode
 import com.elxvro.scan.ui.screens.BarcodeCreateScreen
 import com.elxvro.scan.ui.screens.BatchScanScreen
@@ -69,10 +72,12 @@ fun ElxvroScanApp() {
     val billing = remember { BillingRepository(context.applicationContext) }
     val entitlement by billing.entitlement.collectAsStateWithLifecycle()
     val offer by billing.offer.collectAsStateWithLifecycle()
+    val interstitialAds = remember(context) { InterstitialAdController(context.applicationContext) }
     val proTestMode = remember(context) {
         context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
     }
     val effectiveEntitlement = ProTestMode.resolve(entitlement, proTestMode)
+    val adsEnabled = entitlement is ProEntitlement.Free || entitlement is ProEntitlement.Error
 
     var tab by remember { mutableStateOf(AppTab.SCAN) }
     var showPaywall by remember { mutableStateOf(false) }
@@ -84,6 +89,18 @@ fun ElxvroScanApp() {
     DisposableEffect(billing) {
         billing.start()
         onDispose { billing.close() }
+    }
+
+    DisposableEffect(interstitialAds, adsEnabled) {
+        if (adsEnabled) interstitialAds.preload()
+        onDispose {
+            if (!adsEnabled) interstitialAds.clear()
+        }
+    }
+
+    fun onAdEligibleAction() {
+        if (!adsEnabled) return
+        context.findActivity()?.let(interstitialAds::onEligibleAction)
     }
 
     val childScreenOpen = showPaywall || showQrCard || showBarcodeCreate || showBatchScan
@@ -111,7 +128,12 @@ fun ElxvroScanApp() {
         containerColor = ScanTokens.Ink,
         bottomBar = {
             if (!childScreenOpen) {
-                ReferenceBottomBar(selected = tab, onSelect = { tab = it })
+                Column {
+                    if (adsEnabled && tab != AppTab.SCAN) {
+                        AdBanner()
+                    }
+                    ReferenceBottomBar(selected = tab, onSelect = { tab = it })
+                }
             }
         }
     ) { padding ->
@@ -162,6 +184,7 @@ fun ElxvroScanApp() {
                             showQrCard = true
                         },
                         onOpenBarcodeCreate = { showBarcodeCreate = true },
+                        onAdEligibleAction = ::onAdEligibleAction,
                         onBack = { tab = AppTab.SCAN }
                     )
                     AppTab.HISTORY -> HistoryScreen(store = store, onBack = { tab = AppTab.SCAN })
