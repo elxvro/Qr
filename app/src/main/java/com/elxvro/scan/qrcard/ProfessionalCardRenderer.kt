@@ -193,24 +193,68 @@ object ProfessionalCardRenderer {
         height: Float,
         short: Float
     ) {
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = max(1f, short * 0.0022f)
-        paint.color = withAlpha(
-            0xFFFFFFFF.toInt(),
-            if (preset.tier == ProfessionalCardTier.PRO) 0.075f else 0.055f
-        )
-        val step = short * 0.085f
-        var x = 0f
-        while (x <= width) {
-            canvas.drawLine(x, 0f, x, height, paint)
-            x += step
+        paint.style = Paint.Style.FILL
+        repeat(6) { index ->
+            paint.color = withAlpha(
+                if (index % 2 == 0) 0xFFFFFFFF.toInt() else preset.accentArgb,
+                if (preset.tier == ProfessionalCardTier.PRO) 0.040f + index * 0.008f else 0.030f + index * 0.006f
+            )
+            val band = RectF(
+                width * (-0.18f + index * 0.16f),
+                height * (0.58f - index * 0.06f),
+                width * (0.52f + index * 0.16f),
+                height * (0.74f - index * 0.04f)
+            )
+            canvas.drawOval(band, paint)
         }
-        var y = 0f
-        while (y <= height) {
-            canvas.drawLine(0f, y, width, y, paint)
-            y += step
+
+        paint.style = Paint.Style.STROKE
+        paint.strokeCap = Paint.Cap.ROUND
+        paint.strokeWidth = max(1f, short * 0.002f)
+        repeat(5) { index ->
+            paint.color = withAlpha(
+                0xFFFFFFFF.toInt(),
+                if (preset.tier == ProfessionalCardTier.PRO) 0.060f else 0.045f
+            )
+            val path = Path().apply {
+                moveTo(width * (-0.05f), height * (0.22f + index * 0.13f))
+                cubicTo(
+                    width * 0.18f,
+                    height * (0.15f + index * 0.10f),
+                    width * 0.58f,
+                    height * (0.30f + index * 0.12f),
+                    width * 1.02f,
+                    height * (0.18f + index * 0.10f)
+                )
+            }
+            canvas.drawPath(path, paint)
         }
         paint.style = Paint.Style.FILL
+
+        drawSoftVignette(canvas, paint, preset, width, height, short)
+    }
+
+    private fun drawSoftVignette(
+        canvas: Canvas,
+        paint: Paint,
+        preset: ProfessionalCardPreset,
+        width: Float,
+        height: Float,
+        short: Float
+    ) {
+        paint.shader = RadialGradient(
+            width * 0.88f,
+            height * 0.16f,
+            short * 0.90f,
+            0x00000000,
+            withAlpha(
+                0xFF000000.toInt(),
+                if (isLight(preset.backgroundEndArgb)) 0.10f else 0.16f
+            ),
+            Shader.TileMode.CLAMP
+        )
+        canvas.drawRect(0f, 0f, width, height, paint)
+        paint.shader = null
     }
 
     private fun drawAccentRibbon(
@@ -221,22 +265,28 @@ object ProfessionalCardRenderer {
         height: Float
     ) {
         paint.shader = LinearGradient(
-            width * 0.40f,
-            height,
-            width,
-            height * 0.36f,
+            width * 0.15f,
+            height * 0.92f,
+            width * 0.94f,
+            height * 0.32f,
             withAlpha(
                 preset.accentArgb,
-                if (preset.tier == ProfessionalCardTier.PRO) 0.32f else 0.22f
+                if (preset.tier == ProfessionalCardTier.PRO) 0.22f else 0.16f
             ),
             0x00000000,
             Shader.TileMode.CLAMP
         )
         val ribbon = Path().apply {
-            moveTo(width * 0.33f, height)
-            lineTo(width * 0.82f, height)
-            lineTo(width, height * 0.43f)
-            lineTo(width * 0.70f, height * 0.43f)
+            moveTo(width * 0.08f, height)
+            cubicTo(
+                width * 0.30f,
+                height * 0.82f,
+                width * 0.70f,
+                height * 0.98f,
+                width,
+                height * 0.58f
+            )
+            lineTo(width, height)
             close()
         }
         canvas.drawPath(ribbon, paint)
