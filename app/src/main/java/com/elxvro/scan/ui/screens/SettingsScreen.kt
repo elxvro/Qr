@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,6 +40,7 @@ import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -54,6 +56,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -81,6 +84,8 @@ fun SettingsScreen(
     onRetryBilling: () -> Unit,
     showAdPrivacyOptions: Boolean,
     onAdPrivacyOptions: () -> Unit,
+    reviewerAccessEnabled: Boolean,
+    onVerifyReviewerCode: (String) -> Boolean,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -95,6 +100,8 @@ fun SettingsScreen(
     var termsOpen by remember { mutableStateOf(false) }
     var supportOpen by remember { mutableStateOf(false) }
     var aboutOpen by remember { mutableStateOf(false) }
+    var reviewerAccessOpen by remember { mutableStateOf(false) }
+    var reviewerCode by remember { mutableStateOf("") }
     val proState = ProSettingsPresentation.from(entitlement, proTestMode)
 
     fun update(block: (ScanSettings) -> ScanSettings) {
@@ -271,7 +278,8 @@ fun SettingsScreen(
                 DividerLine()
                 BrandVersionRow(
                     appVersion = appVersion,
-                    onClick = { aboutOpen = true }
+                    onClick = { aboutOpen = true },
+                    onLongClick = { reviewerAccessOpen = true }
                 )
             }
 
@@ -327,12 +335,74 @@ fun SettingsScreen(
             onDismiss = { aboutOpen = false }
         )
     }
+
+    if (reviewerAccessOpen) {
+        AlertDialog(
+            onDismissRequest = {
+                reviewerAccessOpen = false
+                reviewerCode = ""
+            },
+            containerColor = ScanTokens.Card,
+            shape = RoundedCornerShape(18.dp),
+            title = { Text("Google Play Review Access", color = ScanTokens.Text) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        if (reviewerAccessEnabled) {
+                            "Review access is already active. PRO features are unlocked and ads are disabled for review."
+                        } else {
+                            "Enter the reusable Google Play reviewer access code."
+                        },
+                        color = ScanTokens.Muted,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    if (!reviewerAccessEnabled) {
+                        OutlinedTextField(
+                            value = reviewerCode,
+                            onValueChange = { reviewerCode = it },
+                            singleLine = true,
+                            label = { Text("Review code") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (reviewerAccessEnabled) {
+                            reviewerAccessOpen = false
+                        } else if (onVerifyReviewerCode(reviewerCode)) {
+                            Toast.makeText(context, "Review access enabled", Toast.LENGTH_SHORT).show()
+                            reviewerCode = ""
+                            reviewerAccessOpen = false
+                        } else {
+                            Toast.makeText(context, "Invalid review code", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                ) {
+                    Text(if (reviewerAccessEnabled) "OK" else "Enable", color = ScanTokens.Blue)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        reviewerAccessOpen = false
+                        reviewerCode = ""
+                    }
+                ) {
+                    Text("Cancel", color = ScanTokens.Muted)
+                }
+            }
+        )
+    }
 }
 
 @Composable
 private fun BrandVersionRow(
     appVersion: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -345,7 +415,12 @@ private fun BrandVersionRow(
                     )
                 )
             )
-            .clickable(onClick = onClick)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = { onClick() },
+                    onLongPress = { onLongClick() }
+                )
+            }
             .padding(horizontal = 14.dp, vertical = 15.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
