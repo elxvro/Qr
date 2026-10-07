@@ -1,3 +1,15 @@
+## v3.8.4-test — Restrained ads
+
+- Added Google Mobile Ads SDK 25.5.0 with Google demo IDs for safe development testing.
+- FREE users get one fixed banner on Create, History and Settings; the live scanner stays ad-free.
+- Added one closeable interstitial format shown only after completed QR save/share actions.
+- Interstitial frequency is restrained: eligible after every 4 completed actions and never more often than once every 8 minutes.
+- PRO users receive no in-app ads.
+- Added "Reklamsız kullanım" to the lifetime PRO benefits.
+- Updated in-app privacy disclosure for advertising services.
+- Production AdMob IDs are intentionally not enabled in this test build.
+- Version 3.8.4-test / versionCode 45.
+
 ## v3.8.3-test — Refined fixed tone cards
 
 - Reworked FREE and PRO fixed-card palettes around curated color tones instead of scene/plan-style visuals.
