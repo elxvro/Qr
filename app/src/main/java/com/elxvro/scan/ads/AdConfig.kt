@@ -7,10 +7,11 @@ object AdConfig {
     private const val TEST_INTERSTITIAL_ID = "ca-app-pub-3940256099942544/1033173712"
 
     private const val PRODUCTION_BANNER_ID = "ca-app-pub-1306515175084399/6105367552"
+    private const val PRODUCTION_INTERSTITIAL_ID = "ca-app-pub-1306515175084399/8914618865"
 
     val BANNER_ID: String
         get() = if (BuildConfig.DEBUG) TEST_BANNER_ID else PRODUCTION_BANNER_ID
 
-    // Real interstitial unit ID has not been supplied yet, so both builds keep Google's demo interstitial.
-    const val INTERSTITIAL_ID = TEST_INTERSTITIAL_ID
+    val INTERSTITIAL_ID: String
+        get() = if (BuildConfig.DEBUG) TEST_INTERSTITIAL_ID else PRODUCTION_INTERSTITIAL_ID
 }
