@@ -1,3 +1,13 @@
+## v3.8.3-test — Refined fixed tone cards
+
+- Reworked FREE and PRO fixed-card palettes around curated color tones instead of scene/plan-style visuals.
+- FREE families include mist blue, cocoa sand, night lavender, petrol mist, sage, stone gray, plum, cream taupe, peach dust and deep ocean.
+- PRO families include navy gold, espresso gold, graphite pearl, rose taupe, night glow, olive beige, slate coast, sapphire mist, steel blue and silky nude.
+- Removed the visible grid/plan texture from fixed backgrounds.
+- Added softer flowing overlays, restrained light bands and subtle vignette depth.
+- QR readability, TARA placement, copy safe zones and lifetime PRO billing behavior are unchanged.
+- Version 3.8.3-test / versionCode 44.
+
 ## v3.8.2-test — Lifetime PRO purchase
 
 - PRO billing changed from recurring subscriptions to a single non-consumable Google Play one-time product.
