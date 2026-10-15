@@ -46,9 +46,9 @@ jobs:
 
       - name: Export APK signer helper
         run: |
-          APKSIGNER_BIN="$(command -v apksigner)"
-          APKSIGNER_DIR="$(dirname "$APKSIGNER_BIN")"
-          cp "$APKSIGNER_DIR/lib/apksigner.jar" "$GITHUB_WORKSPACE/apksigner.jar"
+          APKSIG_JAR="$(find "$HOME/.gradle/caches/modules-2/files-2.1/com.android.tools.build/apksig" -type f -name 'apksig-*.jar' | sort | tail -n 1)"
+          test -n "$APKSIG_JAR"
+          cp "$APKSIG_JAR" "$GITHUB_WORKSPACE/apksig.jar"
 
       - name: Upload release package
         uses: actions/upload-artifact@v4
@@ -60,7 +60,7 @@ jobs:
             app/build/outputs/bundle/release/app-release.aab
             app/build/reports/lint-results-release.html
             ELXVRO-Scan-v3.9.2-source.zip
-            apksigner.jar
+            apksig.jar
             .github/workflows/android.yml
           if-no-files-found: error
           retention-days: 14
