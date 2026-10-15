@@ -44,6 +44,12 @@ jobs:
       - name: Package source ZIP
         run: git archive --format=zip --output=ELXVRO-Scan-v3.9.2-source.zip HEAD
 
+      - name: Export APK signer helper
+        run: |
+          APKSIGNER_BIN="$(command -v apksigner)"
+          APKSIGNER_DIR="$(dirname "$APKSIGNER_BIN")"
+          cp "$APKSIGNER_DIR/lib/apksigner.jar" "$GITHUB_WORKSPACE/apksigner.jar"
+
       - name: Upload release package
         uses: actions/upload-artifact@v4
         with:
@@ -54,6 +60,7 @@ jobs:
             app/build/outputs/bundle/release/app-release.aab
             app/build/reports/lint-results-release.html
             ELXVRO-Scan-v3.9.2-source.zip
+            apksigner.jar
             .github/workflows/android.yml
           if-no-files-found: error
           retention-days: 14
