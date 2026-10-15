@@ -32,8 +32,10 @@ import androidx.compose.material.icons.outlined.FlashlightOff
 import androidx.compose.material.icons.outlined.FlashlightOn
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -91,6 +93,7 @@ fun BatchScanScreen(
     var previewView by remember { mutableStateOf<PreviewView?>(null) }
     var session by remember { mutableStateOf(BatchScanSession()) }
     var lowLight by remember { mutableStateOf(false) }
+    var clearConfirm by remember { mutableStateOf(false) }
 
     fun toast(message: String) = Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
 
@@ -291,7 +294,7 @@ fun BatchScanScreen(
                 session = session.removeSelected()
             },
             onClear = {
-                session = session.clear()
+                if (session.entries.isNotEmpty()) clearConfirm = true
             },
             onCsv = {
                 val items = exportEntries()
@@ -302,6 +305,29 @@ fun BatchScanScreen(
                 val items = exportEntries()
                 if (items.isEmpty()) toast("Dışa aktarılacak kod yok")
                 else shareText("ELXVRO-Toplu-Tarama.json", "application/json", BatchScanExport.toJson(items))
+            }
+        )
+    }
+
+    if (clearConfirm) {
+        AlertDialog(
+            onDismissRequest = { clearConfirm = false },
+            title = { Text("Toplu taramayı temizle") },
+            text = { Text("Bu oturumdaki tüm kodlar listeden kaldırılsın mı? Geçmiş kayıtları etkilenmez.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        session = session.clear()
+                        clearConfirm = false
+                    }
+                ) {
+                    Text("Temizle", color = ScanTokens.Danger)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { clearConfirm = false }) {
+                    Text("Vazgeç", color = ScanTokens.Muted)
+                }
             }
         )
     }
