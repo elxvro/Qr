@@ -1,3 +1,13 @@
+## v3.9.2 — Stability and recovery improvements
+
+- Guarded Google Play Billing connection setup so repeated refresh/restore taps cannot start overlapping service connections.
+- Added bounded banner-ad retry backoff for temporary network or ad-load failures.
+- Banner retries stop after four controlled attempts instead of retrying indefinitely.
+- Added confirmation before clearing a batch-scan session; clearing the session does not delete scan history.
+- Google Play reviewer PRO access remains available for policy review.
+- Lifetime PRO, AdMob IDs, UMP privacy flow and existing ad frequency rules are unchanged.
+- Version 3.9.2 / versionCode 51.
+
 ## v3.9.1 — Google Play review access
 
 - Added reusable reviewer access for Google Play policy review without requiring a paid PRO purchase.
