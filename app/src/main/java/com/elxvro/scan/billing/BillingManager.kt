@@ -23,6 +23,7 @@ class BillingManager(
     private val onPurchaseSnapshot: (Boolean, PurchaseSnapshot?) -> Unit
 ) {
     private var productDetails: ProductDetails? = null
+    private var connecting = false
 
     private val purchasesUpdatedListener = PurchasesUpdatedListener { billingResult, purchases ->
         when (billingResult.responseCode) {
@@ -48,8 +49,12 @@ class BillingManager(
             refreshPurchases()
             return
         }
+        if (connecting) return
+
+        connecting = true
         billingClient.startConnection(object : BillingClientStateListener {
             override fun onBillingSetupFinished(billingResult: BillingResult) {
+                connecting = false
                 if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
                     queryOffer()
                     refreshPurchases()
@@ -60,6 +65,7 @@ class BillingManager(
             }
 
             override fun onBillingServiceDisconnected() {
+                connecting = false
                 onPurchaseSnapshot(false, null)
             }
         })
