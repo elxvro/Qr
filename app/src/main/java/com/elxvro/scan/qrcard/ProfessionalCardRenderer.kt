@@ -24,6 +24,9 @@ object ProfessionalCardRenderer {
         val short = min(size.width, size.height).toFloat()
 
         drawScene(canvas, paint, preset, size.width.toFloat(), size.height.toFloat(), short)
+        if (preset.tier == ProfessionalCardTier.PRO) {
+            drawPremiumFrame(canvas, paint, preset, size.width.toFloat(), size.height.toFloat(), short)
+        }
         drawContentPanel(canvas, paint, preset, layout.panelRect.toRectF(), short)
         drawCopy(canvas, paint, preset, copy, layout, short)
         drawQrPlate(canvas, paint, preset, qrBitmap, layout.qrRect.toRectF(), short)
@@ -460,6 +463,73 @@ object ProfessionalCardRenderer {
             canvas.drawPath(p,paint)
         }
         paint.style=Paint.Style.FILL
+    }
+
+    private fun drawPremiumFrame(
+        canvas: Canvas,
+        paint: Paint,
+        preset: ProfessionalCardPreset,
+        width: Float,
+        height: Float,
+        short: Float
+    ) {
+        val inset = short * 0.022f
+        val radius = short * 0.040f
+        val frame = RectF(inset, inset, width - inset, height - inset)
+
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = max(1.5f, short * 0.0038f)
+        paint.shader = LinearGradient(
+            frame.left,
+            frame.top,
+            frame.right,
+            frame.bottom,
+            intArrayOf(
+                withAlpha(0xFFFFFFFF.toInt(), 0.22f),
+                withAlpha(preset.accentArgb, 0.72f),
+                withAlpha(0xFFFFFFFF.toInt(), 0.10f)
+            ),
+            floatArrayOf(0f, 0.52f, 1f),
+            Shader.TileMode.CLAMP
+        )
+        canvas.drawRoundRect(frame, radius, radius, paint)
+        paint.shader = null
+
+        val inner = RectF(
+            frame.left + short * 0.012f,
+            frame.top + short * 0.012f,
+            frame.right - short * 0.012f,
+            frame.bottom - short * 0.012f
+        )
+        paint.strokeWidth = max(1f, short * 0.0018f)
+        paint.color = withAlpha(0xFFFFFFFF.toInt(), 0.10f)
+        canvas.drawRoundRect(inner, radius * 0.82f, radius * 0.82f, paint)
+        paint.style = Paint.Style.FILL
+
+        paint.shader = LinearGradient(
+            0f,
+            0f,
+            width,
+            height,
+            0x00FFFFFF,
+            withAlpha(0xFFFFFFFF.toInt(), 0.11f),
+            Shader.TileMode.CLAMP
+        )
+        val sheen = Path().apply {
+            moveTo(width * 0.50f, 0f)
+            lineTo(width * 0.72f, 0f)
+            lineTo(width * 0.30f, height)
+            lineTo(width * 0.08f, height)
+            close()
+        }
+        canvas.drawPath(sheen, paint)
+        paint.shader = null
+
+        repeat(3) { index ->
+            paint.color = withAlpha(preset.accentArgb, 0.55f - index * 0.12f)
+            val dot = short * (0.007f + index * 0.002f)
+            canvas.drawCircle(width * (0.92f - index * 0.022f), height * 0.075f, dot, paint)
+        }
     }
 
     private fun drawContentPanel(canvas: Canvas, paint: Paint, preset: ProfessionalCardPreset, rect: RectF, short: Float) {
