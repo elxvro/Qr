@@ -479,7 +479,7 @@ fun CreateScreen(
                     modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top = 6.dp),
                     horizontalArrangement = Arrangement.spacedBy(7.dp)
                 ) {
-                    listOf(512, 900, 1200, 2048).forEach { size ->
+                    listOf(512, 900, 1200, 2048, 3072, 4096).forEach { size ->
                         val locked = !isPro && size > 900
                         CompactLightChip("$size${if (locked) " PRO" else ""}", qrSize == size) {
                             if (locked) onOpenPaywall() else {
@@ -792,7 +792,13 @@ private fun ColorSwatches(selected: Int, onSelect: (Int) -> Unit) {
 
 @Composable
 private fun BackgroundSwatches(selected: Int, onSelect: (Int) -> Unit) {
-    val colors = listOf(Color.White, Color(0xFFF7F8F9), Color(0xFFEAF2FF), Color(0xFFFFF4E5))
+    val colors = listOf(
+        Color.White,
+        Color(0xFFF7F8F9),
+        Color(0xFFEAF2FF),
+        Color(0xFFFFF4E5),
+        Color.Transparent
+    )
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         colors.forEach { color ->
             val value = color.toArgb()
@@ -801,9 +807,17 @@ private fun BackgroundSwatches(selected: Int, onSelect: (Int) -> Unit) {
                     .size(32.dp)
                     .border(if (selected == value) 2.dp else 1.dp, if (selected == value) ScanTokens.Blue else ScanTokens.Divider, CircleShape)
                     .padding(4.dp)
-                    .background(color, CircleShape)
-                    .clickable { onSelect(value) }
-            )
+                    .background(
+                        if (color == Color.Transparent) Color(0xFFE8EDF3) else color,
+                        CircleShape
+                    )
+                    .clickable { onSelect(value) },
+                contentAlignment = Alignment.Center
+            ) {
+                if (color == Color.Transparent) {
+                    Text("T", color = ScanTokens.Muted, style = MaterialTheme.typography.labelSmall)
+                }
+            }
         }
     }
 }
