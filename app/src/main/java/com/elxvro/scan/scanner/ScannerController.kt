@@ -3,6 +3,8 @@ package com.elxvro.scan.scanner
 import android.content.Context
 import android.net.Uri
 import android.os.SystemClock
+import android.view.OrientationEventListener
+import android.view.Surface
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
@@ -37,6 +39,9 @@ class ScannerController(
 
     private var provider: ProcessCameraProvider? = null
     private var camera: Camera? = null
+    private var previewUseCase: Preview? = null
+    private var analysisUseCase: ImageAnalysis? = null
+    private var orientationListener: OrientationEventListener? = null
     private var busy = false
     private var closed = false
     private var torchEnabled = false
@@ -68,12 +73,19 @@ class ScannerController(
                 provider = cameraProvider
                 cameraProvider.unbindAll()
 
-                val preview = Preview.Builder().build().also {
-                    it.setSurfaceProvider(previewView.surfaceProvider)
-                }
+                val initialRotation = previewView.display?.rotation ?: Surface.ROTATION_0
+                val preview = Preview.Builder()
+                    .setTargetRotation(initialRotation)
+                    .build()
+                    .also {
+                        it.setSurfaceProvider(previewView.surfaceProvider)
+                        previewUseCase = it
+                    }
                 val analysis = ImageAnalysis.Builder()
+                    .setTargetRotation(initialRotation)
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .build()
+                    .also { analysisUseCase = it }
                 analysis.setAnalyzer(executor) { proxy ->
                     analyze(
                         proxy = proxy,
@@ -90,6 +102,7 @@ class ScannerController(
                     analysis
                 )
                 attachGestures(previewView, onZoomChanged)
+                attachOrientationTracking()
                 if (initialTorch && hasFlash()) setTorch(true)
                 onZoomChanged(currentZoom())
                 previewView.postDelayed({
@@ -271,7 +284,34 @@ class ScannerController(
         }
     }
 
+    private fun attachOrientationTracking() {
+        orientationListener?.disable()
+        orientationListener = object : OrientationEventListener(context) {
+            private var lastRotation = -1
+
+            override fun onOrientationChanged(orientation: Int) {
+                if (orientation == ORIENTATION_UNKNOWN) return
+                val rotation = when {
+                    orientation >= 315 || orientation < 45 -> Surface.ROTATION_0
+                    orientation < 135 -> Surface.ROTATION_270
+                    orientation < 225 -> Surface.ROTATION_180
+                    else -> Surface.ROTATION_90
+                }
+                if (rotation == lastRotation) return
+                lastRotation = rotation
+                previewUseCase?.targetRotation = rotation
+                analysisUseCase?.targetRotation = rotation
+            }
+        }.also { listener ->
+            if (listener.canDetectOrientation()) listener.enable()
+        }
+    }
+
     fun stop() {
+        orientationListener?.disable()
+        orientationListener = null
+        previewUseCase = null
+        analysisUseCase = null
         provider?.unbindAll()
         camera = null
         torchEnabled = false
