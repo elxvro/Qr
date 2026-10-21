@@ -21,7 +21,7 @@ object QrPremiumPolicy {
     fun canExportQrCards(entitlement: ProEntitlement): Boolean = entitlement is ProEntitlement.Pro
 
     fun maxQrExportSize(entitlement: ProEntitlement): Int {
-        return if (entitlement is ProEntitlement.Pro) 2048 else 900
+        return if (entitlement is ProEntitlement.Pro) 4096 else 900
     }
 
     fun maxQrCardExportSize(entitlement: ProEntitlement): Int {
