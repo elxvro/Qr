@@ -75,14 +75,14 @@ fun ProPaywallScreen(
                         tint = ScanTokens.Warning
                     )
                     Text(
-                        text = "Ömür Boyu PRO",
+                        text = "ELXVRO Scan PRO Studio",
                         color = ScanTokens.TextOnDark,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
                 }
                 Text(
-                    text = "Bir kez satın al, PRO özelliklerini kalıcı olarak aç. Abonelik ve otomatik yenileme yok.",
+                    text = "Profesyonel QR üretimi, premium kart stüdyosu ve reklamsız kullanım. Tek ödeme, kalıcı erişim; abonelik yok.",
                     color = ScanTokens.TextOnDark.copy(alpha = 0.78f),
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -104,11 +104,13 @@ fun ProPaywallScreen(
                     .padding(ScanTokens.Space4),
                 verticalArrangement = Arrangement.spacedBy(ScanTokens.Space3)
             ) {
-                FeatureRow("Reklamsız kullanım")
-                FeatureRow("50 PRO profesyonel QR kart tasarımı")
-                FeatureRow("Kendi logonu ve arka planını kullanma")
-                FeatureRow("1200 px ve 2048 px yüksek çözünürlüklü çıktı")
-                FeatureRow("Gelişmiş renk, stil ve marka seçenekleri")
+                FeatureRow("Tam reklamsız kullanım")
+                FeatureRow("50 PRO profesyonel QR kart tasarımı ve premium arka planlar")
+                FeatureRow("Kendi logonu, fotoğrafını ve marka renklerini kullanma")
+                FeatureRow("3072 px ve 4096 px Ultra HD QR/kart çıktısı")
+                FeatureRow("Şeffaf PNG arka plan desteği")
+                FeatureRow("5 kart oranı: kare, 16:9, klasik, 4:5 ve 9:16 Story")
+                FeatureRow("Gelişmiş QR renk, stil, boşluk ve logo kontrolü")
                 FeatureRow("Aynı Google Play hesabında satın alımı geri yükleme")
             }
 
