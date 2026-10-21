@@ -16,7 +16,7 @@ object QrCodeUtil {
         background: Int = Color.WHITE,
         highErrorCorrection: Boolean = false
     ): Bitmap {
-        val safeSize = size.coerceIn(256, 2048)
+        val safeSize = size.coerceIn(256, 4096)
         val hints = mutableMapOf<EncodeHintType, Any>(
             EncodeHintType.MARGIN to margin.coerceIn(0, 8)
         )
