@@ -32,6 +32,6 @@ class QrPremiumPolicyTest {
     @Test
     fun exportSizeLimitTracksEntitlement() {
         assertEquals(900, QrPremiumPolicy.maxQrExportSize(ProEntitlement.Free))
-        assertEquals(2048, QrPremiumPolicy.maxQrExportSize(ProEntitlement.Pro))
+        assertEquals(4096, QrPremiumPolicy.maxQrExportSize(ProEntitlement.Pro))
     }
 }
