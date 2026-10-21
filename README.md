@@ -1,3 +1,18 @@
+## v4.0.0 — Android 17, all-angle scanning and PRO Studio
+
+- Updated the Android build target to Android 17 / API 37 while keeping Android 7.0+ device support.
+- Updated the Android Gradle toolchain for API 37 and current platform compatibility.
+- Added dynamic camera rotation tracking so live QR/barcode analysis follows device orientation without restarting the scanner.
+- All-angle scanning continues to use ML Kit rotation metadata for vertical, horizontal and rotated codes.
+- Upgraded ELXVRO Scan PRO into a clearer PRO Studio presentation with lifetime access and no subscription.
+- Standard PRO QR export now supports 3072 px and 4096 px output in addition to existing sizes.
+- Added transparent PNG background support for PRO QR generation.
+- Refined PRO professional card rendering with metallic border depth, premium sheen and improved visual framing.
+- Existing 50 FREE + 50 PRO professional card libraries remain available.
+- MagicOS 6–10 compatibility is documented; current MagicOS 10 devices are Android 16 based.
+- Reviewer access, Google Play Billing, AdMob/UMP and existing ad-frequency rules remain unchanged.
+- Version 4.0.0 / versionCode 52.
+
 ## v3.9.2 — Stability and recovery improvements
 
 - Guarded Google Play Billing connection setup so repeated refresh/restore taps cannot start overlapping service connections.
