@@ -238,7 +238,7 @@ private fun LifetimePurchaseCard(price: String, onClick: () -> Unit) {
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    text = "Ömür Boyu PRO'yu Aç",
+                    text = "PRO Studio’yu Ömür Boyu Aç",
                     color = ScanTokens.Text,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
