@@ -1,12 +1,11 @@
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
     namespace = "com.elxvro.scan"
-    compileSdk = 36
+    compileSdk = 37
 
     val releaseKeystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
     val releaseKeystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
@@ -33,9 +32,9 @@ android {
     defaultConfig {
         applicationId = "com.elxvro.scan"
         minSdk = 24
-        targetSdk = 36
-        versionCode = 51
-        versionName = "3.9.2"
+        targetSdk = 37
+        versionCode = 52
+        versionName = "4.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
     }
