@@ -30,7 +30,7 @@ object FreeQrBrandPresetCatalog {
         CopySet("Antrenmana Başla", "Program, üyelik ve iletişim bilgilerine ulaş", "TARA"),
         CopySet("Randevu & Bilgi", "Hizmetler ve iletişim detayları için tara", "TARA"),
         CopySet("Portföyü İncele", "İlanları, proje bilgilerini ve iletişimi görüntüle", "TARA"),
-        CopySet("Araçlarımızı Keşfet", "Araç, hizmet ve iletişim seçeneklerine ulaş", "TARA")
+        CopySet("Araçlarımızı Keşfet", "Araç, hizmet ve iletişim seçeneklerine ulaş • elxvro.com", "TARA")
     )
 
     val all: List<FreeQrBrandPreset> = ProfessionalCardCatalog.free.mapIndexed { index, card ->
