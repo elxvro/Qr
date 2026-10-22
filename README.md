@@ -1,3 +1,14 @@
+## v4.1.0 — Sector photo cards
+
+- Replaced the active FREE and PRO fixed-card artwork path with packaged sector photography instead of generated canvas backgrounds.
+- Added offline backgrounds for barber/hair salon, cafe, restaurant, bakery/patisserie, beauty/spa, boutique, gym, clinic, real estate and automotive businesses.
+- The existing 50 FREE + 50 PRO fixed-card libraries remain available; each sector has five layout variants.
+- Added a photo-aware layout engine that reserves safe zones for QR, title, description and CTA across landscape, square and portrait cards.
+- QR and text overlays remain rendered dynamically; the fixed background artwork itself comes from bundled image assets.
+- Added sector-specific FREE copy and updated PRO Studio presentation for the new business card library.
+- Existing custom-background/photo mode, Google Play lifetime PRO, reviewer access, AdMob/UMP and app signing behavior are unchanged.
+- Version 4.1.0 / versionCode 53.
+
 ## v4.0.0 — Android 17, all-angle scanning and PRO Studio
 
 - Updated the Android build target to Android 17 / API 37 while keeping Android 7.0+ device support.
