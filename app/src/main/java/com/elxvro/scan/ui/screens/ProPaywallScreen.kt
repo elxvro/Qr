@@ -105,7 +105,7 @@ fun ProPaywallScreen(
                 verticalArrangement = Arrangement.spacedBy(ScanTokens.Space3)
             ) {
                 FeatureRow("Tam reklamsız kullanım")
-                FeatureRow("50 PRO profesyonel QR kart tasarımı ve premium arka planlar")
+                FeatureRow("50 PRO sektör kartı: kuaför, kafe, restoran, spa, emlak ve daha fazlası")
                 FeatureRow("Kendi logonu, fotoğrafını ve marka renklerini kullanma")
                 FeatureRow("3072 px ve 4096 px Ultra HD QR/kart çıktısı")
                 FeatureRow("Şeffaf PNG arka plan desteği")
