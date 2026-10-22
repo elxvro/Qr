@@ -373,7 +373,7 @@ fun QrCardEditorScreen(
                         backgroundMode = selectedMode
                         if (
                             selectedMode == QrCardBackgroundMode.FIXED_BACKGROUND &&
-                            ProfessionalCardCatalog.pro.none { it.id == backgroundPresetId }
+                            ProfessionalCardCatalog.all.none { it.id == backgroundPresetId }
                         ) {
                             backgroundPresetId = ProfessionalCardCatalog.defaultPro.id
                         }
@@ -404,7 +404,7 @@ fun QrCardEditorScreen(
                     }
 
                     if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
-                        SectionTitle("PRO sektör kartları • 50 fotoğraflı tasarım")
+                        SectionTitle("Sektör kartları • 50 FREE + 50 PRO fotoğraflı tasarım")
                         ProfessionalCardPresetSelector(
                             selectedId = backgroundPresetId,
                             enabled = isPro,
@@ -483,7 +483,7 @@ fun QrCardEditorScreen(
                 QrCardEditorTab.STYLE -> {
                     if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
                         Text(
-                            text = "Sabit PRO kartlarda hazır degrade, ışık ve doku kompozisyonu korunur. QR ve TARA yerleşimi sabittir; marka, başlık, açıklama ve logonu değiştirebilirsin.",
+                            text = "Sabit FREE ve PRO kartlarda sektör fotoğrafı ile güvenli QR/metin kompozisyonu korunur. QR ve TARA yerleşimi sabittir; marka, başlık, açıklama ve logonu değiştirebilirsin.",
                             color = ScanTokens.Muted,
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier
@@ -886,22 +886,59 @@ private fun ProfessionalCardPresetSelector(
     previewFor: (ProfessionalCardPreset) -> Bitmap?,
     onSelect: (ProfessionalCardPreset) -> Unit
 ) {
-    val categories = ProfessionalCardCatalog.categories(com.elxvro.scan.qrcard.ProfessionalCardTier.PRO)
-    val selectedPreset = ProfessionalCardCatalog.pro.firstOrNull { it.id == selectedId }
-    var category by remember(selectedPreset?.category) {
-        mutableStateOf(selectedPreset?.category ?: categories.first())
+    val selectedPreset = ProfessionalCardCatalog.all.firstOrNull { it.id == selectedId }
+    var tier by remember(selectedPreset?.tier) {
+        mutableStateOf(
+            selectedPreset?.tier ?: com.elxvro.scan.qrcard.ProfessionalCardTier.FREE
+        )
     }
-    val categoryCards = ProfessionalCardCatalog.byCategory(
-        com.elxvro.scan.qrcard.ProfessionalCardTier.PRO,
-        category
-    )
-    val globalIndex = ProfessionalCardCatalog.pro.indexOfFirst { it.id == selectedId }
+    val tierCards = ProfessionalCardCatalog.forTier(tier)
+    val categories = ProfessionalCardCatalog.categories(tier)
+    var category by remember(tier, selectedPreset?.category) {
+        mutableStateOf(
+            selectedPreset
+                ?.takeIf { it.tier == tier }
+                ?.category
+                ?: categories.first()
+        )
+    }
+    val categoryCards = ProfessionalCardCatalog.byCategory(tier, category)
+    val globalIndex = tierCards.indexOfFirst { it.id == selectedId }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        listOf(
+            com.elxvro.scan.qrcard.ProfessionalCardTier.FREE,
+            com.elxvro.scan.qrcard.ProfessionalCardTier.PRO
+        ).forEach { item ->
+            ReferenceChip(
+                text = if (item == com.elxvro.scan.qrcard.ProfessionalCardTier.FREE) {
+                    "FREE • 50"
+                } else {
+                    "PRO • 50"
+                },
+                selected = tier == item,
+                onClick = {
+                    if (enabled) {
+                        tier = item
+                        ProfessionalCardCatalog.forTier(item).firstOrNull()?.let(onSelect)
+                    } else {
+                        onLocked()
+                    }
+                }
+            )
+        }
+    }
 
     Text(
         text = if (globalIndex >= 0) {
-            "Seçili: ${globalIndex + 1}/50 • ${ProfessionalCardCatalog.pro[globalIndex].label}"
+            "Seçili: ${globalIndex + 1}/50 • ${tier.name} • ${tierCards[globalIndex].label}"
         } else {
-            "50 PRO kart"
+            "50 ${tier.name} kart"
         },
         color = ScanTokens.Text,
         style = MaterialTheme.typography.bodySmall,
