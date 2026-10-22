@@ -69,6 +69,8 @@ import com.elxvro.scan.pro.QrGenerationPolicy
 import com.elxvro.scan.pro.QrPremiumPolicy
 import com.elxvro.scan.qrcard.ElxvroBrandLogo
 import com.elxvro.scan.qrcard.LogoMode
+import com.elxvro.scan.qrcard.ProfessionalBackgroundImageCatalog
+import com.elxvro.scan.qrcard.ProfessionalCardCatalog
 import com.elxvro.scan.qrcard.QrCardAspectPreset
 import com.elxvro.scan.qrcard.QrCardBackgroundMode
 import com.elxvro.scan.qrcard.QrCardDesignCatalog
@@ -180,9 +182,14 @@ fun CreateScreen(
             qrBackgroundArgb = AndroidColor.WHITE,
             cardAspectRatio = 1f
         )
+        val backgroundPhoto = ProfessionalBackgroundImageCatalog.load(
+            context,
+            ProfessionalCardCatalog.find(brandPreset.backgroundPresetId)
+        )
         return QrCardRenderer.render(
             model = cardModel,
             qrBitmap = qr,
+            fixedBackgroundBitmap = backgroundPhoto,
             outputWidth = outputSize.coerceIn(512, 4096)
         )
     }
