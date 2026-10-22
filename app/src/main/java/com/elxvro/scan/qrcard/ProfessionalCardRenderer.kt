@@ -6,6 +6,7 @@ import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RadialGradient
+import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
@@ -13,17 +14,37 @@ import kotlin.math.max
 import kotlin.math.min
 
 object ProfessionalCardRenderer {
-    fun render(model: QrCardModel, qrBitmap: Bitmap, requestedLongEdge: Int): Bitmap {
+    fun render(
+        model: QrCardModel,
+        qrBitmap: Bitmap,
+        backgroundBitmap: Bitmap? = null,
+        requestedLongEdge: Int
+    ): Bitmap {
         val preset = ProfessionalCardCatalog.find(model.backgroundPresetId)
         val size = QrCardOutputSizePolicy.resolve(requestedLongEdge, model.cardAspectRatio)
         val output = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
-        val layout = ProfessionalCardLayoutEngine.resolve(size.width, size.height, preset.composition)
+        val layout = if (backgroundBitmap != null) {
+            ProfessionalPhotoLayoutEngine.resolve(size.width, size.height, preset.artVariant)
+        } else {
+            ProfessionalCardLayoutEngine.resolve(size.width, size.height, preset.composition)
+        }
         val copy = QrCardCopyPolicy.resolve(model)
         val short = min(size.width, size.height).toFloat()
 
-        drawScene(canvas, paint, preset, size.width.toFloat(), size.height.toFloat(), short)
+        if (backgroundBitmap != null) {
+            drawPhotoBackground(
+                canvas = canvas,
+                paint = paint,
+                bitmap = backgroundBitmap,
+                preset = preset,
+                width = size.width.toFloat(),
+                height = size.height.toFloat()
+            )
+        } else {
+            drawScene(canvas, paint, preset, size.width.toFloat(), size.height.toFloat(), short)
+        }
         if (preset.tier == ProfessionalCardTier.PRO) {
             drawPremiumFrame(canvas, paint, preset, size.width.toFloat(), size.height.toFloat(), short)
         }
@@ -33,6 +54,73 @@ object ProfessionalCardRenderer {
         drawCta(canvas, paint, preset, "TARA", layout.ctaRect.toRectF(), short)
         drawMicroDetail(canvas, paint, preset, size.width.toFloat(), size.height.toFloat(), short)
         return output
+    }
+
+    private fun drawPhotoBackground(
+        canvas: Canvas,
+        paint: Paint,
+        bitmap: Bitmap,
+        preset: ProfessionalCardPreset,
+        width: Float,
+        height: Float
+    ) {
+        if (bitmap.width <= 0 || bitmap.height <= 0) {
+            drawScene(canvas, paint, preset, width, height, min(width, height))
+            return
+        }
+
+        val destination = RectF(0f, 0f, width, height)
+        val srcRatio = bitmap.width.toFloat() / bitmap.height
+        val dstRatio = width / height
+        val src = if (srcRatio > dstRatio) {
+            val cropWidth = (bitmap.height * dstRatio).toInt().coerceAtLeast(1)
+            val available = (bitmap.width - cropWidth).coerceAtLeast(0)
+            val focus = if (dstRatio >= 1.12f) {
+                0.42f + (preset.artVariant % 5) * 0.025f
+            } else {
+                0.62f + (preset.artVariant % 3) * 0.035f
+            }
+            val left = (available * focus).toInt().coerceIn(0, available)
+            Rect(left, 0, left + cropWidth, bitmap.height)
+        } else {
+            val cropHeight = (bitmap.width / dstRatio).toInt().coerceAtLeast(1)
+            val available = (bitmap.height - cropHeight).coerceAtLeast(0)
+            val top = (available * 0.45f).toInt().coerceIn(0, available)
+            Rect(0, top, bitmap.width, top + cropHeight)
+        }
+        canvas.drawBitmap(bitmap, src, destination, paint)
+
+        paint.shader = if (dstRatio >= 1.12f) {
+            LinearGradient(
+                0f, 0f, width * .68f, 0f,
+                intArrayOf(
+                    withAlpha(
+                        0xFF080A0D.toInt(),
+                        if (preset.tier == ProfessionalCardTier.PRO) .62f else .50f
+                    ),
+                    withAlpha(0xFF080A0D.toInt(), .24f),
+                    0x00000000
+                ),
+                floatArrayOf(0f, .58f, 1f),
+                Shader.TileMode.CLAMP
+            )
+        } else {
+            LinearGradient(
+                0f, height * .36f, 0f, height,
+                intArrayOf(
+                    0x00000000,
+                    withAlpha(0xFF080A0D.toInt(), .42f),
+                    withAlpha(
+                        0xFF080A0D.toInt(),
+                        if (preset.tier == ProfessionalCardTier.PRO) .70f else .58f
+                    )
+                ),
+                floatArrayOf(0f, .42f, 1f),
+                Shader.TileMode.CLAMP
+            )
+        }
+        canvas.drawRect(0f, 0f, width, height, paint)
+        paint.shader = null
     }
 
     private fun drawScene(
