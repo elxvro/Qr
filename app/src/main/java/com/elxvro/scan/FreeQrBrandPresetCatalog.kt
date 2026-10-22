@@ -21,16 +21,16 @@ object FreeQrBrandPresetCatalog {
     )
 
     private val copySets = listOf(
-        CopySet("elxvro.com", "Dijital dünyanı keşfet", "TARA"),
-        CopySet("ELXVRO Scan", "QR ve barkodları hızlıca tara", "TARA"),
-        CopySet("Tara • Keşfet", "Bağlantıyı aç, içeriğe ulaş", "TARA"),
-        CopySet("Tek taramada bağlan", "Hızlı, sade ve doğrudan", "TARA"),
-        CopySet("Dijital dünyana açılan kod", "elxvro.com", "TARA"),
-        CopySet("People • Places • Possibilities", "Scan. Connect. Discover.", "TARA"),
-        CopySet("Bağlantın burada", "Kodu tara ve devam et", "TARA"),
-        CopySet("ELXVRO ile keşfet", "Tek kod, hızlı erişim", "TARA"),
-        CopySet("Daha hızlı bağlan", "QR ile anında eriş", "TARA"),
-        CopySet("Scan smarter", "Connect faster with ELXVRO", "TARA")
+        CopySet("Randevunu Oluştur", "Kuaför ve bakım hizmetlerimizi keşfet", "TARA"),
+        CopySet("Menüyü Keşfet", "Kahve, tatlı ve günün lezzetlerine göz at", "TARA"),
+        CopySet("Lezzetlerimizi Keşfet", "Menü, rezervasyon ve iletişim bilgilerine ulaş", "TARA"),
+        CopySet("Günün Tazeleri", "Fırından çıkan ürünleri ve özel siparişleri gör", "TARA"),
+        CopySet("Bakım & Güzellik", "Hizmetleri incele ve randevu bilgilerine ulaş", "TARA"),
+        CopySet("Yeni Koleksiyon", "Ürünleri, kampanyaları ve mağaza bilgilerini keşfet", "TARA"),
+        CopySet("Antrenmana Başla", "Program, üyelik ve iletişim bilgilerine ulaş", "TARA"),
+        CopySet("Randevu & Bilgi", "Hizmetler ve iletişim detayları için tara", "TARA"),
+        CopySet("Portföyü İncele", "İlanları, proje bilgilerini ve iletişimi görüntüle", "TARA"),
+        CopySet("Araçlarımızı Keşfet", "Araç, hizmet ve iletişim seçeneklerine ulaş", "TARA")
     )
 
     val all: List<FreeQrBrandPreset> = ProfessionalCardCatalog.free.mapIndexed { index, card ->
