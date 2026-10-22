@@ -14,6 +14,7 @@ object QrCardRenderer {
         qrBitmap: Bitmap,
         logoBitmap: Bitmap? = null,
         heroBitmap: Bitmap? = null,
+        fixedBackgroundBitmap: Bitmap? = null,
         outputWidth: Int = 1600
     ): Bitmap {
         require(QrCardValidator.validate(model) is ValidationResult.Valid) {
@@ -26,6 +27,7 @@ object QrCardRenderer {
                 model = model,
                 qrBitmap = qrBitmap,
                 heroBitmap = heroBitmap,
+                fixedBackgroundBitmap = fixedBackgroundBitmap,
                 requestedLongEdge = outputWidth
             )
         }
