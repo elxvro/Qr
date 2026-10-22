@@ -65,6 +65,7 @@ import com.elxvro.scan.pro.QrGenerationPolicy
 import com.elxvro.scan.pro.QrPremiumPolicy
 import com.elxvro.scan.qrcard.CardColorPickerPolicy
 import com.elxvro.scan.qrcard.ElxvroBrandLogo
+import com.elxvro.scan.qrcard.ProfessionalBackgroundImageCatalog
 import com.elxvro.scan.qrcard.ProfessionalCardCatalog
 import com.elxvro.scan.qrcard.ProfessionalCardPreset
 import com.elxvro.scan.qrcard.LogoMode
@@ -261,11 +262,20 @@ fun QrCardEditorScreen(
         } else {
             rawQr
         }
+        val fixedBackground = if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
+            ProfessionalBackgroundImageCatalog.load(
+                context,
+                ProfessionalCardCatalog.find(model.backgroundPresetId)
+            )
+        } else {
+            null
+        }
         return QrCardRenderer.render(
             model = model,
             qrBitmap = composedQr,
             logoBitmap = null,
             heroBitmap = heroImage,
+            fixedBackgroundBitmap = fixedBackground,
             outputWidth = size
         )
     }
@@ -372,7 +382,7 @@ fun QrCardEditorScreen(
 
                     Text(
                         text = if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
-                            "Hazır renkli kart kütüphanesi kullanılır. Arka plan; degrade geçişler, ışık ve soyut dokularla tasarlanmıştır; QR ve TARA düzeni sabit kalır, sen marka ve metinleri değiştirirsin."
+                            "Sektöre özel sabit fotoğraf arka planları kullanılır. Kuaför, kafe, restoran, pastane, spa, butik, spor salonu, klinik, emlak ve otomotiv kartlarında QR ve metinler görselin boş alanlarına göre güvenli biçimde yerleştirilir."
                         } else {
                             "Seçtiğin renk kartı tüm arka planı kaplar. Yumuşak tonlar ve temiz kompozisyon tüm oranlarda korunur."
                         },
@@ -394,7 +404,7 @@ fun QrCardEditorScreen(
                     }
 
                     if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
-                        SectionTitle("PRO profesyonel kartlar • 50 tasarım")
+                        SectionTitle("PRO sektör kartları • 50 fotoğraflı tasarım")
                         ProfessionalCardPresetSelector(
                             selectedId = backgroundPresetId,
                             enabled = isPro,
