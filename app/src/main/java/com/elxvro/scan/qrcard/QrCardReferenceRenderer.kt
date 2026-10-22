@@ -17,6 +17,7 @@ object QrCardReferenceRenderer {
         model: QrCardModel,
         qrBitmap: Bitmap,
         heroBitmap: Bitmap?,
+        fixedBackgroundBitmap: Bitmap?,
         requestedLongEdge: Int
     ): Bitmap {
         val preset = requireNotNull(model.designPreset)
@@ -26,6 +27,7 @@ object QrCardReferenceRenderer {
             return ProfessionalCardRenderer.render(
                 model = model,
                 qrBitmap = qrBitmap,
+                backgroundBitmap = fixedBackgroundBitmap,
                 requestedLongEdge = requestedLongEdge
             )
         }
@@ -127,14 +129,7 @@ object QrCardReferenceRenderer {
         short: Float
     ) {
         if (background.useFixedDarkGold) {
-            FixedCardVisualSceneRenderer.draw(
-                canvas = canvas,
-                paint = paint,
-                preset = fixedPreset,
-                width = width,
-                height = height
-            )
-            return
+            error("Fixed photo cards must be rendered by ProfessionalCardRenderer")
         }
 
         if (background.useUserPhoto && heroBitmap != null) {
