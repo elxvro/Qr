@@ -513,6 +513,10 @@ object QrCardReferenceRenderer {
             CardFontStyle.SERIF -> "serif"
             CardFontStyle.MONO -> "monospace"
             CardFontStyle.SCRIPT -> "cursive"
+            CardFontStyle.CONDENSED -> "sans-serif-condensed"
+            CardFontStyle.ROUNDED -> "sans-serif-rounded"
+            CardFontStyle.DISPLAY -> "sans-serif-black"
+            CardFontStyle.LIGHT -> "sans-serif-light"
         }
         return Typeface.create(family, if (bold) Typeface.BOLD else Typeface.NORMAL)
     }

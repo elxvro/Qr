@@ -1208,7 +1208,14 @@ private fun AspectRatioSelector(
             QrCardAspectPreset.STORY
         ).forEach { preset ->
             ReferenceChip(
-                text = preset.label,
+                text = when (preset) {
+                    QrCardAspectPreset.SQUARE -> "Kare • 1080×1080"
+                    QrCardAspectPreset.WIDE -> "Yatay • 1920×1080"
+                    QrCardAspectPreset.CARD -> "Kart • 1586×1000"
+                    QrCardAspectPreset.PORTRAIT -> "Dikey • 1080×1350"
+                    QrCardAspectPreset.STORY -> "Story • 1080×1920"
+                    QrCardAspectPreset.DEFAULT -> preset.label
+                },
                 selected = selected == preset,
                 onClick = {
                     if (enabled) onSelect(preset) else onLocked()
@@ -1365,7 +1372,11 @@ private fun FontStyleSelector(
             "Sans" to CardFontStyle.SANS,
             "Serif" to CardFontStyle.SERIF,
             "Mono" to CardFontStyle.MONO,
-            "Script" to CardFontStyle.SCRIPT
+            "El Yazısı" to CardFontStyle.SCRIPT,
+            "Dar" to CardFontStyle.CONDENSED,
+            "Yuvarlak" to CardFontStyle.ROUNDED,
+            "Display" to CardFontStyle.DISPLAY,
+            "İnce" to CardFontStyle.LIGHT
         ).forEach { (label, style) ->
             ReferenceChip(text = label, selected = selected == style, onClick = { onSelect(style) })
         }
