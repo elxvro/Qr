@@ -13,48 +13,25 @@ data class FreeQrBrandPreset(
     val backgroundPresetId: String
 )
 
+/**
+ * FREE kullanıcıya tek bir ELXVRO tanıtım kartı sunulur.
+ * Kart herhangi bir sabit sektör fotoğrafı kullanmaz; ELXVRO marka tasarımıyla oluşturulur.
+ */
 object FreeQrBrandPresetCatalog {
-    private data class CopySet(
-        val title: String,
-        val description: String,
-        val cta: String
+    val default = FreeQrBrandPreset(
+        id = "elxvro_intro",
+        label = "ELXVRO Özel Kart",
+        brand = "ELXVRO",
+        category = "ELXVRO",
+        title = "ELXVRO Scan ile Keşfet",
+        description = "QR ve barkod araçları, akıllı tarama ve daha fazlası • elxvro.com",
+        cta = "ELXVRO.COM",
+        backgroundPresetId = ProfessionalCardCatalog.defaultFree.id
     )
 
-    private val copySets = listOf(
-        CopySet("Randevunu Oluştur", "Kuaför ve bakım hizmetlerimizi keşfet", "TARA"),
-        CopySet("Menüyü Keşfet", "Kahve, tatlı ve günün lezzetlerine göz at", "TARA"),
-        CopySet("Lezzetlerimizi Keşfet", "Menü, rezervasyon ve iletişim bilgilerine ulaş", "TARA"),
-        CopySet("Günün Tazeleri", "Fırından çıkan ürünleri ve özel siparişleri gör", "TARA"),
-        CopySet("Bakım & Güzellik", "Hizmetleri incele ve randevu bilgilerine ulaş", "TARA"),
-        CopySet("Yeni Koleksiyon", "Ürünleri, kampanyaları ve mağaza bilgilerini keşfet", "TARA"),
-        CopySet("Antrenmana Başla", "Program, üyelik ve iletişim bilgilerine ulaş", "TARA"),
-        CopySet("Randevu & Bilgi", "Hizmetler ve iletişim detayları için tara", "TARA"),
-        CopySet("Portföyü İncele", "İlanları, proje bilgilerini ve iletişimi görüntüle", "TARA"),
-        CopySet("Araçlarımızı Keşfet", "Araç, hizmet ve iletişim seçeneklerine ulaş • elxvro.com", "TARA")
-    )
+    val all: List<FreeQrBrandPreset> = listOf(default)
 
-    val all: List<FreeQrBrandPreset> = ProfessionalCardCatalog.free.mapIndexed { index, card ->
-        val copy = copySets[(index / 5).coerceIn(0, copySets.lastIndex)]
-        FreeQrBrandPreset(
-            id = "free_brand_${index + 1}",
-            label = card.label,
-            brand = "ELXVRO",
-            category = card.category,
-            title = copy.title,
-            description = copy.description,
-            cta = copy.cta,
-            backgroundPresetId = card.id
-        )
-    }
-
-    val default: FreeQrBrandPreset = all.first()
-
-    fun find(id: String): FreeQrBrandPreset =
-        all.firstOrNull { it.id == id } ?: default
-
-    fun categories(): List<String> =
-        all.map { it.category }.distinct()
-
-    fun byCategory(category: String): List<FreeQrBrandPreset> =
-        all.filter { it.category == category }
+    fun find(id: String): FreeQrBrandPreset = default
+    fun categories(): List<String> = listOf("ELXVRO")
+    fun byCategory(category: String): List<FreeQrBrandPreset> = all
 }
