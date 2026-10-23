@@ -205,13 +205,26 @@ object QrV2Renderer {
         }
 
         val qrSide = (short * 0.30f * state.qrScale.coerceIn(0.65f, 1.65f))
-            .coerceIn(short * 0.18f, short * 0.52f)
+            .coerceIn(short * 0.18f, min(short * 0.52f, min(w * 0.82f, h * 0.82f)))
+
+        fun square(cx: Float, cy: Float, side: Float): RectF {
+            val centerX = (cx.coerceIn(0.05f, 0.95f) * w)
+                .coerceIn(side / 2f + w * 0.025f, w - side / 2f - w * 0.025f)
+            val centerY = (cy.coerceIn(0.05f, 0.95f) * h)
+                .coerceIn(side / 2f + h * 0.025f, h - side / 2f - h * 0.025f)
+            return RectF(
+                centerX - side / 2f,
+                centerY - side / 2f,
+                centerX + side / 2f,
+                centerY + side / 2f
+            )
+        }
 
         return QrV2Layout(
             brand = rect(state.brandX, state.brandY, w * 0.42f, short * 0.10f * state.brandScale.coerceIn(0.7f, 1.8f)),
             title = rect(state.titleX, state.titleY, w * 0.48f, short * 0.16f * state.titleScale.coerceIn(0.7f, 1.8f)),
             body = rect(state.bodyX, state.bodyY, w * 0.48f, short * 0.16f * state.bodyScale.coerceIn(0.7f, 1.8f)),
-            qr = rect(state.qrX, state.qrY, qrSide, qrSide),
+            qr = square(state.qrX, state.qrY, qrSide),
             cta = rect(state.ctaX, state.ctaY, short * 0.34f * state.ctaScale.coerceIn(0.7f, 1.8f), short * 0.085f * state.ctaScale.coerceIn(0.7f, 1.8f))
         )
     }
@@ -229,9 +242,11 @@ object QrV2Renderer {
         paint.typeface = Typeface.create(state.font.family, if (bold) Typeface.BOLD else Typeface.NORMAL)
         paint.color = state.textColor
         paint.textAlign = Paint.Align.LEFT
-        paint.textSize = max(rect.height() * 0.54f * scale.coerceIn(0.7f, 1.8f), 14f)
+        paint.textSize = max(rect.height() * 0.54f, 14f)
+        paint.setShadowLayer(max(2f, rect.height() * 0.045f), 0f, max(1f, rect.height() * 0.025f), 0x88000000.toInt())
         val baseline = rect.centerY() - (paint.ascent() + paint.descent()) / 2f
         canvas.drawText(ellipsize(text, paint, rect.width()), rect.left, baseline, paint)
+        paint.clearShadowLayer()
     }
 
     private fun ellipsize(text: String, paint: Paint, maxWidth: Float): String {
