@@ -6,23 +6,21 @@ import org.junit.Test
 
 class FreeQrBrandPresetCatalogTest {
     @Test
-    fun offersMultipleReadyElxvroBrandCards() {
-        assertTrue(FreeQrBrandPresetCatalog.all.size >= 6)
-        FreeQrBrandPresetCatalog.all.forEach { preset ->
-            assertEquals("ELXVRO", preset.brand)
-            assertTrue(preset.title.isNotBlank())
-            assertTrue(preset.description.isNotBlank())
-            assertTrue(preset.backgroundPresetId.isNotBlank())
-        }
+    fun offersSingleElxvroPromotionalCard() {
+        assertEquals(1, FreeQrBrandPresetCatalog.all.size)
+        val preset = FreeQrBrandPresetCatalog.default
+        assertEquals("ELXVRO", preset.brand)
+        assertEquals("ELXVRO Özel Kart", preset.label)
+        assertTrue(preset.title.contains("ELXVRO", ignoreCase = true))
+        assertTrue(preset.description.contains("elxvro.com", ignoreCase = true))
+        assertTrue(preset.cta.contains("ELXVRO", ignoreCase = true))
     }
 
     @Test
-    fun includesElxvroDotComPromotionalCard() {
-        assertTrue(
-            FreeQrBrandPresetCatalog.all.any {
-                it.title.contains("elxvro.com", ignoreCase = true) ||
-                    it.description.contains("elxvro.com", ignoreCase = true)
-            }
-        )
+    fun freeCardPromotesElxvroScanAndWebsite() {
+        val preset = FreeQrBrandPresetCatalog.default
+        assertTrue(preset.title.contains("Scan", ignoreCase = true))
+        assertTrue(preset.description.contains("QR", ignoreCase = true))
+        assertTrue(preset.description.contains("elxvro.com", ignoreCase = true))
     }
 }
