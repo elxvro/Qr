@@ -67,6 +67,7 @@ import com.elxvro.scan.qrnew.QrV2Font
 import com.elxvro.scan.qrnew.QrV2Layout
 import com.elxvro.scan.qrnew.QrV2Renderer
 import com.elxvro.scan.qrnew.QrV2State
+import com.elxvro.scan.qrnew.withSafeAspectLayout
 import com.elxvro.scan.ui.components.ProBadge
 import com.elxvro.scan.ui.components.ReferenceHeader
 import com.elxvro.scan.ui.components.ReferencePrimaryButton
@@ -222,7 +223,7 @@ fun QrCardEditorScreen(
                 selected = selected,
                 onSelect = { selected = it },
                 onMove = ::moveElement,
-                modifier = Modifier.fillMaxWidth().heightIn(max = 390.dp)
+                modifier = Modifier.fillMaxWidth().height(360.dp)
             )
 
             Row(
@@ -259,7 +260,8 @@ fun QrCardEditorScreen(
                         ) {
                             QrV2Aspect.entries.forEach { aspect ->
                                 EditorChip(aspect.label, card.aspect == aspect) {
-                                    card = card.copy(aspect = aspect)
+                                    card = card.withSafeAspectLayout(aspect)
+                                    selected = QrV2Element.QR
                                 }
                             }
                         }
@@ -456,20 +458,35 @@ private fun QrV3EditablePreview(
 ) {
     BoxWithConstraints(
         modifier = modifier
-            .aspectRatio(state.aspect.ratio)
             .background(EditorPanel, RoundedCornerShape(18.dp))
-            .padding(4.dp)
+            .padding(6.dp),
+        contentAlignment = Alignment.Center
     ) {
+        val availableRatio = maxWidth.value / maxHeight.value.coerceAtLeast(1f)
+        val cardWidth = if (state.aspect.ratio >= availableRatio) {
+            maxWidth
+        } else {
+            maxHeight * state.aspect.ratio
+        }
+        val cardHeight = if (state.aspect.ratio >= availableRatio) {
+            maxWidth / state.aspect.ratio
+        } else {
+            maxHeight
+        }
         val density = LocalDensity.current
-        val widthPx = with(density) { maxWidth.toPx() }
-        val heightPx = with(density) { maxHeight.toPx() }
+        val widthPx = with(density) { cardWidth.toPx() }
+        val heightPx = with(density) { cardHeight.toPx() }
         val layout = remember(widthPx, heightPx, state) {
             if (widthPx > 1f && heightPx > 1f) {
                 QrV2Renderer.layout(widthPx.roundToInt(), heightPx.roundToInt(), state)
             } else null
         }
 
-        Box(Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .size(cardWidth, cardHeight)
+                .background(Color.Black, RoundedCornerShape(14.dp))
+        ) {
             preview?.let {
                 Image(
                     bitmap = it.asImageBitmap(),
