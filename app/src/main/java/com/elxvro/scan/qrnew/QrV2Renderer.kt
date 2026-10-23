@@ -1,0 +1,278 @@
+package com.elxvro.scan.qrnew
+
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.RectF
+import android.graphics.Typeface
+import kotlin.math.max
+import kotlin.math.min
+
+enum class QrV2Aspect(val ratio: Float, val label: String) {
+    SQUARE(1f, "1:1"),
+    CARD(1.586f, "Kart"),
+    PORTRAIT(0.8f, "4:5"),
+    STORY(9f / 16f, "9:16"),
+    WIDE(16f / 9f, "16:9")
+}
+
+enum class QrV2Font(val label: String, val family: String) {
+    SANS("Modern", "sans-serif"),
+    SERIF("Serif", "serif"),
+    ROUNDED("Yuvarlak", "sans-serif-rounded"),
+    CONDENSED("Dar", "sans-serif-condensed"),
+    MONO("Mono", "monospace"),
+    SCRIPT("El yazısı", "cursive"),
+    DISPLAY("Kalın", "sans-serif-black"),
+    LIGHT("İnce", "sans-serif-light")
+}
+
+enum class QrV2Element(val label: String) {
+    BRAND("Marka"),
+    TITLE("Başlık"),
+    BODY("Açıklama"),
+    QR("QR"),
+    CTA("Buton")
+}
+
+data class QrV2State(
+    val aspect: QrV2Aspect = QrV2Aspect.CARD,
+    val brand: String = "ELXVRO",
+    val title: String = "Bizi Keşfet",
+    val body: String = "QR kodu tara ve keşfet",
+    val cta: String = "TARA",
+    val font: QrV2Font = QrV2Font.SANS,
+    val textColor: Int = Color.WHITE,
+    val accentColor: Int = 0xFF168CFF.toInt(),
+    val brandX: Float = 0.24f,
+    val brandY: Float = 0.18f,
+    val titleX: Float = 0.25f,
+    val titleY: Float = 0.32f,
+    val bodyX: Float = 0.25f,
+    val bodyY: Float = 0.48f,
+    val qrX: Float = 0.77f,
+    val qrY: Float = 0.43f,
+    val ctaX: Float = 0.77f,
+    val ctaY: Float = 0.76f,
+    val brandScale: Float = 1f,
+    val titleScale: Float = 1f,
+    val bodyScale: Float = 1f,
+    val qrScale: Float = 1f,
+    val ctaScale: Float = 1f
+)
+
+data class QrV2Layout(
+    val brand: RectF,
+    val title: RectF,
+    val body: RectF,
+    val qr: RectF,
+    val cta: RectF
+)
+
+object QrV2Renderer {
+    private const val FREE_BG = 0xFF07182B.toInt()
+    private const val FREE_ACCENT = 0xFF168CFF.toInt()
+
+    fun renderFree(qr: Bitmap, width: Int = 1080): Bitmap {
+        val safeWidth = width.coerceIn(720, 2160)
+        val height = safeWidth
+        val out = Bitmap.createBitmap(safeWidth, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(out)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+        val w = safeWidth.toFloat()
+        val h = height.toFloat()
+
+        canvas.drawColor(FREE_BG)
+
+        paint.color = FREE_ACCENT
+        canvas.drawRoundRect(
+            RectF(w * 0.075f, h * 0.075f, w * 0.925f, h * 0.925f),
+            w * 0.045f,
+            w * 0.045f,
+            paint
+        )
+
+        paint.color = FREE_BG
+        canvas.drawRoundRect(
+            RectF(w * 0.088f, h * 0.088f, w * 0.912f, h * 0.912f),
+            w * 0.038f,
+            w * 0.038f,
+            paint
+        )
+
+        paint.typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
+        paint.textAlign = Paint.Align.CENTER
+        paint.color = Color.WHITE
+        paint.textSize = w * 0.085f
+        canvas.drawText("ELXVRO", w * 0.5f, h * 0.19f, paint)
+
+        paint.typeface = Typeface.create("sans-serif", Typeface.NORMAL)
+        paint.textSize = w * 0.038f
+        paint.color = 0xFFD9E8F7.toInt()
+        canvas.drawText("www.elxvro.com", w * 0.5f, h * 0.255f, paint)
+
+        val qrSide = w * 0.47f
+        val qrRect = RectF(
+            w * 0.5f - qrSide / 2f,
+            h * 0.52f - qrSide / 2f,
+            w * 0.5f + qrSide / 2f,
+            h * 0.52f + qrSide / 2f
+        )
+        paint.color = Color.WHITE
+        canvas.drawRoundRect(expand(qrRect, w * 0.025f), w * 0.03f, w * 0.03f, paint)
+        canvas.drawBitmap(qr, null, qrRect, paint)
+
+        paint.typeface = Typeface.create("sans-serif", Typeface.BOLD)
+        paint.color = Color.WHITE
+        paint.textSize = w * 0.045f
+        canvas.drawText("QR KODU TARA", w * 0.5f, h * 0.835f, paint)
+
+        paint.typeface = Typeface.create("sans-serif", Typeface.NORMAL)
+        paint.color = 0xFF9FC8ED.toInt()
+        paint.textSize = w * 0.026f
+        canvas.drawText("ELXVRO Scan ile oluşturuldu", w * 0.5f, h * 0.885f, paint)
+
+        paint.textAlign = Paint.Align.LEFT
+        return out
+    }
+
+    fun renderPro(
+        qr: Bitmap,
+        background: Bitmap?,
+        state: QrV2State,
+        width: Int = 1400
+    ): Bitmap {
+        val outWidth = width.coerceIn(720, 4096)
+        val outHeight = (outWidth / state.aspect.ratio).toInt().coerceAtLeast(1)
+        val out = Bitmap.createBitmap(outWidth, outHeight, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(out)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+        val w = outWidth.toFloat()
+        val h = outHeight.toFloat()
+        val short = min(w, h)
+
+        if (background != null) {
+            drawCenterCrop(canvas, paint, background, RectF(0f, 0f, w, h))
+        } else {
+            canvas.drawColor(0xFF101820.toInt())
+        }
+
+        val layout = layout(outWidth, outHeight, state)
+        drawText(canvas, paint, state.brand, layout.brand, state, state.brandScale, true)
+        drawText(canvas, paint, state.title, layout.title, state, state.titleScale, true)
+        drawText(canvas, paint, state.body, layout.body, state, state.bodyScale, false)
+
+        paint.color = Color.WHITE
+        val qrPad = short * 0.018f
+        canvas.drawRoundRect(expand(layout.qr, qrPad), short * 0.022f, short * 0.022f, paint)
+        canvas.drawBitmap(qr, null, layout.qr, paint)
+
+        if (state.cta.isNotBlank()) {
+            paint.color = state.accentColor
+            canvas.drawRoundRect(layout.cta, layout.cta.height() / 2f, layout.cta.height() / 2f, paint)
+            paint.typeface = Typeface.create(state.font.family, Typeface.BOLD)
+            paint.textAlign = Paint.Align.CENTER
+            paint.color = Color.WHITE
+            paint.textSize = max(short * 0.026f * state.ctaScale.coerceIn(0.7f, 1.8f), 14f)
+            val baseline = layout.cta.centerY() - (paint.ascent() + paint.descent()) / 2f
+            canvas.drawText(ellipsize(state.cta, paint, layout.cta.width() * 0.82f), layout.cta.centerX(), baseline, paint)
+            paint.textAlign = Paint.Align.LEFT
+        }
+
+        return out
+    }
+
+    fun layout(width: Int, height: Int, state: QrV2State): QrV2Layout {
+        val w = width.toFloat()
+        val h = height.toFloat()
+        val short = min(w, h)
+
+        fun rect(cx: Float, cy: Float, rw: Float, rh: Float): RectF {
+            val clampedW = rw.coerceAtMost(w * 0.88f)
+            val clampedH = rh.coerceAtMost(h * 0.30f)
+            val centerX = (cx.coerceIn(0.05f, 0.95f) * w)
+                .coerceIn(clampedW / 2f + w * 0.025f, w - clampedW / 2f - w * 0.025f)
+            val centerY = (cy.coerceIn(0.05f, 0.95f) * h)
+                .coerceIn(clampedH / 2f + h * 0.025f, h - clampedH / 2f - h * 0.025f)
+            return RectF(
+                centerX - clampedW / 2f,
+                centerY - clampedH / 2f,
+                centerX + clampedW / 2f,
+                centerY + clampedH / 2f
+            )
+        }
+
+        val qrSide = (short * 0.30f * state.qrScale.coerceIn(0.65f, 1.65f))
+            .coerceIn(short * 0.18f, min(short * 0.52f, min(w * 0.82f, h * 0.82f)))
+
+        fun square(cx: Float, cy: Float, side: Float): RectF {
+            val centerX = (cx.coerceIn(0.05f, 0.95f) * w)
+                .coerceIn(side / 2f + w * 0.025f, w - side / 2f - w * 0.025f)
+            val centerY = (cy.coerceIn(0.05f, 0.95f) * h)
+                .coerceIn(side / 2f + h * 0.025f, h - side / 2f - h * 0.025f)
+            return RectF(
+                centerX - side / 2f,
+                centerY - side / 2f,
+                centerX + side / 2f,
+                centerY + side / 2f
+            )
+        }
+
+        return QrV2Layout(
+            brand = rect(state.brandX, state.brandY, w * 0.42f, short * 0.10f * state.brandScale.coerceIn(0.7f, 1.8f)),
+            title = rect(state.titleX, state.titleY, w * 0.48f, short * 0.16f * state.titleScale.coerceIn(0.7f, 1.8f)),
+            body = rect(state.bodyX, state.bodyY, w * 0.48f, short * 0.16f * state.bodyScale.coerceIn(0.7f, 1.8f)),
+            qr = square(state.qrX, state.qrY, qrSide),
+            cta = rect(state.ctaX, state.ctaY, short * 0.34f * state.ctaScale.coerceIn(0.7f, 1.8f), short * 0.085f * state.ctaScale.coerceIn(0.7f, 1.8f))
+        )
+    }
+
+    private fun drawText(
+        canvas: Canvas,
+        paint: Paint,
+        text: String,
+        rect: RectF,
+        state: QrV2State,
+        scale: Float,
+        bold: Boolean
+    ) {
+        if (text.isBlank()) return
+        paint.typeface = Typeface.create(state.font.family, if (bold) Typeface.BOLD else Typeface.NORMAL)
+        paint.color = state.textColor
+        paint.textAlign = Paint.Align.LEFT
+        paint.textSize = max(rect.height() * 0.54f, 14f)
+        paint.setShadowLayer(max(2f, rect.height() * 0.045f), 0f, max(1f, rect.height() * 0.025f), 0x88000000.toInt())
+        val baseline = rect.centerY() - (paint.ascent() + paint.descent()) / 2f
+        canvas.drawText(ellipsize(text, paint, rect.width()), rect.left, baseline, paint)
+        paint.clearShadowLayer()
+    }
+
+    private fun ellipsize(text: String, paint: Paint, maxWidth: Float): String {
+        if (paint.measureText(text) <= maxWidth) return text
+        var value = text
+        while (value.length > 1 && paint.measureText("$value…") > maxWidth) {
+            value = value.dropLast(1)
+        }
+        return "$value…"
+    }
+
+    private fun drawCenterCrop(canvas: Canvas, paint: Paint, bitmap: Bitmap, dst: RectF) {
+        val srcRatio = bitmap.width.toFloat() / bitmap.height.coerceAtLeast(1)
+        val dstRatio = dst.width() / dst.height().coerceAtLeast(1f)
+        val src = if (srcRatio > dstRatio) {
+            val cropWidth = (bitmap.height * dstRatio).toInt().coerceAtLeast(1)
+            val left = ((bitmap.width - cropWidth) / 2).coerceAtLeast(0)
+            Rect(left, 0, (left + cropWidth).coerceAtMost(bitmap.width), bitmap.height)
+        } else {
+            val cropHeight = (bitmap.width / dstRatio).toInt().coerceAtLeast(1)
+            val top = ((bitmap.height - cropHeight) / 2).coerceAtLeast(0)
+            Rect(0, top, bitmap.width, (top + cropHeight).coerceAtMost(bitmap.height))
+        }
+        canvas.drawBitmap(bitmap, src, dst, paint)
+    }
+
+    private fun expand(rect: RectF, amount: Float): RectF =
+        RectF(rect.left - amount, rect.top - amount, rect.right + amount, rect.bottom + amount)
+}
