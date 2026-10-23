@@ -76,7 +76,7 @@ import com.elxvro.scan.qrcard.ProfessionalBackgroundImageCatalog
 import com.elxvro.scan.qrcard.ProfessionalCardCatalog
 import com.elxvro.scan.qrcard.ProfessionalCardPreset
 import com.elxvro.scan.qrcard.ProfessionalCardTier
-import com.elxvro.scan.qrcard.ProfessionalEditableLayoutPolicy
+import com.elxvro.scan.qrcard.QrCardReferenceFreeformPolicy
 import com.elxvro.scan.qrcard.QrCardAspectPreset
 import com.elxvro.scan.qrcard.QrCardBackgroundMode
 import com.elxvro.scan.qrcard.QrCardDesignCatalog
@@ -143,21 +143,21 @@ fun QrCardEditorScreen(
     var heroImage by remember { mutableStateOf<Bitmap?>(null) }
     var logoScale by remember { mutableFloatStateOf(0.18f) }
     var exportSize by remember { mutableIntStateOf(1200) }
-    var backgroundMode by remember { mutableStateOf(QrCardBackgroundMode.FIXED_BACKGROUND) }
+    var backgroundMode by remember { mutableStateOf(QrCardBackgroundMode.FULL_BACKGROUND) }
     var backgroundPresetId by remember { mutableStateOf(ProfessionalCardCatalog.defaultPro.id) }
     var aspectPreset by remember { mutableStateOf(QrCardAspectPreset.CARD) }
-    var designPreset by remember { mutableStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE) }
+    var designPreset by remember { mutableStateOf(QrCardDesignPreset.CLASSIC_LUXURY) }
     var qrPosition by remember { mutableStateOf(QrPosition.CENTER) }
-    var cardBackground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().backgroundArgb) }
-    var accent by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().accentArgb) }
-    var brandTextColor by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().accentArgb) }
-    var textColor by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().titleArgb) }
-    var bodyTextColor by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().bodyArgb) }
+    var cardBackground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_LUXURY.theme().backgroundArgb) }
+    var accent by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_LUXURY.theme().accentArgb) }
+    var brandTextColor by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_LUXURY.theme().accentArgb) }
+    var textColor by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_LUXURY.theme().titleArgb) }
+    var bodyTextColor by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_LUXURY.theme().bodyArgb) }
     var ctaTextColor by remember {
-        mutableIntStateOf(QrCardTextColorPolicy.readableOn(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().accentArgb))
+        mutableIntStateOf(QrCardTextColorPolicy.readableOn(QrCardDesignPreset.CLASSIC_LUXURY.theme().accentArgb))
     }
-    var qrForeground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().qrForegroundArgb) }
-    var qrBackground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().qrBackgroundArgb) }
+    var qrForeground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_LUXURY.theme().qrForegroundArgb) }
+    var qrBackground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_LUXURY.theme().qrBackgroundArgb) }
     var colorTarget by remember { mutableStateOf(CardColorTarget.BACKGROUND) }
     var freeformEnabled by remember { mutableStateOf(false) }
     var selectedFreeformHandle by remember { mutableStateOf(FreeformHandle.QR) }
@@ -238,11 +238,8 @@ fun QrCardEditorScreen(
         qrBackground = theme.qrBackgroundArgb
     }
 
-    fun currentPreset(): ProfessionalCardPreset = ProfessionalCardCatalog.find(backgroundPresetId)
-
     fun freeformSupported(): Boolean =
-        backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND &&
-            currentPreset().tier == ProfessionalCardTier.PRO
+        isPro && backgroundMode == QrCardBackgroundMode.FULL_BACKGROUND
 
     fun seedFreeformLayout() {
         val aspect = aspectPreset.resolve(QrCardTemplate.MINIMAL)
@@ -253,20 +250,25 @@ fun QrCardEditorScreen(
             val height = 1200
             (height * aspect).roundToInt() to height
         }
-        val baseLayout = ProfessionalEditableLayoutPolicy.resolve(
+        val baseLayout = QrCardReferenceFreeformPolicy.resolve(
             width = size.first,
             height = size.second,
             model = QrCardModel(
                 payload = "https://elxvro.com",
-                backgroundPresetId = backgroundPresetId,
+                designPreset = QrCardDesignCatalog.defaultFor(
+                    aspectPreset,
+                    QrCardBackgroundMode.FULL_BACKGROUND
+                ),
                 cardAspectRatio = aspect,
                 freeformEnabled = false
             ),
-            preset = currentPreset(),
-            usePhotoLayout = true
+            aspect = aspectPreset
         )
-        fun cx(rect: com.elxvro.scan.qrcard.LayoutRect) = ((rect.left + rect.right) / 2f) / size.first.toFloat()
-        fun cy(rect: com.elxvro.scan.qrcard.LayoutRect) = ((rect.top + rect.bottom) / 2f) / size.second.toFloat()
+        fun cx(rect: com.elxvro.scan.qrcard.LayoutRect) =
+            ((rect.left + rect.right) / 2f) / size.first.toFloat()
+        fun cy(rect: com.elxvro.scan.qrcard.LayoutRect) =
+            ((rect.top + rect.bottom) / 2f) / size.second.toFloat()
+
         brandAnchorX = cx(baseLayout.brandRect)
         brandAnchorY = cy(baseLayout.brandRect)
         titleAnchorX = cx(baseLayout.titleRect)
@@ -397,14 +399,7 @@ fun QrCardEditorScreen(
         } else {
             rawQr
         }
-        val fixedBackground = if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
-            ProfessionalBackgroundImageCatalog.load(
-                context,
-                ProfessionalCardCatalog.find(model.backgroundPresetId)
-            )
-        } else {
-            null
-        }
+        val fixedBackground: Bitmap? = null
         return QrCardRenderer.render(
             model = model,
             qrBitmap = composedQr,
@@ -464,7 +459,6 @@ fun QrCardEditorScreen(
                     EditablePreviewCard(
                         preview = it,
                         model = previewModel,
-                        preset = currentPreset(),
                         editable = isPro && freeformEnabled && freeformSupported(),
                         selectedHandle = selectedFreeformHandle,
                         onDragSelected = ::dragSelectedHandle
@@ -494,33 +488,12 @@ fun QrCardEditorScreen(
 
             when (tab) {
                 QrCardEditorTab.DESIGN -> {
-                    SectionTitle("Kart tipi")
-                    BackgroundModeSelector(
-                        selected = backgroundMode,
-                        enabled = isPro,
-                        onLocked = onOpenPaywall
-                    ) { selectedMode ->
-                        backgroundMode = selectedMode
-                        if (
-                            selectedMode == QrCardBackgroundMode.FIXED_BACKGROUND &&
-                            ProfessionalCardCatalog.all.none { it.id == backgroundPresetId }
-                        ) {
-                            backgroundPresetId = ProfessionalCardCatalog.defaultPro.id
-                        }
-                        applyDesign(QrCardDesignCatalog.defaultFor(aspectPreset, selectedMode))
-                    }
-
+                    SectionTitle("PRO arka plan")
                     Text(
-                        text = if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
-                            "Sabit hazır arka planlar kullanılır. FREE bölümünde sektör kartları, PRO bölümünde ise birbirinden farklı 50 özgün görsel bulunur. PRO hazır görsellerde QR, TARA ve yazı alanlarını sürükleyip kendi konumunu belirleyebilirsin."
-                        } else {
-                            "Seçtiğin renk kartı tüm arka planı kaplar. Yumuşak tonlar ve temiz kompozisyon tüm oranlarda korunur."
-                        },
+                        "Sabit arka plan kaldırıldı. PRO kartta yalnızca kendi seçtiğin ve istediğin zaman değiştirebildiğin tam arka plan görseli kullanılır.",
                         color = ScanTokens.Muted,
                         style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 6.dp)
+                        modifier = Modifier.fillMaxWidth()
                     )
 
                     SectionTitle("Kart oranı")
@@ -530,63 +503,41 @@ fun QrCardEditorScreen(
                         onLocked = onOpenPaywall
                     ) { selectedAspect ->
                         aspectPreset = selectedAspect
-                        applyDesign(QrCardDesignCatalog.defaultFor(selectedAspect, backgroundMode))
-                    }
-
-                    if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
-                        SectionTitle("Hazır arka plan kartları • 50 FREE + 50 PRO görsel")
-                        ProfessionalCardPresetSelector(
-                            selectedId = backgroundPresetId,
-                            enabled = isPro,
-                            onLocked = onOpenPaywall,
-                            previewKey = previewModel.copy(backgroundPresetId = ""),
-                            previewFor = { preset ->
-                                runCatching {
-                                    renderCard(
-                                        320,
-                                        previewModel.copy(backgroundPresetId = preset.id)
-                                    )
-                                }.getOrNull()
-                            },
-                            onSelect = { preset ->
-                                backgroundPresetId = preset.id
-                                if (preset.tier != ProfessionalCardTier.PRO) {
-                                    freeformEnabled = false
-                                } else if (freeformEnabled) {
-                                    seedFreeformLayout()
-                                }
-                            }
-                        )
-                    }
-
-                    if (backgroundMode == QrCardBackgroundMode.FULL_BACKGROUND) {
-                        SectionTitle("Tam arka plan")
-                        ReferencePrimaryButton(
-                            text = if (heroImage == null) "Arka Plan Görseli Seç" else "Arka Planı Değiştir",
-                            onClick = {
-                                if (isPro) heroPicker.launch("image/*") else onOpenPaywall()
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        if (heroImage != null) {
-                            Text(
-                                text = "Arka planı kaldır",
-                                color = ScanTokens.Blue,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier
-                                    .padding(top = 8.dp)
-                                    .clickable { heroImage = null }
+                        applyDesign(
+                            QrCardDesignCatalog.defaultFor(
+                                selectedAspect,
+                                QrCardBackgroundMode.FULL_BACKGROUND
                             )
-                        }
+                        )
+                        if (freeformEnabled) seedFreeformLayout()
+                    }
+
+                    SectionTitle("Değişen arka plan")
+                    ReferencePrimaryButton(
+                        text = if (heroImage == null) "Arka Plan Görseli Seç" else "Arka Planı Değiştir",
+                        onClick = {
+                            if (isPro) heroPicker.launch("image/*") else onOpenPaywall()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (heroImage != null) {
+                        Text(
+                            text = "Arka planı kaldır",
+                            color = ScanTokens.Blue,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier
+                                .padding(top = 8.dp)
+                                .clickable { heroImage = null }
+                        )
                     }
 
                     Text(
-                        text = "Kart görünümü ortaktır; marka, yazılar, renkler ve görseller İçerik/Stil sekmelerinden tamamen değiştirilebilir.",
+                        "QR, yazılar ve TARA butonu Stil sekmesinden serbestçe konumlandırılabilir.",
                         color = ScanTokens.Muted,
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 14.dp)
+                            .padding(top = 12.dp)
                     )
                 }
                 QrCardEditorTab.CONTENT -> {
@@ -594,18 +545,7 @@ fun QrCardEditorScreen(
                     EditorField("Marka / isim", brandText, isPro, onOpenPaywall) { brandText = it }
                     EditorField("Başlık", title, isPro, onOpenPaywall) { title = it }
                     EditorField("Açıklama", descriptionText, isPro, onOpenPaywall) { descriptionText = it }
-                    if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
-                        Text(
-                            text = "Sabit kartlarda buton metni TARA olarak sabittir ve QR'ın hemen altında gösterilir.",
-                            color = ScanTokens.Muted,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp)
-                        )
-                    } else {
-                        EditorField("Buton metni", ctaText, isPro, onOpenPaywall) { ctaText = it }
-                    }
+                    EditorField("Buton metni", ctaText, isPro, onOpenPaywall) { ctaText = it }
                     Text(
                         text = "Marka / isim alanını boş bırakırsan kartta marka yazısı gösterilmez.",
                         color = ScanTokens.Muted,
@@ -616,111 +556,92 @@ fun QrCardEditorScreen(
                     )
                 }
                 QrCardEditorTab.STYLE -> {
-                    if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color.White, RoundedCornerShape(12.dp))
-                                .border(1.dp, ScanTokens.Divider, RoundedCornerShape(12.dp))
-                                .padding(14.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Text(
-                                text = "FREE hazır kartlarda otomatik güvenli yerleşim korunur. PRO hazır görsellerde QR, TARA, marka, başlık ve açıklamayı sürükleyebilir; seçili öğenin boyutunu, yazı stilini ve hizasını değiştirebilirsin.",
-                                color = ScanTokens.Muted,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            SectionTitle("Yerleşim modu")
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .horizontalScroll(rememberScrollState()),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                ReferenceChip("Otomatik", selected = !freeformEnabled) {
-                                    freeformEnabled = false
-                                }
-                                ReferenceChip("Serbest taşı", selected = freeformEnabled) {
-                                    if (!freeformSupported()) {
-                                        toast("Serbest taşıma yalnızca PRO hazır görsellerde açık")
-                                    } else {
-                                        if (!freeformEnabled) {
-                                            seedFreeformLayout()
-                                        }
-                                        freeformEnabled = true
-                                    }
-                                }
-                            }
-                            if (freeformSupported()) {
-                                Text(
-                                    text = if (freeformEnabled) "Önizlemede seçili öğeyi parmağınla sürükleyebilirsin." else "PRO görsellerde serbest taşıma açıldığında konumlandırma önizleme üzerinden yapılır.",
-                                    color = ScanTokens.Muted,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                                if (freeformEnabled) {
-                                    SectionTitle("Seçili öğe")
-                                    FreeformHandleSelector(
-                                        selected = selectedFreeformHandle,
-                                        onSelect = { selectedFreeformHandle = it }
-                                    )
-                                    SectionTitle("Öğe boyutu")
-                                    Slider(
-                                        value = selectedElementScale(),
-                                        onValueChange = ::updateSelectedElementScale,
-                                        valueRange = 0.75f..1.6f,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                    SectionTitle("Yazı stili")
-                                    FontStyleSelector(
-                                        selected = fontStyle,
-                                        onSelect = { fontStyle = it }
-                                    )
-                                    SectionTitle("Yazı hizası")
-                                    TextAlignmentSelector(
-                                        selected = textAlignment,
-                                        onSelect = { textAlignment = it }
-                                    )
-                                }
+                    Text(
+                        "PRO düzenleyicide QR, marka, başlık, açıklama ve TARA öğelerini önizleme üzerinde taşıyabilirsin.",
+                        color = ScanTokens.Muted,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.White, RoundedCornerShape(12.dp))
+                            .border(1.dp, ScanTokens.Divider, RoundedCornerShape(12.dp))
+                            .padding(14.dp)
+                    )
+
+                    SectionTitle("Yerleşim modu")
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        ReferenceChip("Otomatik", selected = !freeformEnabled) {
+                            freeformEnabled = false
+                        }
+                        ReferenceChip("Serbest taşı", selected = freeformEnabled) {
+                            if (!isPro) {
+                                onOpenPaywall()
                             } else {
-                                Text(
-                                    text = "Serbest taşıma için PRO hazır görsellerden birini seçmelisin.",
-                                    color = ScanTokens.Muted,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
+                                if (!freeformEnabled) seedFreeformLayout()
+                                freeformEnabled = true
                             }
                         }
-                    } else {
-                        SectionTitle("Rengini değiştireceğin bölüm")
-                        CardColorTargetSelector(
-                            selected = colorTarget,
-                            onSelect = { colorTarget = it }
+                    }
+
+                    if (freeformEnabled && isPro) {
+                        SectionTitle("Seçili öğe")
+                        FreeformHandleSelector(
+                            selected = selectedFreeformHandle,
+                            onSelect = { selectedFreeformHandle = it }
                         )
-                        val selectedColor = when (colorTarget) {
-                            CardColorTarget.BACKGROUND -> cardBackground
-                            CardColorTarget.ACCENT -> accent
-                            CardColorTarget.BRAND -> brandTextColor
-                            CardColorTarget.TITLE -> textColor
-                            CardColorTarget.BODY -> bodyTextColor
-                            CardColorTarget.CTA_TEXT -> ctaTextColor
-                            CardColorTarget.QR -> qrForeground
-                            CardColorTarget.QR_BACKGROUND -> qrBackground
-                        }
-                        SectionTitle("${colorTarget.label} rengi")
-                        ContinuousColorPicker(
-                            selectedArgb = selectedColor,
-                            enabled = isPro,
-                            onLocked = onOpenPaywall
-                        ) { color ->
-                            when (colorTarget) {
-                                CardColorTarget.BACKGROUND -> cardBackground = color
-                                CardColorTarget.ACCENT -> accent = color
-                                CardColorTarget.BRAND -> brandTextColor = color
-                                CardColorTarget.TITLE -> textColor = color
-                                CardColorTarget.BODY -> bodyTextColor = color
-                                CardColorTarget.CTA_TEXT -> ctaTextColor = color
-                                CardColorTarget.QR -> qrForeground = color
-                                CardColorTarget.QR_BACKGROUND -> qrBackground = color
-                            }
+                        SectionTitle("Öğe boyutu")
+                        Slider(
+                            value = selectedElementScale(),
+                            onValueChange = ::updateSelectedElementScale,
+                            valueRange = 0.75f..1.6f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        SectionTitle("Yazı stili")
+                        FontStyleSelector(
+                            selected = fontStyle,
+                            onSelect = { fontStyle = it }
+                        )
+                        SectionTitle("Yazı hizası")
+                        TextAlignmentSelector(
+                            selected = textAlignment,
+                            onSelect = { textAlignment = it }
+                        )
+                    }
+
+                    SectionTitle("Rengini değiştireceğin bölüm")
+                    CardColorTargetSelector(
+                        selected = colorTarget,
+                        onSelect = { colorTarget = it }
+                    )
+                    val selectedColor = when (colorTarget) {
+                        CardColorTarget.BACKGROUND -> cardBackground
+                        CardColorTarget.ACCENT -> accent
+                        CardColorTarget.BRAND -> brandTextColor
+                        CardColorTarget.TITLE -> textColor
+                        CardColorTarget.BODY -> bodyTextColor
+                        CardColorTarget.CTA_TEXT -> ctaTextColor
+                        CardColorTarget.QR -> qrForeground
+                        CardColorTarget.QR_BACKGROUND -> qrBackground
+                    }
+                    SectionTitle("${colorTarget.label} rengi")
+                    ContinuousColorPicker(
+                        selectedArgb = selectedColor,
+                        enabled = isPro,
+                        onLocked = onOpenPaywall
+                    ) { color ->
+                        when (colorTarget) {
+                            CardColorTarget.BACKGROUND -> cardBackground = color
+                            CardColorTarget.ACCENT -> accent = color
+                            CardColorTarget.BRAND -> brandTextColor = color
+                            CardColorTarget.TITLE -> textColor = color
+                            CardColorTarget.BODY -> bodyTextColor = color
+                            CardColorTarget.CTA_TEXT -> ctaTextColor = color
+                            CardColorTarget.QR -> qrForeground = color
+                            CardColorTarget.QR_BACKGROUND -> qrBackground = color
                         }
                     }
                 }
@@ -1337,7 +1258,6 @@ private enum class FreeformHandle(val label: String) {
 private fun EditablePreviewCard(
     preview: Bitmap,
     model: QrCardModel,
-    preset: ProfessionalCardPreset,
     editable: Boolean,
     selectedHandle: FreeformHandle,
     onDragSelected: (Float, Float) -> Unit
@@ -1355,14 +1275,13 @@ private fun EditablePreviewCard(
         val density = LocalDensity.current
         val widthPx = with(density) { maxWidth.toPx() }
         val heightPx = with(density) { maxHeight.toPx() }
-        val layout = remember(widthPx, heightPx, model, preset) {
+        val layout = remember(widthPx, heightPx, model) {
             if (widthPx > 1f && heightPx > 1f) {
-                ProfessionalEditableLayoutPolicy.resolve(
+                QrCardReferenceFreeformPolicy.resolve(
                     width = widthPx.roundToInt(),
                     height = heightPx.roundToInt(),
                     model = model,
-                    preset = preset,
-                    usePhotoLayout = true
+                    aspect = model.designPreset?.aspectPreset ?: QrCardAspectPreset.CARD
                 )
             } else {
                 null
