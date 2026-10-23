@@ -25,11 +25,13 @@ object ProfessionalCardRenderer {
         val output = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
-        val layout = if (backgroundBitmap != null) {
-            ProfessionalPhotoLayoutEngine.resolve(size.width, size.height, preset.artVariant)
-        } else {
-            ProfessionalCardLayoutEngine.resolve(size.width, size.height, preset.composition)
-        }
+        val layout = ProfessionalEditableLayoutPolicy.resolve(
+            width = size.width,
+            height = size.height,
+            model = model,
+            preset = preset,
+            usePhotoLayout = backgroundBitmap != null
+        )
         val copy = QrCardCopyPolicy.resolve(model)
         val short = min(size.width, size.height).toFloat()
 
@@ -49,9 +51,9 @@ object ProfessionalCardRenderer {
             drawPremiumFrame(canvas, paint, preset, size.width.toFloat(), size.height.toFloat(), short)
         }
         drawContentPanel(canvas, paint, preset, layout.panelRect.toRectF(), short)
-        drawCopy(canvas, paint, preset, copy, layout, short)
+        drawCopy(canvas, paint, preset, copy, layout, short, model)
         drawQrPlate(canvas, paint, preset, qrBitmap, layout.qrRect.toRectF(), short)
-        drawCta(canvas, paint, preset, "TARA", layout.ctaRect.toRectF(), short)
+        drawCta(canvas, paint, preset, model.ctaText.ifBlank { "TARA" }, layout.ctaRect.toRectF(), short, model)
         drawMicroDetail(canvas, paint, preset, size.width.toFloat(), size.height.toFloat(), short)
         return output
     }
@@ -643,30 +645,62 @@ object ProfessionalCardRenderer {
         }
     }
 
-    private fun drawCopy(canvas: Canvas, paint: Paint, preset: ProfessionalCardPreset, copy: QrCardCopy, layout: ProfessionalCardLayout, short: Float) {
-        val align=when(layout.textAlignment){
-            FixedCardTextAlignment.LEFT->Paint.Align.LEFT
-            FixedCardTextAlignment.CENTER->Paint.Align.CENTER
-            FixedCardTextAlignment.RIGHT->Paint.Align.RIGHT
+    private fun drawCopy(
+        canvas: Canvas,
+        paint: Paint,
+        preset: ProfessionalCardPreset,
+        copy: QrCardCopy,
+        layout: ProfessionalCardLayout,
+        short: Float,
+        model: QrCardModel
+    ) {
+        val align = when (layout.textAlignment) {
+            FixedCardTextAlignment.LEFT -> Paint.Align.LEFT
+            FixedCardTextAlignment.CENTER -> Paint.Align.CENTER
+            FixedCardTextAlignment.RIGHT -> Paint.Align.RIGHT
         }
-        fun x(rect: LayoutRect)=when(layout.textAlignment){
-            FixedCardTextAlignment.LEFT->rect.left
-            FixedCardTextAlignment.CENTER->(rect.left+rect.right)/2f
-            FixedCardTextAlignment.RIGHT->rect.right
+        fun x(rect: LayoutRect) = when (layout.textAlignment) {
+            FixedCardTextAlignment.LEFT -> rect.left
+            FixedCardTextAlignment.CENTER -> (rect.left + rect.right) / 2f
+            FixedCardTextAlignment.RIGHT -> rect.right
         }
-        paint.textAlign=align
-        if(copy.brand.isNotBlank()){
-            paint.typeface=Typeface.create(Typeface.DEFAULT,Typeface.BOLD); paint.color=preset.accentArgb; paint.textSize=max(13f,short*.037f)
-            val label=QrCardTextLayout.wrap(copy.brand.uppercase(),layout.brandRect.width,1,paint::measureText).firstOrNull().orEmpty()
-            canvas.drawText(label,x(layout.brandRect),layout.brandRect.centerBaseline(paint),paint)
+        paint.textAlign = align
+        if (copy.brand.isNotBlank()) {
+            paint.typeface = typefaceFor(model.fontStyle, model.fontEmphasis)
+            paint.color = if (model.freeformEnabled && preset.tier == ProfessionalCardTier.PRO) {
+                model.brandTextArgb ?: preset.accentArgb
+            } else {
+                preset.accentArgb
+            }
+            paint.textSize = max(13f, short * .037f * model.brandScale.coerceIn(.72f, 1.80f))
+            val label = QrCardTextLayout.wrap(copy.brand.uppercase(), layout.brandRect.width, 1, paint::measureText).firstOrNull().orEmpty()
+            canvas.drawText(label, x(layout.brandRect), layout.brandRect.centerBaseline(paint), paint)
         }
-        paint.typeface=Typeface.create(Typeface.DEFAULT,Typeface.BOLD); paint.color=preset.titleArgb; paint.textSize=max(17f,short*.055f)
-        var y=layout.titleRect.top-paint.ascent()
-        QrCardTextLayout.wrap(copy.title,layout.titleRect.width,2,paint::measureText).forEach { line -> if(y<=layout.titleRect.bottom){ canvas.drawText(line,x(layout.titleRect),y,paint); y+=paint.textSize*1.10f } }
-        paint.typeface=Typeface.create(Typeface.DEFAULT,Typeface.NORMAL); paint.color=preset.bodyArgb; paint.textSize=max(12f,short*.030f)
-        y=layout.bodyRect.top-paint.ascent()
-        QrCardTextLayout.wrap(copy.description,layout.bodyRect.width,3,paint::measureText).forEach { line -> if(y<=layout.bodyRect.bottom){ canvas.drawText(line,x(layout.bodyRect),y,paint); y+=paint.textSize*1.24f } }
-        paint.textAlign=Paint.Align.LEFT
+        paint.typeface = typefaceFor(model.fontStyle, model.fontEmphasis)
+        paint.color = if (model.freeformEnabled && preset.tier == ProfessionalCardTier.PRO) model.textArgb else preset.titleArgb
+        paint.textSize = max(17f, short * .055f * model.titleScale.coerceIn(.72f, 1.80f))
+        var y = layout.titleRect.top - paint.ascent()
+        QrCardTextLayout.wrap(copy.title, layout.titleRect.width, 2, paint::measureText).forEach { line ->
+            if (y <= layout.titleRect.bottom) {
+                canvas.drawText(line, x(layout.titleRect), y, paint)
+                y += paint.textSize * 1.10f
+            }
+        }
+        paint.typeface = typefaceFor(model.fontStyle, model.fontEmphasis)
+        paint.color = if (model.freeformEnabled && preset.tier == ProfessionalCardTier.PRO) {
+            model.bodyTextArgb ?: preset.bodyArgb
+        } else {
+            preset.bodyArgb
+        }
+        paint.textSize = max(12f, short * .030f * model.bodyScale.coerceIn(.74f, 1.75f))
+        y = layout.bodyRect.top - paint.ascent()
+        QrCardTextLayout.wrap(copy.description, layout.bodyRect.width, 3, paint::measureText).forEach { line ->
+            if (y <= layout.bodyRect.bottom) {
+                canvas.drawText(line, x(layout.bodyRect), y, paint)
+                y += paint.textSize * 1.24f
+            }
+        }
+        paint.textAlign = Paint.Align.LEFT
     }
 
     private fun drawQrPlate(canvas: Canvas, paint: Paint, preset: ProfessionalCardPreset, qrBitmap: Bitmap, rect: RectF, short: Float) {
@@ -690,15 +724,61 @@ object ProfessionalCardRenderer {
         canvas.drawBitmap(qrBitmap,null,inner,paint)
     }
 
-    private fun drawCta(canvas: Canvas, paint: Paint, preset: ProfessionalCardPreset, text: String, rect: RectF, short: Float) {
-        if(text.isBlank()) return
-        val radius=rect.height()/2f
-        paint.color=withAlpha(0xFF000000.toInt(),.13f)
-        canvas.drawRoundRect(RectF(rect.left+short*.004f,rect.top+short*.004f,rect.right+short*.004f,rect.bottom+short*.004f),radius,radius,paint)
-        paint.color=preset.accentArgb; canvas.drawRoundRect(rect,radius,radius,paint)
-        paint.typeface=Typeface.create(Typeface.DEFAULT,Typeface.BOLD); paint.color=preset.ctaTextArgb; paint.textSize=max(12f,min(short*.028f,rect.height()*.40f)); paint.textAlign=Paint.Align.CENTER
-        val label=QrCardTextLayout.wrap(text,rect.width()*.80f,1,paint::measureText).firstOrNull().orEmpty()
-        canvas.drawText(label,rect.centerX(),rect.centerY()-(paint.ascent()+paint.descent())/2f,paint); paint.textAlign=Paint.Align.LEFT
+    private fun drawCta(
+        canvas: Canvas,
+        paint: Paint,
+        preset: ProfessionalCardPreset,
+        text: String,
+        rect: RectF,
+        short: Float,
+        model: QrCardModel
+    ) {
+        if (text.isBlank()) return
+        val radius = rect.height() / 2f
+        paint.color = withAlpha(0xFF000000.toInt(), .13f)
+        canvas.drawRoundRect(
+            RectF(
+                rect.left + short * .004f,
+                rect.top + short * .004f,
+                rect.right + short * .004f,
+                rect.bottom + short * .004f
+            ),
+            radius,
+            radius,
+            paint
+        )
+        paint.color = if (model.freeformEnabled && preset.tier == ProfessionalCardTier.PRO) model.accentArgb else preset.accentArgb
+        canvas.drawRoundRect(rect, radius, radius, paint)
+        paint.typeface = typefaceFor(model.fontStyle, model.fontEmphasis)
+        paint.color = if (model.freeformEnabled && preset.tier == ProfessionalCardTier.PRO) {
+            model.ctaTextArgb ?: preset.ctaTextArgb
+        } else {
+            preset.ctaTextArgb
+        }
+        paint.textSize = max(
+            12f,
+            min(short * .028f * model.ctaScale.coerceIn(.74f, 1.75f), rect.height() * .40f)
+        )
+        paint.textAlign = Paint.Align.CENTER
+        val label = QrCardTextLayout.wrap(text, rect.width() * .80f, 1, paint::measureText).firstOrNull().orEmpty()
+        canvas.drawText(label, rect.centerX(), rect.centerY() - (paint.ascent() + paint.descent()) / 2f, paint)
+        paint.textAlign = Paint.Align.LEFT
+    }
+
+
+    private fun typefaceFor(style: CardFontStyle, emphasis: CardFontEmphasis): Typeface {
+        val family = when (style) {
+            CardFontStyle.SANS -> "sans-serif"
+            CardFontStyle.SERIF -> "serif"
+            CardFontStyle.MONO -> "monospace"
+            CardFontStyle.SCRIPT -> "cursive"
+        }
+        val faceStyle = when (emphasis) {
+            CardFontEmphasis.NORMAL -> Typeface.NORMAL
+            CardFontEmphasis.BOLD -> Typeface.BOLD
+            CardFontEmphasis.ITALIC -> Typeface.ITALIC
+        }
+        return Typeface.create(family, faceStyle)
     }
 
     private fun drawMicroDetail(canvas: Canvas, paint: Paint, preset: ProfessionalCardPreset, width: Float, height: Float, short: Float) {
