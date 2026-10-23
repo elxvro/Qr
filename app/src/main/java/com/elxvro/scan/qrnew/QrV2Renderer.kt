@@ -4,6 +4,8 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.LinearGradient
+import android.graphics.Shader
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Typeface
@@ -97,8 +99,20 @@ object QrV2Renderer {
         val w = safeWidth.toFloat()
         val h = height.toFloat()
 
-        canvas.drawColor(FREE_BG)
+        paint.shader = LinearGradient(
+            0f,
+            0f,
+            w,
+            h,
+            intArrayOf(0xFF03101D.toInt(), 0xFF071F3D.toInt(), 0xFF020A14.toInt()),
+            floatArrayOf(0f, 0.52f, 1f),
+            Shader.TileMode.CLAMP
+        )
+        canvas.drawRect(0f, 0f, w, h, paint)
+        paint.shader = null
 
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = w * 0.012f
         paint.color = FREE_ACCENT
         canvas.drawRoundRect(
             RectF(w * 0.075f, h * 0.075f, w * 0.925f, h * 0.925f),
@@ -107,13 +121,20 @@ object QrV2Renderer {
             paint
         )
 
-        paint.color = FREE_BG
+        paint.strokeWidth = w * 0.004f
+        paint.color = 0xFF55C8FF.toInt()
         canvas.drawRoundRect(
-            RectF(w * 0.088f, h * 0.088f, w * 0.912f, h * 0.912f),
-            w * 0.038f,
-            w * 0.038f,
+            RectF(w * 0.092f, h * 0.092f, w * 0.908f, h * 0.908f),
+            w * 0.036f,
+            w * 0.036f,
             paint
         )
+        paint.style = Paint.Style.FILL
+
+        paint.color = 0x221598FF
+        canvas.drawCircle(w * 0.5f, h * 0.54f, w * 0.37f, paint)
+        paint.color = 0x331598FF
+        canvas.drawCircle(w * 0.5f, h * 0.54f, w * 0.26f, paint)
 
         paint.typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
         paint.textAlign = Paint.Align.CENTER
