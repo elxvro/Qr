@@ -11,9 +11,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -57,18 +59,24 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import com.elxvro.scan.QrCodeUtil
 import com.elxvro.scan.billing.ProEntitlement
 import com.elxvro.scan.pro.QrGenerationPolicy
 import com.elxvro.scan.pro.QrPremiumPolicy
 import com.elxvro.scan.qrcard.CardColorPickerPolicy
+import com.elxvro.scan.qrcard.CardFontStyle
+import com.elxvro.scan.qrcard.CardTextAlignment
 import com.elxvro.scan.qrcard.ElxvroBrandLogo
+import com.elxvro.scan.qrcard.LogoMode
 import com.elxvro.scan.qrcard.ProfessionalBackgroundImageCatalog
 import com.elxvro.scan.qrcard.ProfessionalCardCatalog
 import com.elxvro.scan.qrcard.ProfessionalCardPreset
-import com.elxvro.scan.qrcard.LogoMode
+import com.elxvro.scan.qrcard.ProfessionalCardTier
+import com.elxvro.scan.qrcard.ProfessionalEditableLayoutPolicy
 import com.elxvro.scan.qrcard.QrCardAspectPreset
 import com.elxvro.scan.qrcard.QrCardBackgroundMode
 import com.elxvro.scan.qrcard.QrCardDesignCatalog
@@ -151,6 +159,25 @@ fun QrCardEditorScreen(
     var qrForeground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().qrForegroundArgb) }
     var qrBackground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_EXECUTIVE.theme().qrBackgroundArgb) }
     var colorTarget by remember { mutableStateOf(CardColorTarget.BACKGROUND) }
+    var freeformEnabled by remember { mutableStateOf(false) }
+    var selectedFreeformHandle by remember { mutableStateOf(FreeformHandle.QR) }
+    var brandAnchorX by remember { mutableFloatStateOf(0.22f) }
+    var brandAnchorY by remember { mutableFloatStateOf(0.17f) }
+    var titleAnchorX by remember { mutableFloatStateOf(0.24f) }
+    var titleAnchorY by remember { mutableFloatStateOf(0.31f) }
+    var bodyAnchorX by remember { mutableFloatStateOf(0.24f) }
+    var bodyAnchorY by remember { mutableFloatStateOf(0.49f) }
+    var qrAnchorX by remember { mutableFloatStateOf(0.77f) }
+    var qrAnchorY by remember { mutableFloatStateOf(0.43f) }
+    var ctaAnchorX by remember { mutableFloatStateOf(0.77f) }
+    var ctaAnchorY by remember { mutableFloatStateOf(0.77f) }
+    var brandScale by remember { mutableFloatStateOf(1f) }
+    var titleScale by remember { mutableFloatStateOf(1f) }
+    var bodyScale by remember { mutableFloatStateOf(1f) }
+    var qrScale by remember { mutableFloatStateOf(1f) }
+    var ctaScale by remember { mutableFloatStateOf(1f) }
+    var textAlignment by remember { mutableStateOf(CardTextAlignment.LEFT) }
+    var fontStyle by remember { mutableStateOf(CardFontStyle.SANS) }
 
     fun toast(text: String) = Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
 
@@ -211,6 +238,96 @@ fun QrCardEditorScreen(
         qrBackground = theme.qrBackgroundArgb
     }
 
+    fun currentPreset(): ProfessionalCardPreset = ProfessionalCardCatalog.find(backgroundPresetId)
+
+    fun freeformSupported(): Boolean =
+        backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND &&
+            currentPreset().tier == ProfessionalCardTier.PRO
+
+    fun seedFreeformLayout() {
+        val aspect = aspectPreset.resolve(QrCardTemplate.MINIMAL)
+        val size = if (aspect >= 1f) {
+            val width = 1200
+            width to (width / aspect).roundToInt()
+        } else {
+            val height = 1200
+            (height * aspect).roundToInt() to height
+        }
+        val baseLayout = ProfessionalEditableLayoutPolicy.resolve(
+            width = size.first,
+            height = size.second,
+            model = QrCardModel(
+                payload = "https://elxvro.com",
+                backgroundPresetId = backgroundPresetId,
+                cardAspectRatio = aspect,
+                freeformEnabled = false
+            ),
+            preset = currentPreset(),
+            usePhotoLayout = true
+        )
+        fun cx(rect: com.elxvro.scan.qrcard.LayoutRect) = ((rect.left + rect.right) / 2f) / size.first.toFloat()
+        fun cy(rect: com.elxvro.scan.qrcard.LayoutRect) = ((rect.top + rect.bottom) / 2f) / size.second.toFloat()
+        brandAnchorX = cx(baseLayout.brandRect)
+        brandAnchorY = cy(baseLayout.brandRect)
+        titleAnchorX = cx(baseLayout.titleRect)
+        titleAnchorY = cy(baseLayout.titleRect)
+        bodyAnchorX = cx(baseLayout.bodyRect)
+        bodyAnchorY = cy(baseLayout.bodyRect)
+        qrAnchorX = cx(baseLayout.qrRect)
+        qrAnchorY = cy(baseLayout.qrRect)
+        ctaAnchorX = cx(baseLayout.ctaRect)
+        ctaAnchorY = cy(baseLayout.ctaRect)
+        brandScale = 1f
+        titleScale = 1f
+        bodyScale = 1f
+        qrScale = 1f
+        ctaScale = 1f
+    }
+
+    fun dragSelectedHandle(deltaX: Float, deltaY: Float) {
+        fun clamp(value: Float) = value.coerceIn(0.08f, 0.92f)
+        when (selectedFreeformHandle) {
+            FreeformHandle.BRAND -> {
+                brandAnchorX = clamp(brandAnchorX + deltaX)
+                brandAnchorY = clamp(brandAnchorY + deltaY)
+            }
+            FreeformHandle.TITLE -> {
+                titleAnchorX = clamp(titleAnchorX + deltaX)
+                titleAnchorY = clamp(titleAnchorY + deltaY)
+            }
+            FreeformHandle.BODY -> {
+                bodyAnchorX = clamp(bodyAnchorX + deltaX)
+                bodyAnchorY = clamp(bodyAnchorY + deltaY)
+            }
+            FreeformHandle.QR -> {
+                qrAnchorX = clamp(qrAnchorX + deltaX)
+                qrAnchorY = clamp(qrAnchorY + deltaY)
+            }
+            FreeformHandle.CTA -> {
+                ctaAnchorX = clamp(ctaAnchorX + deltaX)
+                ctaAnchorY = clamp(ctaAnchorY + deltaY)
+            }
+        }
+    }
+
+    fun selectedElementScale(): Float = when (selectedFreeformHandle) {
+        FreeformHandle.BRAND -> brandScale
+        FreeformHandle.TITLE -> titleScale
+        FreeformHandle.BODY -> bodyScale
+        FreeformHandle.QR -> qrScale
+        FreeformHandle.CTA -> ctaScale
+    }
+
+    fun updateSelectedElementScale(value: Float) {
+        when (selectedFreeformHandle) {
+            FreeformHandle.BRAND -> brandScale = value
+            FreeformHandle.TITLE -> titleScale = value
+            FreeformHandle.BODY -> bodyScale = value
+            FreeformHandle.QR -> qrScale = value
+            FreeformHandle.CTA -> ctaScale = value
+        }
+    }
+
     fun currentModel(): QrCardModel = QrCardModel(
         template = QrCardTemplate.MINIMAL,
         designPreset = designPreset,
@@ -232,7 +349,25 @@ fun QrCardEditorScreen(
         logoScaleFraction = logoScale,
         quietZoneModules = 4,
         qrPosition = qrPosition,
-        cardAspectRatio = aspectPreset.resolve(QrCardTemplate.MINIMAL)
+        cardAspectRatio = aspectPreset.resolve(QrCardTemplate.MINIMAL),
+        freeformEnabled = freeformEnabled,
+        brandAnchorX = brandAnchorX,
+        brandAnchorY = brandAnchorY,
+        titleAnchorX = titleAnchorX,
+        titleAnchorY = titleAnchorY,
+        bodyAnchorX = bodyAnchorX,
+        bodyAnchorY = bodyAnchorY,
+        qrAnchorX = qrAnchorX,
+        qrAnchorY = qrAnchorY,
+        ctaAnchorX = ctaAnchorX,
+        ctaAnchorY = ctaAnchorY,
+        brandScale = brandScale,
+        titleScale = titleScale,
+        bodyScale = bodyScale,
+        qrScale = qrScale,
+        ctaScale = ctaScale,
+        textAlignment = textAlignment,
+        fontStyle = fontStyle
     )
 
     fun logoBitmap(mode: LogoMode): Bitmap? = when (mode) {
@@ -326,18 +461,13 @@ fun QrCardEditorScreen(
                 contentAlignment = Alignment.Center
             ) {
                 preview?.let {
-                    Image(
-                        bitmap = it.asImageBitmap(),
-                        contentDescription = "QR Kart önizlemesi",
-                        modifier = Modifier
-                            .fillMaxWidth(
-                                when {
-                                    previewModel.cardAspectRatio < 0.65f -> 0.62f
-                                    previewModel.cardAspectRatio < 0.90f -> 0.82f
-                                    else -> 1f
-                                }
-                            )
-                            .aspectRatio(previewModel.cardAspectRatio)
+                    EditablePreviewCard(
+                        preview = it,
+                        model = previewModel,
+                        preset = currentPreset(),
+                        editable = isPro && freeformEnabled && freeformSupported(),
+                        selectedHandle = selectedFreeformHandle,
+                        onDragSelected = ::dragSelectedHandle
                     )
                 } ?: Text("Önizleme hazırlanamadı", color = ScanTokens.Muted)
             }
@@ -382,7 +512,7 @@ fun QrCardEditorScreen(
 
                     Text(
                         text = if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
-                            "Sektöre özel sabit fotoğraf arka planları kullanılır. Kuaför, kafe, restoran, pastane, spa, butik, spor salonu, klinik, emlak ve otomotiv kartlarında QR ve metinler görselin boş alanlarına göre güvenli biçimde yerleştirilir."
+                            "Sabit hazır arka planlar kullanılır. FREE bölümünde sektör kartları, PRO bölümünde ise birbirinden farklı 50 özgün görsel bulunur. PRO hazır görsellerde QR, TARA ve yazı alanlarını sürükleyip kendi konumunu belirleyebilirsin."
                         } else {
                             "Seçtiğin renk kartı tüm arka planı kaplar. Yumuşak tonlar ve temiz kompozisyon tüm oranlarda korunur."
                         },
@@ -404,7 +534,7 @@ fun QrCardEditorScreen(
                     }
 
                     if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
-                        SectionTitle("Sektör kartları • 50 FREE + 50 PRO fotoğraflı tasarım")
+                        SectionTitle("Hazır arka plan kartları • 50 FREE + 50 PRO görsel")
                         ProfessionalCardPresetSelector(
                             selectedId = backgroundPresetId,
                             enabled = isPro,
@@ -420,6 +550,11 @@ fun QrCardEditorScreen(
                             },
                             onSelect = { preset ->
                                 backgroundPresetId = preset.id
+                                if (preset.tier != ProfessionalCardTier.PRO) {
+                                    freeformEnabled = false
+                                } else if (freeformEnabled) {
+                                    seedFreeformLayout()
+                                }
                             }
                         )
                     }
@@ -482,16 +617,78 @@ fun QrCardEditorScreen(
                 }
                 QrCardEditorTab.STYLE -> {
                     if (backgroundMode == QrCardBackgroundMode.FIXED_BACKGROUND) {
-                        Text(
-                            text = "Sabit FREE ve PRO kartlarda sektör fotoğrafı ile güvenli QR/metin kompozisyonu korunur. QR ve TARA yerleşimi sabittir; marka, başlık, açıklama ve logonu değiştirebilirsin.",
-                            color = ScanTokens.Muted,
-                            style = MaterialTheme.typography.bodyMedium,
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(Color.White, RoundedCornerShape(12.dp))
                                 .border(1.dp, ScanTokens.Divider, RoundedCornerShape(12.dp))
-                                .padding(14.dp)
-                        )
+                                .padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = "FREE hazır kartlarda otomatik güvenli yerleşim korunur. PRO hazır görsellerde QR, TARA, marka, başlık ve açıklamayı sürükleyebilir; seçili öğenin boyutunu, yazı stilini ve hizasını değiştirebilirsin.",
+                                color = ScanTokens.Muted,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            SectionTitle("Yerleşim modu")
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                ReferenceChip("Otomatik", selected = !freeformEnabled) {
+                                    freeformEnabled = false
+                                }
+                                ReferenceChip("Serbest taşı", selected = freeformEnabled) {
+                                    if (!freeformSupported()) {
+                                        toast("Serbest taşıma yalnızca PRO hazır görsellerde açık")
+                                    } else {
+                                        if (!freeformEnabled) {
+                                            seedFreeformLayout()
+                                        }
+                                        freeformEnabled = true
+                                    }
+                                }
+                            }
+                            if (freeformSupported()) {
+                                Text(
+                                    text = if (freeformEnabled) "Önizlemede seçili öğeyi parmağınla sürükleyebilirsin." else "PRO görsellerde serbest taşıma açıldığında konumlandırma önizleme üzerinden yapılır.",
+                                    color = ScanTokens.Muted,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                if (freeformEnabled) {
+                                    SectionTitle("Seçili öğe")
+                                    FreeformHandleSelector(
+                                        selected = selectedFreeformHandle,
+                                        onSelect = { selectedFreeformHandle = it }
+                                    )
+                                    SectionTitle("Öğe boyutu")
+                                    Slider(
+                                        value = selectedElementScale(),
+                                        onValueChange = ::updateSelectedElementScale,
+                                        valueRange = 0.75f..1.6f,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                    SectionTitle("Yazı stili")
+                                    FontStyleSelector(
+                                        selected = fontStyle,
+                                        onSelect = { fontStyle = it }
+                                    )
+                                    SectionTitle("Yazı hizası")
+                                    TextAlignmentSelector(
+                                        selected = textAlignment,
+                                        onSelect = { textAlignment = it }
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    text = "Serbest taşıma için PRO hazır görsellerden birini seçmelisin.",
+                                    color = ScanTokens.Muted,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
                     } else {
                         SectionTitle("Rengini değiştireceğin bölüm")
                         CardColorTargetSelector(
@@ -1123,6 +1320,156 @@ private fun <T> LightChoiceRow(
             ) {
                 Text(label, color = if (selected == value) ScanTokens.Blue else ScanTokens.Text, style = MaterialTheme.typography.bodySmall)
             }
+        }
+    }
+}
+
+
+private enum class FreeformHandle(val label: String) {
+    BRAND("Marka"),
+    TITLE("Başlık"),
+    BODY("Açıklama"),
+    QR("QR"),
+    CTA("TARA")
+}
+
+@Composable
+private fun EditablePreviewCard(
+    preview: Bitmap,
+    model: QrCardModel,
+    preset: ProfessionalCardPreset,
+    editable: Boolean,
+    selectedHandle: FreeformHandle,
+    onDragSelected: (Float, Float) -> Unit
+) {
+    val fillFraction = when {
+        model.cardAspectRatio < 0.65f -> 0.62f
+        model.cardAspectRatio < 0.90f -> 0.82f
+        else -> 1f
+    }
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxWidth(fillFraction)
+            .aspectRatio(model.cardAspectRatio)
+    ) {
+        val density = LocalDensity.current
+        val widthPx = with(density) { maxWidth.toPx() }
+        val heightPx = with(density) { maxHeight.toPx() }
+        val layout = remember(widthPx, heightPx, model, preset) {
+            if (widthPx > 1f && heightPx > 1f) {
+                ProfessionalEditableLayoutPolicy.resolve(
+                    width = widthPx.roundToInt(),
+                    height = heightPx.roundToInt(),
+                    model = model,
+                    preset = preset,
+                    usePhotoLayout = true
+                )
+            } else {
+                null
+            }
+        }
+        Box(Modifier.fillMaxSize()) {
+            Image(
+                bitmap = preview.asImageBitmap(),
+                contentDescription = "QR Kart önizlemesi",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.FillBounds
+            )
+            if (editable && layout != null) {
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInput(selectedHandle) {
+                            detectDragGestures { change, dragAmount ->
+                                change.consume()
+                                val dx = if (size.width == 0) 0f else dragAmount.x / size.width
+                                val dy = if (size.height == 0) 0f else dragAmount.y / size.height
+                                onDragSelected(dx, dy)
+                            }
+                        }
+                ) {
+                    val allRects = listOf(
+                        FreeformHandle.BRAND to layout.brandRect,
+                        FreeformHandle.TITLE to layout.titleRect,
+                        FreeformHandle.BODY to layout.bodyRect,
+                        FreeformHandle.QR to layout.qrRect,
+                        FreeformHandle.CTA to layout.ctaRect
+                    )
+                    allRects.forEach { (handle, rect) ->
+                        val color = if (handle == selectedHandle) ScanTokens.Warning else Color.White.copy(alpha = 0.90f)
+                        drawRect(
+                            color = color,
+                            topLeft = androidx.compose.ui.geometry.Offset(rect.left, rect.top),
+                            size = androidx.compose.ui.geometry.Size(rect.width, rect.height),
+                            style = Stroke(width = if (handle == selectedHandle) 4.dp.toPx() else 2.dp.toPx())
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FreeformHandleSelector(
+    selected: FreeformHandle,
+    onSelect: (FreeformHandle) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        FreeformHandle.entries.forEach { handle ->
+            ReferenceChip(
+                text = handle.label,
+                selected = selected == handle,
+                onClick = { onSelect(handle) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun FontStyleSelector(
+    selected: CardFontStyle,
+    onSelect: (CardFontStyle) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        listOf(
+            "Sans" to CardFontStyle.SANS,
+            "Serif" to CardFontStyle.SERIF,
+            "Mono" to CardFontStyle.MONO,
+            "Script" to CardFontStyle.SCRIPT
+        ).forEach { (label, style) ->
+            ReferenceChip(text = label, selected = selected == style, onClick = { onSelect(style) })
+        }
+    }
+}
+
+@Composable
+private fun TextAlignmentSelector(
+    selected: CardTextAlignment,
+    onSelect: (CardTextAlignment) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        listOf(
+            "Sol" to CardTextAlignment.LEFT,
+            "Orta" to CardTextAlignment.CENTER,
+            "Sağ" to CardTextAlignment.RIGHT
+        ).forEach { (label, value) ->
+            ReferenceChip(text = label, selected = selected == value, onClick = { onSelect(value) })
         }
     }
 }
