@@ -15,7 +15,7 @@ import android.util.LruCache
 object ProfessionalBackgroundImageCatalog {
     private const val FREE_ASSET_DIR = "sector_backgrounds"
     private const val PRO_ASSET_DIR = "premium_backgrounds"
-    private const val PRO_ASSET_PARTS = 2
+    private const val PRO_ASSET_PARTS = 1
     private const val PRO_COLUMNS = 5
     private const val PRO_ROWS = 10
 
