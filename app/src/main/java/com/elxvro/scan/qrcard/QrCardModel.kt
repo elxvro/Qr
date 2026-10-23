@@ -16,7 +16,11 @@ enum class CardFontStyle {
     SANS,
     SERIF,
     MONO,
-    SCRIPT
+    SCRIPT,
+    CONDENSED,
+    ROUNDED,
+    DISPLAY,
+    LIGHT
 }
 
 enum class CardTextAlignment {
