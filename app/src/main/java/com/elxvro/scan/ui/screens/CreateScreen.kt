@@ -68,6 +68,7 @@ import com.elxvro.scan.billing.ProEntitlement
 import com.elxvro.scan.pro.QrGenerationPolicy
 import com.elxvro.scan.pro.QrPremiumPolicy
 import com.elxvro.scan.qrcard.ElxvroBrandLogo
+import com.elxvro.scan.qrcard.FreePromoBackgroundCatalog
 import com.elxvro.scan.qrcard.LogoMode
 import com.elxvro.scan.qrcard.QrCardAspectPreset
 import com.elxvro.scan.qrcard.QrCardBackgroundMode
@@ -110,6 +111,7 @@ fun CreateScreen(
     var logoScale by remember { mutableFloatStateOf(0.18f) }
     var customLogo by remember { mutableStateOf<Bitmap?>(null) }
     var selectedBrandPresetId by remember { mutableStateOf(FreeQrBrandPresetCatalog.default.id) }
+    var freePromoAspect by remember { mutableStateOf(QrCardAspectPreset.SQUARE) }
     var usePlainQr by remember { mutableStateOf(false) }
 
     fun toast(message: String) = Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
@@ -157,35 +159,47 @@ fun CreateScreen(
         return if (logo != null) QrLogoComposer.compose(raw, logo, logoScale) else raw
     }
 
+    fun promoOutputWidth(aspect: QrCardAspectPreset): Int = when (aspect) {
+        QrCardAspectPreset.SQUARE -> 1080
+        QrCardAspectPreset.WIDE -> 1920
+        QrCardAspectPreset.CARD -> 1586
+        QrCardAspectPreset.PORTRAIT -> 1080
+        QrCardAspectPreset.STORY -> 1080
+        QrCardAspectPreset.DEFAULT -> 1080
+    }
+
     fun renderBrandCard(
         text: String,
         brandPreset: FreeQrBrandPreset,
-        outputSize: Int
+        outputSize: Int,
+        aspect: QrCardAspectPreset = freePromoAspect
     ): Bitmap {
-        val qr = renderBaseQr(text, outputSize.coerceIn(512, 900))
+        val preview = outputSize <= 400
+        val width = if (preview) outputSize.coerceAtLeast(320) else promoOutputWidth(aspect)
+        val qr = renderBaseQr(text, if (preview) 360 else 900)
         val cardModel = QrCardModel(
             template = QrCardTemplate.MINIMAL,
             designPreset = QrCardDesignCatalog.defaultFor(
-                QrCardAspectPreset.SQUARE,
+                aspect,
                 QrCardBackgroundMode.FULL_BACKGROUND
             ),
             backgroundPresetId = brandPreset.backgroundPresetId,
             payload = text,
-            brandText = brandPreset.brand,
-            title = brandPreset.title,
-            descriptionText = brandPreset.description,
-            ctaText = brandPreset.cta,
+            brandText = "",
+            title = "",
+            descriptionText = "",
+            ctaText = "TARA",
             logoMode = LogoMode.NONE,
             qrForegroundArgb = AndroidColor.BLACK,
             qrBackgroundArgb = AndroidColor.WHITE,
-            cardAspectRatio = 1f
+            cardAspectRatio = aspect.resolve(QrCardTemplate.MINIMAL)
         )
         return QrCardRenderer.render(
             model = cardModel,
             qrBitmap = qr,
-            heroBitmap = null,
+            heroBitmap = FreePromoBackgroundCatalog.load(context),
             fixedBackgroundBitmap = null,
-            outputWidth = outputSize.coerceIn(512, 4096)
+            outputWidth = width
         )
     }
 
@@ -195,7 +209,8 @@ fun CreateScreen(
         return renderBrandCard(
             text = text,
             brandPreset = FreeQrBrandPresetCatalog.find(selectedBrandPresetId),
-            outputSize = qrSize
+            outputSize = promoOutputWidth(freePromoAspect),
+            aspect = freePromoAspect
         )
     }
 
@@ -336,7 +351,7 @@ fun CreateScreen(
             }
 
             Text(
-                "ELXVRO özel kartı • Ücretsiz",
+                "ELXVRO zorunlu tanıtım kartı • Ücretsiz",
                 color = ScanTokens.Muted,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier
@@ -345,6 +360,11 @@ fun CreateScreen(
             )
             FreeBrandPresetSelector(
                 selectedId = selectedBrandPresetId,
+                selectedAspect = freePromoAspect,
+                onAspect = {
+                    freePromoAspect = it
+                    rebuildGenerated()
+                },
                 usePlainQr = usePlainQr,
                 isPro = isPro,
                 previewKey = listOf(
@@ -361,7 +381,8 @@ fun CreateScreen(
                         renderBrandCard(
                             text = payload.ifBlank { "https://elxvro.com" },
                             brandPreset = preset,
-                            outputSize = 320
+                            outputSize = 320,
+                            aspect = freePromoAspect
                         )
                     }.getOrNull()
                 },
@@ -389,7 +410,12 @@ fun CreateScreen(
                     Image(
                         bitmap = bitmap.asImageBitmap(),
                         contentDescription = "Oluşturulan QR kod",
-                        modifier = Modifier.fillMaxWidth(0.82f).aspectRatio(1f)
+                        modifier = Modifier
+                            .fillMaxWidth(0.82f)
+                            .aspectRatio(
+                                if (usePlainQr && isPro) 1f
+                                else freePromoAspect.resolve(QrCardTemplate.MINIMAL)
+                            )
                     )
                 }
             } ?: Box(
@@ -543,6 +569,8 @@ fun CreateScreen(
 @Composable
 private fun FreeBrandPresetSelector(
     selectedId: String,
+    selectedAspect: QrCardAspectPreset,
+    onAspect: (QrCardAspectPreset) -> Unit,
     usePlainQr: Boolean,
     isPro: Boolean,
     previewKey: Any,
@@ -552,6 +580,27 @@ private fun FreeBrandPresetSelector(
 ) {
     val preset = FreeQrBrandPresetCatalog.default
     val thumbnail = remember(preset.id, previewKey) { previewFor(preset) }
+
+    Text(
+        "Kart boyutu",
+        color = ScanTokens.Muted,
+        style = MaterialTheme.typography.bodySmall,
+        modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
+    )
+    Row(
+        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+        listOf(
+            "Kare 1080×1080" to QrCardAspectPreset.SQUARE,
+            "Yatay 1920×1080" to QrCardAspectPreset.WIDE,
+            "Kart 1586×1000" to QrCardAspectPreset.CARD,
+            "Dikey 1080×1350" to QrCardAspectPreset.PORTRAIT,
+            "Story 1080×1920" to QrCardAspectPreset.STORY
+        ).forEach { (label, aspect) ->
+            ReferenceChip(label, selectedAspect == aspect) { onAspect(aspect) }
+        }
+    }
 
     Text(
         text = if (usePlainQr && isPro) "Seçili: Sade QR" else "Seçili: ELXVRO Özel Kart",
@@ -638,7 +687,7 @@ private fun FreeBrandPresetSelector(
     }
 
     Text(
-        "Ücretsiz sürümde QR çıktısı ELXVRO Scan ve elxvro.com tanıtım kartıyla oluşturulur.",
+        "Ücretsiz QR kaydetme ve paylaşma yalnızca bu ELXVRO tanıtım görseliyle yapılır.",
         color = ScanTokens.Muted,
         style = MaterialTheme.typography.bodySmall,
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
