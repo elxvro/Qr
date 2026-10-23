@@ -461,6 +461,7 @@ fun QrCardEditorScreen(
                         model = previewModel,
                         editable = isPro && freeformEnabled && freeformSupported(),
                         selectedHandle = selectedFreeformHandle,
+                        onSelectHandle = { selectedFreeformHandle = it },
                         onDragSelected = ::dragSelectedHandle
                     )
                 } ?: Text("Önizleme hazırlanamadı", color = ScanTokens.Muted)
@@ -1272,6 +1273,7 @@ private fun EditablePreviewCard(
     model: QrCardModel,
     editable: Boolean,
     selectedHandle: FreeformHandle,
+    onSelectHandle: (FreeformHandle) -> Unit,
     onDragSelected: (Float, Float) -> Unit
 ) {
     val fillFraction = when {
@@ -1307,11 +1309,31 @@ private fun EditablePreviewCard(
                 contentScale = ContentScale.FillBounds
             )
             if (editable && layout != null) {
+                val allRects = listOf(
+                    FreeformHandle.BRAND to layout.brandRect,
+                    FreeformHandle.TITLE to layout.titleRect,
+                    FreeformHandle.BODY to layout.bodyRect,
+                    FreeformHandle.QR to layout.qrRect,
+                    FreeformHandle.CTA to layout.ctaRect
+                )
                 Canvas(
                     modifier = Modifier
                         .fillMaxSize()
-                        .pointerInput(selectedHandle) {
-                            detectDragGestures { change, dragAmount ->
+                        .pointerInput(layout, selectedHandle) {
+                            detectDragGestures(
+                                onDragStart = { start ->
+                                    val hit = allRects
+                                        .asReversed()
+                                        .firstOrNull { (_, rect) ->
+                                            start.x >= rect.left &&
+                                                start.x <= rect.right &&
+                                                start.y >= rect.top &&
+                                                start.y <= rect.bottom
+                                        }
+                                        ?.first
+                                    if (hit != null) onSelectHandle(hit)
+                                }
+                            ) { change, dragAmount ->
                                 change.consume()
                                 val dx = if (size.width == 0) 0f else dragAmount.x / size.width
                                 val dy = if (size.height == 0) 0f else dragAmount.y / size.height
@@ -1319,13 +1341,6 @@ private fun EditablePreviewCard(
                             }
                         }
                 ) {
-                    val allRects = listOf(
-                        FreeformHandle.BRAND to layout.brandRect,
-                        FreeformHandle.TITLE to layout.titleRect,
-                        FreeformHandle.BODY to layout.bodyRect,
-                        FreeformHandle.QR to layout.qrRect,
-                        FreeformHandle.CTA to layout.ctaRect
-                    )
                     allRects.forEach { (handle, rect) ->
                         if (handle == selectedHandle && handle == FreeformHandle.QR) {
                             drawRect(
