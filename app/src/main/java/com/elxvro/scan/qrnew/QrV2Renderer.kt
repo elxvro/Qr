@@ -86,6 +86,62 @@ data class QrV2Layout(
     val cta: RectF
 )
 
+
+fun QrV2State.withSafeAspectLayout(newAspect: QrV2Aspect): QrV2State {
+    return when (newAspect) {
+        QrV2Aspect.CARD -> copy(
+            aspect = newAspect,
+            brandX = 0.24f, brandY = 0.17f,
+            titleX = 0.24f, titleY = 0.31f,
+            bodyX = 0.24f, bodyY = 0.47f,
+            qrX = 0.77f, qrY = 0.40f,
+            ctaX = 0.77f, ctaY = 0.74f,
+            brandScale = 1f, titleScale = 1f, bodyScale = 1f,
+            qrScale = 1f, ctaScale = 1f
+        )
+        QrV2Aspect.WIDE -> copy(
+            aspect = newAspect,
+            brandX = 0.23f, brandY = 0.18f,
+            titleX = 0.23f, titleY = 0.34f,
+            bodyX = 0.23f, bodyY = 0.52f,
+            qrX = 0.78f, qrY = 0.40f,
+            ctaX = 0.78f, ctaY = 0.76f,
+            brandScale = 1f, titleScale = 1f, bodyScale = 1f,
+            qrScale = 1f, ctaScale = 1f
+        )
+        QrV2Aspect.SQUARE -> copy(
+            aspect = newAspect,
+            brandX = 0.50f, brandY = 0.10f,
+            titleX = 0.50f, titleY = 0.19f,
+            bodyX = 0.50f, bodyY = 0.28f,
+            qrX = 0.50f, qrY = 0.54f,
+            ctaX = 0.50f, ctaY = 0.84f,
+            brandScale = 1f, titleScale = 1f, bodyScale = 1f,
+            qrScale = 1f, ctaScale = 1f
+        )
+        QrV2Aspect.PORTRAIT -> copy(
+            aspect = newAspect,
+            brandX = 0.50f, brandY = 0.08f,
+            titleX = 0.50f, titleY = 0.16f,
+            bodyX = 0.50f, bodyY = 0.24f,
+            qrX = 0.50f, qrY = 0.49f,
+            ctaX = 0.50f, ctaY = 0.76f,
+            brandScale = 1f, titleScale = 1f, bodyScale = 1f,
+            qrScale = 1f, ctaScale = 1f
+        )
+        QrV2Aspect.STORY -> copy(
+            aspect = newAspect,
+            brandX = 0.50f, brandY = 0.07f,
+            titleX = 0.50f, titleY = 0.14f,
+            bodyX = 0.50f, bodyY = 0.21f,
+            qrX = 0.50f, qrY = 0.43f,
+            ctaX = 0.50f, ctaY = 0.67f,
+            brandScale = 1f, titleScale = 1f, bodyScale = 1f,
+            qrScale = 1f, ctaScale = 1f
+        )
+    }
+}
+
 object QrV2Renderer {
     private const val FREE_BG = 0xFF07182B.toInt()
     private const val FREE_ACCENT = 0xFF168CFF.toInt()
@@ -238,8 +294,19 @@ object QrV2Renderer {
             )
         }
 
-        val qrSide = (short * 0.30f * state.qrScale.coerceIn(0.65f, 1.65f))
-            .coerceIn(short * 0.18f, min(short * 0.52f, min(w * 0.82f, h * 0.82f)))
+        val vertical = state.aspect == QrV2Aspect.PORTRAIT || state.aspect == QrV2Aspect.STORY
+        val centered = vertical || state.aspect == QrV2Aspect.SQUARE
+        val textWidth = if (centered) w * 0.78f else w * 0.42f
+        val bodyWidth = if (centered) w * 0.82f else w * 0.46f
+        val qrBase = when (state.aspect) {
+            QrV2Aspect.STORY -> 0.42f
+            QrV2Aspect.PORTRAIT -> 0.38f
+            QrV2Aspect.SQUARE -> 0.34f
+            QrV2Aspect.CARD -> 0.30f
+            QrV2Aspect.WIDE -> 0.30f
+        }
+        val qrSide = (short * qrBase * state.qrScale.coerceIn(0.65f, 1.65f))
+            .coerceIn(short * 0.18f, min(short * 0.50f, min(w * 0.82f, h * 0.82f)))
 
         fun square(cx: Float, cy: Float, side: Float): RectF {
             val centerX = (cx.coerceIn(0.05f, 0.95f) * w)
@@ -255,11 +322,16 @@ object QrV2Renderer {
         }
 
         return QrV2Layout(
-            brand = rect(state.brandX, state.brandY, w * 0.42f, short * 0.10f * state.brandScale.coerceIn(0.7f, 1.8f)),
-            title = rect(state.titleX, state.titleY, w * 0.48f, short * 0.16f * state.titleScale.coerceIn(0.7f, 1.8f)),
-            body = rect(state.bodyX, state.bodyY, w * 0.48f, short * 0.16f * state.bodyScale.coerceIn(0.7f, 1.8f)),
+            brand = rect(state.brandX, state.brandY, textWidth, short * 0.10f * state.brandScale.coerceIn(0.7f, 1.8f)),
+            title = rect(state.titleX, state.titleY, textWidth, short * 0.14f * state.titleScale.coerceIn(0.7f, 1.8f)),
+            body = rect(state.bodyX, state.bodyY, bodyWidth, short * 0.13f * state.bodyScale.coerceIn(0.7f, 1.8f)),
             qr = square(state.qrX, state.qrY, qrSide),
-            cta = rect(state.ctaX, state.ctaY, short * 0.34f * state.ctaScale.coerceIn(0.7f, 1.8f), short * 0.085f * state.ctaScale.coerceIn(0.7f, 1.8f))
+            cta = rect(
+                state.ctaX,
+                state.ctaY,
+                (if (centered) short * 0.44f else short * 0.34f) * state.ctaScale.coerceIn(0.7f, 1.8f),
+                short * 0.085f * state.ctaScale.coerceIn(0.7f, 1.8f)
+            )
         )
     }
 
