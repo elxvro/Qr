@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -99,10 +100,10 @@ import com.elxvro.scan.ui.components.ReferencePrimaryButton
 import com.elxvro.scan.ui.theme.ScanTokens
 
 private enum class QrCardEditorTab(val label: String) {
-    DESIGN("Tasarım"),
-    CONTENT("İçerik"),
-    STYLE("Stil"),
-    ADVANCED("Gelişmiş")
+    DESIGN("Arka plan"),
+    CONTENT("Yazılar"),
+    STYLE("Düzen"),
+    ADVANCED("Çıktı")
 }
 
 private enum class CardColorTarget(val label: String) {
@@ -159,7 +160,7 @@ fun QrCardEditorScreen(
     var qrForeground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_LUXURY.theme().qrForegroundArgb) }
     var qrBackground by remember { mutableIntStateOf(QrCardDesignPreset.CLASSIC_LUXURY.theme().qrBackgroundArgb) }
     var colorTarget by remember { mutableStateOf(CardColorTarget.BACKGROUND) }
-    var freeformEnabled by remember { mutableStateOf(false) }
+    var freeformEnabled by remember { mutableStateOf(isPro) }
     var selectedFreeformHandle by remember { mutableStateOf(FreeformHandle.QR) }
     var brandAnchorX by remember { mutableFloatStateOf(0.22f) }
     var brandAnchorY by remember { mutableFloatStateOf(0.17f) }
@@ -414,7 +415,7 @@ fun QrCardEditorScreen(
     val previewModel = remember(model) { QrCardPreviewPolicy.sanitize(model) }
     val preview = remember(previewModel, customLogo, heroImage, entitlement) {
         runCatching {
-            renderCard(700, previewModel)
+            renderCard(960, previewModel)
         }.getOrNull()
     }
 
@@ -443,16 +444,15 @@ fun QrCardEditorScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(ScanTokens.Paper, RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White, RoundedCornerShape(ScanTokens.RadiusCard))
-                    .border(1.dp, ScanTokens.Divider, RoundedCornerShape(ScanTokens.RadiusCard))
-                    .padding(12.dp),
+                    .heightIn(max = 285.dp)
+                    .background(Color(0xFFF5F7FA), RoundedCornerShape(ScanTokens.RadiusCard))
+                    .padding(8.dp),
                 contentAlignment = Alignment.Center
             ) {
                 preview?.let {
@@ -466,6 +466,14 @@ fun QrCardEditorScreen(
                 } ?: Text("Önizleme hazırlanamadı", color = ScanTokens.Muted)
             }
 
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(top = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
             if (!isPro) {
                 Row(
                     modifier = Modifier
@@ -557,17 +565,13 @@ fun QrCardEditorScreen(
                 }
                 QrCardEditorTab.STYLE -> {
                     Text(
-                        "PRO düzenleyicide QR, marka, başlık, açıklama ve TARA öğelerini önizleme üzerinde taşıyabilirsin.",
+                        "Öğeyi seç, üstteki önizleme üzerinde parmağınla taşı ve boyutunu ayarla.",
                         color = ScanTokens.Muted,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color.White, RoundedCornerShape(12.dp))
-                            .border(1.dp, ScanTokens.Divider, RoundedCornerShape(12.dp))
-                            .padding(14.dp)
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.fillMaxWidth()
                     )
 
-                    SectionTitle("Yerleşim modu")
+                    SectionTitle("Yerleşim")
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -707,6 +711,7 @@ fun QrCardEditorScreen(
                 }
             }
             Spacer(Modifier.height(20.dp))
+            }
         }
     }
 }
@@ -1322,13 +1327,20 @@ private fun EditablePreviewCard(
                         FreeformHandle.CTA to layout.ctaRect
                     )
                     allRects.forEach { (handle, rect) ->
-                        val color = if (handle == selectedHandle) ScanTokens.Warning else Color.White.copy(alpha = 0.90f)
-                        drawRect(
-                            color = color,
-                            topLeft = androidx.compose.ui.geometry.Offset(rect.left, rect.top),
-                            size = androidx.compose.ui.geometry.Size(rect.width, rect.height),
-                            style = Stroke(width = if (handle == selectedHandle) 4.dp.toPx() else 2.dp.toPx())
-                        )
+                        if (handle == selectedHandle && handle == FreeformHandle.QR) {
+                            drawRect(
+                                color = ScanTokens.Blue,
+                                topLeft = androidx.compose.ui.geometry.Offset(rect.left, rect.top),
+                                size = androidx.compose.ui.geometry.Size(rect.width, rect.height),
+                                style = Stroke(width = 3.dp.toPx())
+                            )
+                        } else if (handle == selectedHandle) {
+                            drawCircle(
+                                color = ScanTokens.Blue,
+                                radius = 4.dp.toPx(),
+                                center = androidx.compose.ui.geometry.Offset(rect.left, rect.top)
+                            )
+                        }
                     }
                 }
             }
