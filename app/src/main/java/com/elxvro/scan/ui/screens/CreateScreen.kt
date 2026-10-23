@@ -111,7 +111,6 @@ fun CreateScreen(
     var customLogo by remember { mutableStateOf<Bitmap?>(null) }
     var selectedBrandPresetId by remember { mutableStateOf(FreeQrBrandPresetCatalog.default.id) }
     var freePromoAspect by remember { mutableStateOf(QrCardAspectPreset.SQUARE) }
-    var usePlainQr by remember { mutableStateOf(false) }
 
     fun toast(message: String) = Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
 
@@ -209,8 +208,6 @@ fun CreateScreen(
     }
 
     fun renderQr(text: String): Bitmap {
-        val composed = renderBaseQr(text)
-        if (usePlainQr && isPro) return composed
         return renderBrandCard(
             text = text,
             brandPreset = FreeQrBrandPresetCatalog.find(selectedBrandPresetId),
@@ -364,14 +361,11 @@ fun CreateScreen(
                     .padding(top = 14.dp, bottom = 7.dp)
             )
             FreeBrandPresetSelector(
-                selectedId = selectedBrandPresetId,
                 selectedAspect = freePromoAspect,
                 onAspect = {
                     freePromoAspect = it
                     rebuildGenerated()
                 },
-                usePlainQr = usePlainQr,
-                isPro = isPro,
                 previewKey = listOf(
                     payload,
                     primary,
@@ -379,26 +373,18 @@ fun CreateScreen(
                     background,
                     logoMode,
                     logoScale,
-                    customLogo
+                    customLogo,
+                    freePromoAspect
                 ),
-                previewFor = { preset ->
+                previewFor = {
                     runCatching {
                         renderBrandCard(
                             text = payload.ifBlank { "https://elxvro.com" },
-                            brandPreset = preset,
+                            brandPreset = FreeQrBrandPresetCatalog.default,
                             outputSize = 320,
                             aspect = freePromoAspect
                         )
                     }.getOrNull()
-                },
-                onSelect = { preset ->
-                    selectedBrandPresetId = preset.id
-                    usePlainQr = false
-                    rebuildGenerated()
-                },
-                onPlain = {
-                    usePlainQr = true
-                    rebuildGenerated()
                 }
             )
 
@@ -417,10 +403,7 @@ fun CreateScreen(
                         contentDescription = "Oluşturulan QR kod",
                         modifier = Modifier
                             .fillMaxWidth(0.82f)
-                            .aspectRatio(
-                                if (usePlainQr && isPro) 1f
-                                else freePromoAspect.resolve(QrCardTemplate.MINIMAL)
-                            )
+                            .aspectRatio(freePromoAspect.resolve(QrCardTemplate.MINIMAL))
                     )
                 }
             } ?: Box(
@@ -573,18 +556,12 @@ fun CreateScreen(
 
 @Composable
 private fun FreeBrandPresetSelector(
-    selectedId: String,
     selectedAspect: QrCardAspectPreset,
     onAspect: (QrCardAspectPreset) -> Unit,
-    usePlainQr: Boolean,
-    isPro: Boolean,
     previewKey: Any,
-    previewFor: (FreeQrBrandPreset) -> Bitmap?,
-    onSelect: (FreeQrBrandPreset) -> Unit,
-    onPlain: () -> Unit
+    previewFor: () -> Bitmap?
 ) {
-    val preset = FreeQrBrandPresetCatalog.default
-    val thumbnail = remember(preset.id, previewKey) { previewFor(preset) }
+    val thumbnail = remember(previewKey) { previewFor() }
 
     Text(
         "Kart boyutu",
@@ -597,102 +574,44 @@ private fun FreeBrandPresetSelector(
         horizontalArrangement = Arrangement.spacedBy(7.dp)
     ) {
         listOf(
-            "Kare 1080×1080" to QrCardAspectPreset.SQUARE,
-            "Yatay 1920×1080" to QrCardAspectPreset.WIDE,
-            "Kart 1586×1000" to QrCardAspectPreset.CARD,
-            "Dikey 1080×1350" to QrCardAspectPreset.PORTRAIT,
-            "Story 1080×1920" to QrCardAspectPreset.STORY
+            "Kare" to QrCardAspectPreset.SQUARE,
+            "Yatay" to QrCardAspectPreset.WIDE,
+            "Kart" to QrCardAspectPreset.CARD,
+            "Dikey" to QrCardAspectPreset.PORTRAIT,
+            "Story" to QrCardAspectPreset.STORY
         ).forEach { (label, aspect) ->
             ReferenceChip(label, selectedAspect == aspect) { onAspect(aspect) }
         }
     }
 
     Text(
-        text = if (usePlainQr && isPro) "Seçili: Sade QR (PRO)" else "Seçili: ELXVRO Sabit Kart",
+        "ELXVRO Sabit Kart",
         color = ScanTokens.Text,
-        style = MaterialTheme.typography.bodySmall,
+        style = MaterialTheme.typography.bodyMedium,
         fontWeight = FontWeight.SemiBold,
-        modifier = Modifier.fillMaxWidth().padding(bottom = 7.dp)
+        modifier = Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 7.dp)
     )
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(170.dp)
+            .background(Color(0xFFF2F4F7), RoundedCornerShape(13.dp))
+            .padding(6.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .clickable { onSelect(preset) },
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(148.dp)
-                    .background(Color(0xFFF2F4F7), RoundedCornerShape(13.dp))
-                    .border(
-                        if (!usePlainQr) 2.dp else 1.dp,
-                        if (!usePlainQr) ScanTokens.Blue else ScanTokens.Divider,
-                        RoundedCornerShape(13.dp)
-                    )
-                    .padding(5.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                thumbnail?.let {
-                    Image(
-                        bitmap = it.asImageBitmap(),
-                        contentDescription = preset.label,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } ?: Text("ELXVRO", color = ScanTokens.Muted)
-            }
-            Text(
-                "ELXVRO Sabit Kart",
-                color = if (!usePlainQr) ScanTokens.Blue else ScanTokens.Text,
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.padding(top = 5.dp)
+        thumbnail?.let {
+            Image(
+                bitmap = it.asImageBitmap(),
+                contentDescription = "ELXVRO Sabit Kart",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize()
             )
-        }
-
-        if (isPro) {
-            Column(
-                modifier = Modifier
-                    .width(118.dp)
-                    .clickable(onClick = onPlain),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(148.dp)
-                        .background(Color.White, RoundedCornerShape(13.dp))
-                        .border(
-                            if (usePlainQr) 2.dp else 1.dp,
-                            if (usePlainQr) ScanTokens.Blue else ScanTokens.Divider,
-                            RoundedCornerShape(13.dp)
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Outlined.QrCode2,
-                        contentDescription = null,
-                        tint = ScanTokens.Text,
-                        modifier = Modifier.size(40.dp)
-                    )
-                }
-                Text(
-                    "Sade QR",
-                    color = if (usePlainQr) ScanTokens.Blue else ScanTokens.Text,
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.padding(top = 5.dp)
-                )
-            }
-        }
+        } ?: Text("ELXVRO • www.elxvro.com", color = ScanTokens.Muted)
     }
 
     Text(
-        "Ücretsiz QR kaydetme ve paylaşma yalnızca ELXVRO + www.elxvro.com sabit renkli tanıtım kartıyla yapılır.",
+        "Ücretsiz QR çıktısı her zaman ELXVRO ve www.elxvro.com bulunan bu sabit renkli kartla kaydedilir ve paylaşılır.",
         color = ScanTokens.Muted,
         style = MaterialTheme.typography.bodySmall,
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
