@@ -68,7 +68,6 @@ import com.elxvro.scan.billing.ProEntitlement
 import com.elxvro.scan.pro.QrGenerationPolicy
 import com.elxvro.scan.pro.QrPremiumPolicy
 import com.elxvro.scan.qrcard.ElxvroBrandLogo
-import com.elxvro.scan.qrcard.FreePromoBackgroundCatalog
 import com.elxvro.scan.qrcard.LogoMode
 import com.elxvro.scan.qrcard.QrCardAspectPreset
 import com.elxvro.scan.qrcard.QrCardBackgroundMode
@@ -185,10 +184,16 @@ fun CreateScreen(
             ),
             backgroundPresetId = brandPreset.backgroundPresetId,
             payload = text,
-            brandText = "",
-            title = "",
+            brandText = "ELXVRO",
+            title = "www.elxvro.com",
             descriptionText = "",
             ctaText = "TARA",
+            cardBackgroundArgb = 0xFF07182B.toInt(),
+            accentArgb = 0xFF168CFF.toInt(),
+            textArgb = 0xFFFFFFFF.toInt(),
+            brandTextArgb = 0xFFFFFFFF.toInt(),
+            bodyTextArgb = 0xFFDCEBFA.toInt(),
+            ctaTextArgb = 0xFFFFFFFF.toInt(),
             logoMode = LogoMode.NONE,
             qrForegroundArgb = AndroidColor.BLACK,
             qrBackgroundArgb = AndroidColor.WHITE,
@@ -197,7 +202,7 @@ fun CreateScreen(
         return QrCardRenderer.render(
             model = cardModel,
             qrBitmap = qr,
-            heroBitmap = FreePromoBackgroundCatalog.load(context),
+            heroBitmap = null,
             fixedBackgroundBitmap = null,
             outputWidth = width
         )
@@ -603,7 +608,7 @@ private fun FreeBrandPresetSelector(
     }
 
     Text(
-        text = if (usePlainQr && isPro) "Seçili: Sade QR" else "Seçili: ELXVRO Özel Kart",
+        text = if (usePlainQr && isPro) "Seçili: Sade QR (PRO)" else "Seçili: ELXVRO Sabit Kart",
         color = ScanTokens.Text,
         style = MaterialTheme.typography.bodySmall,
         fontWeight = FontWeight.SemiBold,
@@ -643,7 +648,7 @@ private fun FreeBrandPresetSelector(
                 } ?: Text("ELXVRO", color = ScanTokens.Muted)
             }
             Text(
-                preset.label,
+                "ELXVRO Sabit Kart",
                 color = if (!usePlainQr) ScanTokens.Blue else ScanTokens.Text,
                 style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier.padding(top = 5.dp)
@@ -687,7 +692,7 @@ private fun FreeBrandPresetSelector(
     }
 
     Text(
-        "Ücretsiz QR kaydetme ve paylaşma yalnızca bu ELXVRO tanıtım görseliyle yapılır.",
+        "Ücretsiz QR kaydetme ve paylaşma yalnızca ELXVRO + www.elxvro.com sabit renkli tanıtım kartıyla yapılır.",
         color = ScanTokens.Muted,
         style = MaterialTheme.typography.bodySmall,
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
