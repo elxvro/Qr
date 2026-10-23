@@ -57,7 +57,7 @@ object QrCardDesignCatalog {
         }
 
     fun defaultFor(aspect: QrCardAspectPreset): QrCardDesignPreset =
-        defaultFor(aspect, QrCardBackgroundMode.FIXED_BACKGROUND)
+        defaultFor(aspect, QrCardBackgroundMode.FULL_BACKGROUND)
 
     fun defaultFor(
         aspect: QrCardAspectPreset,
