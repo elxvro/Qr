@@ -83,7 +83,7 @@ object QrCardReferenceRenderer {
             QrCardReferenceLayout(
                 brandRect = fixed.brandRect,
                 titleRect = fixed.titleRect,
-                bodyRect = fixed.bodyRect,
+                bodyRect = fixed.titleRect,
                 qrRect = fixed.qrRect,
                 ctaRect = fixed.ctaRect
             )
