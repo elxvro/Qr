@@ -100,10 +100,9 @@ import com.elxvro.scan.ui.components.ReferencePrimaryButton
 import com.elxvro.scan.ui.theme.ScanTokens
 
 private enum class QrCardEditorTab(val label: String) {
-    DESIGN("Arka plan"),
-    CONTENT("Yazılar"),
-    STYLE("Düzen"),
-    ADVANCED("Çıktı")
+    DESIGN("Görsel"),
+    CONTENT("Yazı"),
+    STYLE("Düzen")
 }
 
 private enum class CardColorTarget(val label: String) {
@@ -450,9 +449,9 @@ fun QrCardEditorScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 285.dp)
-                    .background(Color(0xFFF5F7FA), RoundedCornerShape(ScanTokens.RadiusCard))
-                    .padding(8.dp),
+                    .heightIn(max = 330.dp)
+                    .background(Color.Black, RoundedCornerShape(ScanTokens.RadiusCard))
+                    .padding(4.dp),
                 contentAlignment = Alignment.Center
             ) {
                 preview?.let {
@@ -541,20 +540,31 @@ fun QrCardEditorScreen(
                     }
 
                     Text(
-                        "QR, yazılar ve TARA butonu Stil sekmesinden serbestçe konumlandırılabilir.",
+                        "Arka plan görseli kartta filtre uygulanmadan canlı gösterilir.",
                         color = ScanTokens.Muted,
                         style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 12.dp)
+                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
                     )
+                    SectionTitle("Çözünürlük")
+                    ResolutionSelector(
+                        selected = exportSize,
+                        sizes = QrPremiumPolicy.allowedQrCardExportSizes(entitlement),
+                        enabled = isPro,
+                        onLocked = onOpenPaywall
+                    ) { exportSize = it }
                 }
                 QrCardEditorTab.CONTENT -> {
                     EditorField("QR içeriği", payload, isPro, onOpenPaywall) { payload = it }
-                    EditorField("Marka / isim", brandText, isPro, onOpenPaywall) { brandText = it }
-                    EditorField("Başlık", title, isPro, onOpenPaywall) { title = it }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Box(Modifier.weight(1f)) {
+                            EditorField("Marka", brandText, isPro, onOpenPaywall) { brandText = it }
+                        }
+                        Box(Modifier.weight(1f)) {
+                            EditorField("Başlık", title, isPro, onOpenPaywall) { title = it }
+                        }
+                    }
                     EditorField("Açıklama", descriptionText, isPro, onOpenPaywall) { descriptionText = it }
-                    EditorField("Buton metni", ctaText, isPro, onOpenPaywall) { ctaText = it }
+                    EditorField("Buton", ctaText, isPro, onOpenPaywall) { ctaText = it }
                     Text(
                         text = "Marka / isim alanını boş bırakırsan kartta marka yazısı gösterilmez.",
                         color = ScanTokens.Muted,
@@ -572,52 +582,32 @@ fun QrCardEditorScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    SectionTitle("Yerleşim")
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        ReferenceChip("Otomatik", selected = !freeformEnabled) {
-                            freeformEnabled = false
-                        }
-                        ReferenceChip("Serbest taşı", selected = freeformEnabled) {
-                            if (!isPro) {
-                                onOpenPaywall()
-                            } else {
-                                if (!freeformEnabled) seedFreeformLayout()
-                                freeformEnabled = true
-                            }
-                        }
-                    }
-
-                    if (freeformEnabled && isPro) {
-                        SectionTitle("Seçili öğe")
+                    if (isPro) {
+                        SectionTitle("Öğe")
                         FreeformHandleSelector(
                             selected = selectedFreeformHandle,
                             onSelect = { selectedFreeformHandle = it }
                         )
-                        SectionTitle("Öğe boyutu")
+                        SectionTitle("Boyut")
                         Slider(
                             value = selectedElementScale(),
                             onValueChange = ::updateSelectedElementScale,
                             valueRange = 0.75f..1.6f,
                             modifier = Modifier.fillMaxWidth()
                         )
-                        SectionTitle("Yazı stili")
+                        SectionTitle("Font")
                         FontStyleSelector(
                             selected = fontStyle,
                             onSelect = { fontStyle = it }
                         )
-                        SectionTitle("Yazı hizası")
+                        SectionTitle("Hizalama")
                         TextAlignmentSelector(
                             selected = textAlignment,
                             onSelect = { textAlignment = it }
                         )
                     }
 
-                    SectionTitle("Rengini değiştireceğin bölüm")
+                    SectionTitle("Renk")
                     CardColorTargetSelector(
                         selected = colorTarget,
                         onSelect = { colorTarget = it }
@@ -650,35 +640,6 @@ fun QrCardEditorScreen(
                         }
                     }
                 }
-                QrCardEditorTab.ADVANCED -> {
-                    SectionTitle("Logo")
-                    LogoModeRow(logoMode, isPro, onOpenPaywall) { logoMode = it }
-                    if (isPro && logoMode == LogoMode.CUSTOM) {
-                        ReferencePrimaryButton(
-                            text = if (customLogo == null) "Logo Seç" else "Logoyu Değiştir",
-                            onClick = { logoPicker.launch("image/*") },
-                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-                        )
-                    }
-                    SectionTitle("Logo boyutu • ${(logoScale * 100).toInt()}%")
-                    Slider(
-                        value = logoScale,
-                        onValueChange = {
-                            if (isPro) logoScale = it else onOpenPaywall()
-                        },
-                        valueRange = 0.12f..0.20f,
-                        enabled = isPro && logoMode != LogoMode.NONE
-                    )
-                    SectionTitle("Çözünürlük")
-                    ResolutionSelector(
-                        selected = exportSize,
-                        sizes = QrPremiumPolicy.allowedQrCardExportSizes(entitlement),
-                        enabled = isPro,
-                        onLocked = onOpenPaywall
-                    ) { exportSize = it }
-                }
-            }
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -761,36 +722,45 @@ private fun EditorField(
     onLocked: () -> Unit,
     onChange: (String) -> Unit
 ) {
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp)
+            .padding(top = 6.dp)
     ) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = onChange,
-            enabled = enabled,
-            label = { Text(label) },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-                disabledContainerColor = Color.White,
-                focusedBorderColor = ScanTokens.Blue,
-                unfocusedBorderColor = ScanTokens.Divider,
-                disabledBorderColor = ScanTokens.Divider,
-                focusedTextColor = ScanTokens.Text,
-                unfocusedTextColor = ScanTokens.Text,
-                disabledTextColor = ScanTokens.Muted
-            )
+        Text(
+            label,
+            color = ScanTokens.Muted,
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.padding(bottom = 3.dp)
         )
-        if (!enabled) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .clickable(onClick = onLocked)
+        Box {
+            androidx.compose.material3.TextField(
+                value = value,
+                onValueChange = onChange,
+                enabled = enabled,
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(10.dp),
+                colors = androidx.compose.material3.TextFieldDefaults.colors(
+                    focusedContainerColor = Color(0xFFF4F6F8),
+                    unfocusedContainerColor = Color(0xFFF4F6F8),
+                    disabledContainerColor = Color(0xFFF4F6F8),
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent,
+                    focusedTextColor = ScanTokens.Text,
+                    unfocusedTextColor = ScanTokens.Text,
+                    disabledTextColor = ScanTokens.Muted,
+                    cursorColor = ScanTokens.Blue
+                )
             )
+            if (!enabled) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable(onClick = onLocked)
+                )
+            }
         }
     }
 }
