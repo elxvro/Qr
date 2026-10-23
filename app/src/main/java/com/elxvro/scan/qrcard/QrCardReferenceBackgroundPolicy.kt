@@ -16,7 +16,7 @@ object QrCardReferenceBackgroundPolicy {
         QrCardBackgroundMode.FULL_BACKGROUND -> QrCardReferenceBackground(
             useUserPhoto = true,
             useFixedDarkGold = false,
-            photoOverlayAlpha = 0.34f
+            photoOverlayAlpha = 0.12f
         )
     }
 }

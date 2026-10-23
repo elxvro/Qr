@@ -136,15 +136,16 @@ object QrCardReferenceRenderer {
 
         if (background.useUserPhoto && heroBitmap != null) {
             drawBitmapCenterCrop(canvas, paint, heroBitmap, RectF(0f, 0f, width, height))
+            val overlay = background.photoOverlayAlpha.coerceIn(0f, 0.35f)
             paint.shader = LinearGradient(
                 0f,
                 0f,
                 0f,
                 height,
                 intArrayOf(
-                    withAlpha(theme.backgroundArgb, 0.58f),
-                    withAlpha(theme.backgroundArgb, 0.18f),
-                    withAlpha(theme.backgroundArgb, 0.64f)
+                    withAlpha(theme.backgroundArgb, overlay * 0.55f),
+                    withAlpha(theme.backgroundArgb, overlay * 0.10f),
+                    withAlpha(theme.backgroundArgb, overlay * 0.65f)
                 ),
                 floatArrayOf(0f, 0.48f, 1f),
                 Shader.TileMode.CLAMP
@@ -154,21 +155,10 @@ object QrCardReferenceRenderer {
             return
         }
 
-        paint.shader = LinearGradient(
-            0f,
-            0f,
-            width,
-            height,
-            blend(theme.backgroundArgb, 0xFF000000.toInt(), 0.10f),
-            blend(theme.backgroundArgb, 0xFF18212B.toInt(), 0.18f),
-            Shader.TileMode.CLAMP
-        )
-        canvas.drawRect(0f, 0f, width, height, paint)
         paint.shader = null
-
-        paint.color = withAlpha(theme.accentArgb, 0.07f)
-        canvas.drawCircle(width * 0.90f, height * 0.08f, short * 0.18f, paint)
-        canvas.drawCircle(width * 0.10f, height * 0.92f, short * 0.22f, paint)
+        paint.style = Paint.Style.FILL
+        paint.color = theme.backgroundArgb
+        canvas.drawRect(0f, 0f, width, height, paint)
     }
 
     private fun drawPremiumPattern(
