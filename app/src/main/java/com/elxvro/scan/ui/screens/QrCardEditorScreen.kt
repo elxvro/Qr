@@ -640,6 +640,8 @@ fun QrCardEditorScreen(
                         }
                     }
                 }
+            }
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
