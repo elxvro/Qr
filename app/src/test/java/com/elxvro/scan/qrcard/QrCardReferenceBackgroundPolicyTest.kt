@@ -15,10 +15,10 @@ class QrCardReferenceBackgroundPolicyTest {
     }
 
     @Test
-    fun changingModeUsesUserPhotoAsFullBackground() {
+    fun changingModeUsesUserPhotoWithoutDarkOverlay() {
         val policy = QrCardReferenceBackgroundPolicy.resolve(QrCardBackgroundMode.FULL_BACKGROUND)
         assertTrue(policy.useUserPhoto)
         assertFalse(policy.useFixedDarkGold)
-        assertTrue(policy.photoOverlayAlpha > 0f)
+        assertEquals(0f, policy.photoOverlayAlpha, 0.0001f)
     }
 }
