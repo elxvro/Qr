@@ -1,0 +1,13 @@
+ELXVRO Scan v4.2.0 (54)
+
+- PRO sabit arka plan galerisine 50 birbirinden farklı, yapay zeka ile üretilmiş gerçek fotoğraf tabanlı WebP görsel eklendi.
+- Görseller uygulamaya gömülüdür ve çevrimdışı çalışır; arka plan görselleri Canvas ile üretilmez.
+- PRO sabit kartlarda QR, marka, başlık, açıklama ve TARA alanları doğrudan önizleme üzerinde dokun-seç ve sürükle ile konumlandırılabilir.
+- Seçili öğenin boyutu ayarlanabilir.
+- Sans, Serif, Mono ve Script yazı aileleri eklendi.
+- Normal, Kalın ve İtalik yazı vurguları eklendi.
+- Sol, Orta ve Sağ metin hizası eklendi.
+- PRO serbest modda marka, başlık, açıklama, TARA, vurgu ve QR renkleri düzenlenebilir.
+- Yerleşimi sıfırlama seçeneği eklendi.
+- FREE sabit kartların güvenli otomatik yerleşimi değiştirilmedi.
+- QR boyutu güvenli alt/üst sınırlar içinde tutulur ve kart dışına taşması engellenir.
