@@ -4,6 +4,8 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.LinearGradient
+import android.graphics.Shader
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Typeface
@@ -32,9 +34,15 @@ enum class QrV2Font(val label: String, val family: String) {
 enum class QrV2Element(val label: String) {
     BRAND("Marka"),
     TITLE("Başlık"),
-    BODY("Açıklama"),
-    QR("QR"),
+    BODY("Alt Yazı"),
+    QR("QR Kod"),
     CTA("Buton")
+}
+
+enum class QrV2Align(val label: String) {
+    LEFT("Sola"),
+    CENTER("Ortala"),
+    RIGHT("Sağa")
 }
 
 data class QrV2State(
@@ -46,6 +54,13 @@ data class QrV2State(
     val font: QrV2Font = QrV2Font.SANS,
     val textColor: Int = Color.WHITE,
     val accentColor: Int = 0xFF168CFF.toInt(),
+    val textAlign: QrV2Align = QrV2Align.CENTER,
+    val bold: Boolean = true,
+    val italic: Boolean = false,
+    val underline: Boolean = false,
+    val qrColor: Int = Color.BLACK,
+    val qrBorderColor: Int = Color.WHITE,
+    val qrBorderScale: Float = 1f,
     val brandX: Float = 0.24f,
     val brandY: Float = 0.18f,
     val titleX: Float = 0.25f,
@@ -84,8 +99,20 @@ object QrV2Renderer {
         val w = safeWidth.toFloat()
         val h = height.toFloat()
 
-        canvas.drawColor(FREE_BG)
+        paint.shader = LinearGradient(
+            0f,
+            0f,
+            w,
+            h,
+            intArrayOf(0xFF03101D.toInt(), 0xFF071F3D.toInt(), 0xFF020A14.toInt()),
+            floatArrayOf(0f, 0.52f, 1f),
+            Shader.TileMode.CLAMP
+        )
+        canvas.drawRect(0f, 0f, w, h, paint)
+        paint.shader = null
 
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = w * 0.012f
         paint.color = FREE_ACCENT
         canvas.drawRoundRect(
             RectF(w * 0.075f, h * 0.075f, w * 0.925f, h * 0.925f),
@@ -94,13 +121,20 @@ object QrV2Renderer {
             paint
         )
 
-        paint.color = FREE_BG
+        paint.strokeWidth = w * 0.004f
+        paint.color = 0xFF55C8FF.toInt()
         canvas.drawRoundRect(
-            RectF(w * 0.088f, h * 0.088f, w * 0.912f, h * 0.912f),
-            w * 0.038f,
-            w * 0.038f,
+            RectF(w * 0.092f, h * 0.092f, w * 0.908f, h * 0.908f),
+            w * 0.036f,
+            w * 0.036f,
             paint
         )
+        paint.style = Paint.Style.FILL
+
+        paint.color = 0x221598FF
+        canvas.drawCircle(w * 0.5f, h * 0.54f, w * 0.37f, paint)
+        paint.color = 0x331598FF
+        canvas.drawCircle(w * 0.5f, h * 0.54f, w * 0.26f, paint)
 
         paint.typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
         paint.textAlign = Paint.Align.CENTER
@@ -164,8 +198,8 @@ object QrV2Renderer {
         drawText(canvas, paint, state.title, layout.title, state, state.titleScale, true)
         drawText(canvas, paint, state.body, layout.body, state, state.bodyScale, false)
 
-        paint.color = Color.WHITE
-        val qrPad = short * 0.018f
+        paint.color = state.qrBorderColor
+        val qrPad = short * 0.018f * state.qrBorderScale.coerceIn(0.4f, 2.2f)
         canvas.drawRoundRect(expand(layout.qr, qrPad), short * 0.022f, short * 0.022f, paint)
         canvas.drawBitmap(qr, null, layout.qr, paint)
 
@@ -239,14 +273,32 @@ object QrV2Renderer {
         bold: Boolean
     ) {
         if (text.isBlank()) return
-        paint.typeface = Typeface.create(state.font.family, if (bold) Typeface.BOLD else Typeface.NORMAL)
+        val style = when {
+            state.bold && state.italic -> Typeface.BOLD_ITALIC
+            state.bold || bold -> Typeface.BOLD
+            state.italic -> Typeface.ITALIC
+            else -> Typeface.NORMAL
+        }
+        paint.typeface = Typeface.create(state.font.family, style)
         paint.color = state.textColor
-        paint.textAlign = Paint.Align.LEFT
+        paint.isUnderlineText = state.underline
+        paint.textAlign = when (state.textAlign) {
+            QrV2Align.LEFT -> Paint.Align.LEFT
+            QrV2Align.CENTER -> Paint.Align.CENTER
+            QrV2Align.RIGHT -> Paint.Align.RIGHT
+        }
         paint.textSize = max(rect.height() * 0.54f, 14f)
         paint.setShadowLayer(max(2f, rect.height() * 0.045f), 0f, max(1f, rect.height() * 0.025f), 0x88000000.toInt())
         val baseline = rect.centerY() - (paint.ascent() + paint.descent()) / 2f
-        canvas.drawText(ellipsize(text, paint, rect.width()), rect.left, baseline, paint)
+        val x = when (state.textAlign) {
+            QrV2Align.LEFT -> rect.left
+            QrV2Align.CENTER -> rect.centerX()
+            QrV2Align.RIGHT -> rect.right
+        }
+        canvas.drawText(ellipsize(text, paint, rect.width()), x, baseline, paint)
         paint.clearShadowLayer()
+        paint.isUnderlineText = false
+        paint.textAlign = Paint.Align.LEFT
     }
 
     private fun ellipsize(text: String, paint: Paint, maxWidth: Float): String {
