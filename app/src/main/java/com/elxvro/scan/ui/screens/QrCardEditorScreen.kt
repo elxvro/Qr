@@ -45,6 +45,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -363,7 +364,7 @@ fun QrCardEditorScreen(
 
                     QrV3Tab.LAYOUT -> {
                         Text(
-                            "Önizlemede öğeye dokun ve sürükle. Seçtiğin öğenin boyutunu aşağıdan ayarla.",
+                            "QR veya yazının üstüne basılı tutup sürükleyerek istediğin yere taşı. Sürükleme sırasında seçim kesilmez.",
                             color = EditorMuted,
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -498,22 +499,30 @@ private fun QrV3EditablePreview(
 
             if (layout != null) {
                 val rects = layout.asElementRectsV3()
+                val currentRects by rememberUpdatedState(rects)
+                val currentSelected by rememberUpdatedState(selected)
+                val currentOnSelect by rememberUpdatedState(onSelect)
+                val currentOnMove by rememberUpdatedState(onMove)
+
                 Canvas(
-                    modifier = Modifier.fillMaxSize().pointerInput(layout, selected) {
-                        var active = selected
+                    modifier = Modifier.fillMaxSize().pointerInput(Unit) {
+                        var active = currentSelected
                         detectDragGestures(
                             onDragStart = { start ->
-                                active = rects.asReversed().firstOrNull { (_, rect) ->
-                                    start.x >= rect.left && start.x <= rect.right &&
-                                        start.y >= rect.top && start.y <= rect.bottom
-                                }?.first ?: selected
-                                onSelect(active)
+                                val hitPadding = 24.dp.toPx()
+                                active = currentRects.asReversed().firstOrNull { (_, rect) ->
+                                    start.x >= rect.left - hitPadding &&
+                                        start.x <= rect.right + hitPadding &&
+                                        start.y >= rect.top - hitPadding &&
+                                        start.y <= rect.bottom + hitPadding
+                                }?.first ?: currentSelected
+                                currentOnSelect(active)
                             }
                         ) { change, amount ->
                             change.consume()
                             val dx = if (size.width == 0) 0f else amount.x / size.width.toFloat()
                             val dy = if (size.height == 0) 0f else amount.y / size.height.toFloat()
-                            onMove(active, dx, dy)
+                            currentOnMove(active, dx, dy)
                         }
                     }
                 ) {
