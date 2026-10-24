@@ -1,7 +1,7 @@
 package com.elxvro.scan.ui.screens
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
+import android.graphics.Canvas
 import android.graphics.Color as AndroidColor
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -54,6 +54,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.caverock.androidsvg.SVG
 import com.elxvro.scan.QrCodeUtil
 import com.elxvro.scan.QrImageActions
 import com.elxvro.scan.QrPayloadBuilder
@@ -97,7 +98,7 @@ fun CreateScreen(
     var generatedPayload by remember { mutableStateOf("") }
     var generatedCard by remember { mutableStateOf<Bitmap?>(null) }
     val freeCardBackground = remember {
-        context.assets.open("elxvro_free_card_bg.webp").use { BitmapFactory.decodeStream(it) }
+        loadFreeVectorCard(context)
     }
 
     fun toast(message: String) = Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
@@ -283,7 +284,7 @@ fun CreateScreen(
                     Text("i", color = FreeBlue, fontWeight = FontWeight.Bold)
                 }
                 Text(
-                    "Ücretsiz sürümde profesyonel ELXVRO kartı sabit kullanılır; QR kodun bu hazır görsele yerleştirilir.",
+                    "Ücretsiz sürümde premium ELXVRO SCAN kartı kullanılır. QR kodun yalnızca ayrılmış alana yerleştirilir.",
                     color = FreeMuted,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(start = 10.dp)
@@ -552,4 +553,13 @@ private fun secondaryLabelV4(type: String): String = when (type) {
     "SMS" -> "Mesaj"
     "Takvim" -> "Başlangıç"
     else -> "Ek bilgi"
+}
+
+
+private fun loadFreeVectorCard(context: android.content.Context): Bitmap {
+    val bitmap = Bitmap.createBitmap(1080, 1200, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    val svg = SVG.getFromAsset(context.assets, "elxvro_free_card_v491.svg")
+    svg.renderToCanvas(canvas)
+    return bitmap
 }
