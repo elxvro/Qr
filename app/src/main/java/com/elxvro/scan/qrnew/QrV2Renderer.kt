@@ -20,13 +20,16 @@ enum class QrV2Aspect(val ratio: Float, val label: String) {
 
 enum class QrV2Font(val label: String, val family: String) {
     SANS("Modern", "sans-serif"),
-    SERIF("Serif", "serif"),
+    MEDIUM("Medium", "sans-serif-medium"),
+    DISPLAY("Black", "sans-serif-black"),
+    LIGHT("İnce", "sans-serif-light"),
+    THIN("Çok İnce", "sans-serif-thin"),
     ROUNDED("Yuvarlak", "sans-serif-rounded"),
     CONDENSED("Dar", "sans-serif-condensed"),
+    CONDENSED_LIGHT("Dar İnce", "sans-serif-condensed-light"),
+    SERIF("Klasik", "serif"),
     MONO("Mono", "monospace"),
-    SCRIPT("El yazısı", "cursive"),
-    DISPLAY("Kalın", "sans-serif-black"),
-    LIGHT("İnce", "sans-serif-light")
+    SCRIPT("El Yazısı", "cursive")
 }
 
 enum class QrV2Element(val label: String) {
@@ -155,9 +158,9 @@ object QrV2Renderer {
         canvas.drawBitmap(background, null, RectF(0f, 0f, w, h), paint)
 
         // Only the generated QR is placed inside the card's reserved white frame.
-        val qrSide = w * 0.42f
+        val qrSide = w * 0.435f
         val qrCenterX = w * 0.50f
-        val qrCenterY = h * 0.412f
+        val qrCenterY = h * 0.538f
         val qrRect = RectF(
             qrCenterX - qrSide / 2f,
             qrCenterY - qrSide / 2f,
