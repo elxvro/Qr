@@ -37,6 +37,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elxvro.scan.AppPrefs
 import com.elxvro.scan.ScanStore
@@ -65,6 +68,7 @@ enum class AppTab(val label: String, val icon: ImageVector) {
 @Composable
 fun ElxvroScanApp() {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     val store = remember {
         ScanStore(context.getSharedPreferences("elxvro_scan", Context.MODE_PRIVATE))
     }
@@ -90,6 +94,16 @@ fun ElxvroScanApp() {
     DisposableEffect(billing) {
         billing.start()
         onDispose { billing.close() }
+    }
+
+    DisposableEffect(lifecycleOwner, billing) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                billing.refreshPurchases()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     LaunchedEffect(adEligible) {
