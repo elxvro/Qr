@@ -1,0 +1,38 @@
+name: Export Android Signing Tools
+
+on:
+  push:
+    branches: [ tooling-apksigner-export ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Locate Android SDK signing tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          APKSIGNER_JAR="$(find "$ANDROID_HOME/build-tools" -path '*/lib/apksigner.jar' -type f | sort -V | tail -n 1)"
+          ZIPALIGN_BIN="$(find "$ANDROID_HOME/build-tools" -path '*/zipalign' -type f | sort -V | tail -n 1)"
+          test -f "$APKSIGNER_JAR"
+          test -x "$ZIPALIGN_BIN"
+          cp "$APKSIGNER_JAR" ./apksigner.jar
+          cp "$ZIPALIGN_BIN" ./zipalign
+          chmod +x ./zipalign
+          java -jar ./apksigner.jar version | tee tool-info.txt
+          ./zipalign -h >> tool-info.txt 2>&1 || true
+      - name: Upload tools
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-signing-tools
+          path: |
+            apksigner.jar
+            zipalign
+            tool-info.txt
+          if-no-files-found: error
+          retention-days: 1
