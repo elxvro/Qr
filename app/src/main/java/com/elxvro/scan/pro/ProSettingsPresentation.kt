@@ -10,19 +10,7 @@ data class ProSettingsState(
 )
 
 object ProSettingsPresentation {
-    fun from(
-        entitlement: ProEntitlement,
-        testMode: Boolean = false
-    ): ProSettingsState {
-        if (testMode) {
-            return ProSettingsState(
-                statusLabel = "PRO TEST aktif",
-                showUpgrade = false,
-                showRestore = false,
-                showRetry = false
-            )
-        }
-
+    fun from(entitlement: ProEntitlement): ProSettingsState {
         return when (entitlement) {
             ProEntitlement.Pro -> ProSettingsState(
                 statusLabel = "Ömür Boyu PRO aktif",

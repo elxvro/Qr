@@ -3,7 +3,6 @@ package com.elxvro.scan.ui
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
-import android.content.pm.ApplicationInfo
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -38,6 +37,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elxvro.scan.AppPrefs
 import com.elxvro.scan.ScanStore
@@ -46,8 +48,6 @@ import com.elxvro.scan.ads.AdsConsentManager
 import com.elxvro.scan.ads.InterstitialAdController
 import com.elxvro.scan.billing.BillingRepository
 import com.elxvro.scan.billing.ProEntitlement
-import com.elxvro.scan.pro.ProTestMode
-import com.elxvro.scan.pro.ReviewerAccessManager
 import com.elxvro.scan.ui.screens.BarcodeCreateScreen
 import com.elxvro.scan.ui.screens.BatchScanScreen
 import com.elxvro.scan.ui.screens.CreateScreen
@@ -68,6 +68,7 @@ enum class AppTab(val label: String, val icon: ImageVector) {
 @Composable
 fun ElxvroScanApp() {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     val store = remember {
         ScanStore(context.getSharedPreferences("elxvro_scan", Context.MODE_PRIVATE))
     }
@@ -79,20 +80,8 @@ fun ElxvroScanApp() {
     val canRequestAds by adConsent.canRequestAds.collectAsStateWithLifecycle()
     val privacyOptionsRequired by adConsent.privacyOptionsRequired.collectAsStateWithLifecycle()
     val interstitialAds = remember(context) { InterstitialAdController(context.applicationContext) }
-    val reviewerAccess = remember(context) { ReviewerAccessManager(context.applicationContext) }
-    val reviewerAccessEnabled by reviewerAccess.enabled.collectAsStateWithLifecycle()
-    val proTestMode = remember(context) {
-        context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
-    }
-    val effectiveEntitlement = when {
-        proTestMode || reviewerAccessEnabled -> ProEntitlement.Pro
-        else -> entitlement
-    }
-    val adEligible = when {
-        proTestMode -> true
-        reviewerAccessEnabled -> false
-        else -> entitlement is ProEntitlement.Free || entitlement is ProEntitlement.Error
-    }
+    val effectiveEntitlement = entitlement
+    val adEligible = entitlement is ProEntitlement.Free || entitlement is ProEntitlement.Error
     val adsEnabled = adEligible && canRequestAds
 
     var tab by remember { mutableStateOf(AppTab.SCAN) }
@@ -105,6 +94,16 @@ fun ElxvroScanApp() {
     DisposableEffect(billing) {
         billing.start()
         onDispose { billing.close() }
+    }
+
+    DisposableEffect(lifecycleOwner, billing) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                billing.refreshPurchases()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     LaunchedEffect(adEligible) {
@@ -214,7 +213,6 @@ fun ElxvroScanApp() {
                         store = store,
                         prefs = prefs,
                         entitlement = effectiveEntitlement,
-                        proTestMode = proTestMode,
                         onUpgradePro = { showPaywall = true },
                         onRestorePurchases = billing::restorePurchases,
                         onRetryBilling = billing::refreshPurchases,
@@ -222,8 +220,6 @@ fun ElxvroScanApp() {
                         onAdPrivacyOptions = {
                             context.findActivity()?.let(adConsent::showPrivacyOptionsForm)
                         },
-                        reviewerAccessEnabled = reviewerAccessEnabled,
-                        onVerifyReviewerCode = reviewerAccess::verifyAndEnable,
                         onBack = { tab = AppTab.SCAN }
                     )
                 }

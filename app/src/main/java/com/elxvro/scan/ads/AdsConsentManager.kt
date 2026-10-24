@@ -42,6 +42,7 @@ class AdsConsentManager private constructor(context: Context) {
                 }
             },
             {
+                gatheringStarted.set(false)
                 publishState()
                 initializeAdsIfAllowed()
             }

@@ -33,16 +33,27 @@ android {
         applicationId = "com.elxvro.scan"
         minSdk = 24
         targetSdk = 37
-        versionCode = 64
-        versionName = "4.9.1"
+        versionCode = 65
+        versionName = "5.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
     }
 
     buildTypes {
+        debug {
+            manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
+            buildConfigField("String", "ADMOB_BANNER_ID", "\"ca-app-pub-3940256099942544/9214589741\"")
+            buildConfigField("String", "ADMOB_INTERSTITIAL_ID", "\"ca-app-pub-3940256099942544/1033173712\"")
+            buildConfigField("boolean", "PRODUCTION_MODE", "false")
+        }
+
         release {
+            isDebuggable = false
             isMinifyEnabled = false
             manifestPlaceholders["admobAppId"] = "ca-app-pub-1306515175084399~4280405132"
+            buildConfigField("String", "ADMOB_BANNER_ID", "\"ca-app-pub-1306515175084399/6105367552\"")
+            buildConfigField("String", "ADMOB_INTERSTITIAL_ID", "\"ca-app-pub-1306515175084399/8914618865\"")
+            buildConfigField("boolean", "PRODUCTION_MODE", "true")
             if (hasReleaseSigning) {
                 signingConfig = signingConfigs.getByName("release")
             }

@@ -41,19 +41,43 @@ jobs:
           ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/elxvro-upload.jks
         run: gradle testDebugUnitTest lintRelease assembleDebug assembleRelease bundleRelease --stacktrace --console=plain --build-cache
 
+      - name: Verify production configuration
+        run: |
+          set -euo pipefail
+          grep -q 'targetSdk = 37' app/build.gradle.kts
+          grep -q 'versionName = "5.0.0"' app/build.gradle.kts
+          ! grep -R --line-number -E 'ReviewerAccessManager|ProTestMode|PRO TEST aktif' app/src/main/java
+          APK="$(find app/build/outputs/apk/release -name '*.apk' | head -n 1)"
+          test -n "$APK"
+          unzip -p "$APK" 'classes*.dex' | strings > /tmp/release-dex-strings.txt
+          ! grep -q 'ca-app-pub-3940256099942544' /tmp/release-dex-strings.txt
+          grep -q 'ca-app-pub-1306515175084399/6105367552' /tmp/release-dex-strings.txt
+          grep -q 'ca-app-pub-1306515175084399/8914618865' /tmp/release-dex-strings.txt
+          grep -q 'com.android.vending.BILLING' app/src/main/AndroidManifest.xml
+          grep -q 'com.google.android.gms.permission.AD_ID' app/src/main/AndroidManifest.xml
+
+      - name: Record release signing status
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "SIGNED_WITH_UPLOAD_KEY=true" > RELEASE-SIGNING-STATUS.txt
+          else
+            echo "SIGNED_WITH_UPLOAD_KEY=false" > RELEASE-SIGNING-STATUS.txt
+          fi
+
       - name: Package source ZIP
-        run: git archive --format=zip --output=ELXVRO-Scan-v4.9.1-source.zip HEAD
+        run: git archive --format=zip --output=ELXVRO-Scan-v5.0.0-source.zip HEAD
 
       - name: Upload release package
         uses: actions/upload-artifact@v4
         with:
-          name: ELXVRO-Scan-v4.9.1-release-package
+          name: ELXVRO-Scan-v5.0.0-release-package
           path: |
             app/build/outputs/apk/debug/app-debug.apk
             app/build/outputs/apk/release/*.apk
             app/build/outputs/bundle/release/app-release.aab
             app/build/reports/lint-results-release.html
-            ELXVRO-Scan-v4.9.1-source.zip
+            ELXVRO-Scan-v5.0.0-source.zip
             .github/workflows/android.yml
+            RELEASE-SIGNING-STATUS.txt
           if-no-files-found: error
           retention-days: 14
