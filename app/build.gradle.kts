@@ -48,6 +48,7 @@ android {
         }
 
         release {
+            isDebuggable = false
             isMinifyEnabled = false
             manifestPlaceholders["admobAppId"] = "ca-app-pub-1306515175084399~4280405132"
             buildConfigField("String", "ADMOB_BANNER_ID", "\"ca-app-pub-1306515175084399/6105367552\"")
