@@ -272,6 +272,7 @@ class ScannerController(
             object : GestureDetector.SimpleOnGestureListener() {
                 override fun onDown(e: MotionEvent): Boolean = true
                 override fun onSingleTapUp(e: MotionEvent): Boolean {
+                    previewView.performClick()
                     focusAt(previewView, e.x, e.y)
                     return true
                 }
