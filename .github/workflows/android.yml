@@ -45,7 +45,7 @@ jobs:
         run: |
           set -euo pipefail
           grep -q 'targetSdk = 37' app/build.gradle.kts
-          grep -q 'versionName = "5.0.0"' app/build.gradle.kts
+          grep -q 'versionName = "5.0.1"' app/build.gradle.kts
           ! grep -R --line-number -E 'ReviewerAccessManager|ProTestMode|PRO TEST aktif' app/src/main/java
           APK="$(find app/build/outputs/apk/release -name '*.apk' | head -n 1)"
           test -n "$APK"
