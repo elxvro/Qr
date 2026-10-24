@@ -103,7 +103,7 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:1.6.2")
     implementation("androidx.camera:camera-view:1.6.2")
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
-    implementation("com.google.zxing:core:3.5.3")
+    implementation("com.google.zxing:core:3.5.4")
     implementation("com.caverock:androidsvg-aar:1.4")
     implementation("com.android.billingclient:billing-ktx:9.1.0")
     implementation("com.google.android.gms:play-services-ads:25.5.0")
