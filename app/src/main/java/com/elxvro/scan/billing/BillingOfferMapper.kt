@@ -3,6 +3,7 @@ package com.elxvro.scan.billing
 object BillingOfferMapper {
     fun selectOneTimeOffer(rawOffers: List<RawOneTimeOffer>): OneTimePurchaseOffer? {
         return rawOffers
+            .filter { it.purchaseOptionId == BillingProducts.PURCHASE_OPTION_ID }
             .minWithOrNull(
                 compareBy<RawOneTimeOffer> { it.priceAmountMicros }
                     .thenBy { it.offerToken.orEmpty() }
