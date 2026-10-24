@@ -10,14 +10,24 @@ class BillingOfferMapperTest {
     fun selectsLowestEligibleOneTimeOffer() {
         val selected = BillingOfferMapper.selectOneTimeOffer(
             listOf(
-                RawOneTimeOffer("standard-token", "₺199,99", 199_990_000L, "TRY"),
-                RawOneTimeOffer("discount-token", "₺149,99", 149_990_000L, "TRY")
+                RawOneTimeOffer("lifetime", "standard-token", "₺199,99", 199_990_000L, "TRY"),
+                RawOneTimeOffer("other-option", "discount-token", "₺149,99", 149_990_000L, "TRY")
             )
         )
 
-        assertEquals("discount-token", selected?.offerToken)
-        assertEquals("₺149,99", selected?.formattedPrice)
+        assertEquals("standard-token", selected?.offerToken)
+        assertEquals("₺199,99", selected?.formattedPrice)
         assertEquals("TRY", selected?.priceCurrencyCode)
+    }
+
+    @Test
+    fun wrongPurchaseOptionReturnsNull() {
+        val selected = BillingOfferMapper.selectOneTimeOffer(
+            listOf(
+                RawOneTimeOffer("other-option", "other-token", "₺99,99", 99_990_000L, "TRY")
+            )
+        )
+        assertNull(selected)
     }
 
     @Test
