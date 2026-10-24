@@ -4,8 +4,6 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.LinearGradient
-import android.graphics.Shader
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Typeface
@@ -143,88 +141,30 @@ fun QrV2State.withSafeAspectLayout(newAspect: QrV2Aspect): QrV2State {
 }
 
 object QrV2Renderer {
-    private const val FREE_BG = 0xFF07182B.toInt()
-    private const val FREE_ACCENT = 0xFF168CFF.toInt()
-
-    fun renderFree(qr: Bitmap, width: Int = 1080): Bitmap {
+    fun renderFree(background: Bitmap, qr: Bitmap, width: Int = 1080): Bitmap {
         val safeWidth = width.coerceIn(720, 2160)
-        val height = safeWidth
+        val backgroundRatio = background.width.toFloat() / background.height.coerceAtLeast(1)
+        val height = (safeWidth / backgroundRatio).toInt().coerceAtLeast(1)
         val out = Bitmap.createBitmap(safeWidth, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(out)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
         val w = safeWidth.toFloat()
         val h = height.toFloat()
 
-        paint.shader = LinearGradient(
-            0f,
-            0f,
-            w,
-            h,
-            intArrayOf(0xFF03101D.toInt(), 0xFF071F3D.toInt(), 0xFF020A14.toInt()),
-            floatArrayOf(0f, 0.52f, 1f),
-            Shader.TileMode.CLAMP
-        )
-        canvas.drawRect(0f, 0f, w, h, paint)
-        paint.shader = null
+        // The professional ELXVRO card is a bundled raster asset.
+        canvas.drawBitmap(background, null, RectF(0f, 0f, w, h), paint)
 
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = w * 0.012f
-        paint.color = FREE_ACCENT
-        canvas.drawRoundRect(
-            RectF(w * 0.075f, h * 0.075f, w * 0.925f, h * 0.925f),
-            w * 0.045f,
-            w * 0.045f,
-            paint
-        )
-
-        paint.strokeWidth = w * 0.004f
-        paint.color = 0xFF55C8FF.toInt()
-        canvas.drawRoundRect(
-            RectF(w * 0.092f, h * 0.092f, w * 0.908f, h * 0.908f),
-            w * 0.036f,
-            w * 0.036f,
-            paint
-        )
-        paint.style = Paint.Style.FILL
-
-        paint.color = 0x221598FF
-        canvas.drawCircle(w * 0.5f, h * 0.54f, w * 0.37f, paint)
-        paint.color = 0x331598FF
-        canvas.drawCircle(w * 0.5f, h * 0.54f, w * 0.26f, paint)
-
-        paint.typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
-        paint.textAlign = Paint.Align.CENTER
-        paint.color = Color.WHITE
-        paint.textSize = w * 0.085f
-        canvas.drawText("ELXVRO", w * 0.5f, h * 0.19f, paint)
-
-        paint.typeface = Typeface.create("sans-serif", Typeface.NORMAL)
-        paint.textSize = w * 0.038f
-        paint.color = 0xFFD9E8F7.toInt()
-        canvas.drawText("www.elxvro.com", w * 0.5f, h * 0.255f, paint)
-
-        val qrSide = w * 0.47f
+        // Only the generated QR is placed inside the card's reserved white frame.
+        val qrSide = w * 0.42f
+        val qrCenterX = w * 0.50f
+        val qrCenterY = h * 0.412f
         val qrRect = RectF(
-            w * 0.5f - qrSide / 2f,
-            h * 0.52f - qrSide / 2f,
-            w * 0.5f + qrSide / 2f,
-            h * 0.52f + qrSide / 2f
+            qrCenterX - qrSide / 2f,
+            qrCenterY - qrSide / 2f,
+            qrCenterX + qrSide / 2f,
+            qrCenterY + qrSide / 2f
         )
-        paint.color = Color.WHITE
-        canvas.drawRoundRect(expand(qrRect, w * 0.025f), w * 0.03f, w * 0.03f, paint)
         canvas.drawBitmap(qr, null, qrRect, paint)
-
-        paint.typeface = Typeface.create("sans-serif", Typeface.BOLD)
-        paint.color = Color.WHITE
-        paint.textSize = w * 0.045f
-        canvas.drawText("QR KODU TARA", w * 0.5f, h * 0.835f, paint)
-
-        paint.typeface = Typeface.create("sans-serif", Typeface.NORMAL)
-        paint.color = 0xFF9FC8ED.toInt()
-        paint.textSize = w * 0.026f
-        canvas.drawText("ELXVRO Scan ile oluşturuldu", w * 0.5f, h * 0.885f, paint)
-
-        paint.textAlign = Paint.Align.LEFT
         return out
     }
 
