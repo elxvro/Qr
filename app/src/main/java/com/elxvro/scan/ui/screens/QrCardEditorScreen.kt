@@ -85,6 +85,23 @@ private val EditorBlue = Color(0xFF1598FF)
 private val EditorPurple = Color(0xFF8A2EFF)
 private val EditorGreen = Color(0xFF1ED760)
 
+private data class ProColorCard(
+    val label: String,
+    val text: Int,
+    val accent: Int,
+    val qr: Int,
+    val border: Int
+)
+
+private val ProColorCards = listOf(
+    ProColorCard("Buz Mavisi", 0xFFFFFFFF.toInt(), 0xFF1598FF.toInt(), 0xFF08121F.toInt(), 0xFFFFFFFF.toInt()),
+    ProColorCard("Gece", 0xFFFFFFFF.toInt(), 0xFF1F5EFF.toInt(), 0xFF050A12.toInt(), 0xFF5CB8FF.toInt()),
+    ProColorCard("Altın", 0xFFFFFFFF.toInt(), 0xFFFFB300.toInt(), 0xFF16110A.toInt(), 0xFFFFD166.toInt()),
+    ProColorCard("Mor", 0xFFFFFFFF.toInt(), 0xFF8A2EFF.toInt(), 0xFF150825.toInt(), 0xFFC59BFF.toInt()),
+    ProColorCard("Kırmızı", 0xFFFFFFFF.toInt(), 0xFFFF365E.toInt(), 0xFF18070C.toInt(), 0xFFFF8AA1.toInt()),
+    ProColorCard("Monokrom", 0xFF111111.toInt(), 0xFFEEEEEE.toInt(), 0xFF000000.toInt(), 0xFFFFFFFF.toInt())
+)
+
 private enum class QrV3Tab(val label: String) {
     BACKGROUND("Arka Plan"),
     TEXT("Yazılar"),
@@ -315,7 +332,7 @@ fun QrCardEditorScreen(
                             onChange = ::setSelectedText
                         )
 
-                        EditorSectionTitle("Yazı Tipi")
+                        EditorSectionTitle("Fontlar")
                         Row(
                             modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                             horizontalArrangement = Arrangement.spacedBy(7.dp)
@@ -325,11 +342,26 @@ fun QrCardEditorScreen(
                             }
                         }
 
-                        EditorSectionTitle("Stil")
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            StyleToggle("B", card.bold) { card = card.copy(bold = !card.bold) }
-                            StyleToggle("I", card.italic) { card = card.copy(italic = !card.italic) }
-                            StyleToggle("U", card.underline) { card = card.copy(underline = !card.underline) }
+                        EditorSectionTitle("Yazı Tipi")
+                        Row(
+                            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(7.dp)
+                        ) {
+                            EditorChip("Normal", !card.bold && !card.italic && !card.underline) {
+                                card = card.copy(bold = false, italic = false, underline = false)
+                            }
+                            EditorChip("Kalın", card.bold && !card.italic && !card.underline) {
+                                card = card.copy(bold = true, italic = false, underline = false)
+                            }
+                            EditorChip("İtalik", !card.bold && card.italic && !card.underline) {
+                                card = card.copy(bold = false, italic = true, underline = false)
+                            }
+                            EditorChip("Kalın İtalik", card.bold && card.italic && !card.underline) {
+                                card = card.copy(bold = true, italic = true, underline = false)
+                            }
+                            EditorChip("Altı Çizili", card.underline) {
+                                card = card.copy(underline = !card.underline)
+                            }
                         }
 
                         EditorSectionTitle("Hizalama")
@@ -341,7 +373,30 @@ fun QrCardEditorScreen(
                             }
                         }
 
-                        EditorSectionTitle("Yazı Rengi")
+                        EditorSectionTitle("Renk Kartları")
+                        Row(
+                            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(9.dp)
+                        ) {
+                            ProColorCards.forEach { preset ->
+                                ProColorCardItem(
+                                    preset = preset,
+                                    selected = card.textColor == preset.text &&
+                                        card.accentColor == preset.accent &&
+                                        card.qrColor == preset.qr &&
+                                        card.qrBorderColor == preset.border
+                                ) {
+                                    card = card.copy(
+                                        textColor = preset.text,
+                                        accentColor = preset.accent,
+                                        qrColor = preset.qr,
+                                        qrBorderColor = preset.border
+                                    )
+                                }
+                            }
+                        }
+
+                        EditorSectionTitle("Özel Yazı Rengi")
                         ColorSwatchesV3(
                             selected = card.textColor,
                             colors = listOf(
@@ -350,7 +405,9 @@ fun QrCardEditorScreen(
                                 0xFF1598FF.toInt(),
                                 0xFFFFC857.toInt(),
                                 0xFFFF4D67.toInt(),
-                                0xFF9B5CFF.toInt()
+                                0xFF9B5CFF.toInt(),
+                                0xFF31D6C4.toInt(),
+                                0xFFFF7A00.toInt()
                             )
                         ) { card = card.copy(textColor = it) }
 
@@ -670,6 +727,40 @@ private fun EditorSecondaryButton(text: String, onClick: () -> Unit) {
         style = MaterialTheme.typography.bodySmall,
         modifier = Modifier.padding(top = 8.dp).clickable(onClick = onClick)
     )
+}
+
+@Composable
+private fun ProColorCardItem(
+    preset: ProColorCard,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .background(
+                if (selected) EditorBlue.copy(alpha = 0.28f) else EditorPanelRaised,
+                RoundedCornerShape(12.dp)
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 11.dp, vertical = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            listOf(preset.text, preset.accent, preset.qr, preset.border).forEach { color ->
+                Box(
+                    modifier = Modifier
+                        .size(18.dp)
+                        .background(Color(color), CircleShape)
+                )
+            }
+        }
+        Text(
+            preset.label,
+            color = EditorText,
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.padding(top = 6.dp)
+        )
+    }
 }
 
 @Composable
