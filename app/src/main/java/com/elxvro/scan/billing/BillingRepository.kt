@@ -32,12 +32,16 @@ class BillingRepository(context: Context) {
 
     fun launchPurchase(activity: Activity, offer: OneTimePurchaseOffer) {
         val result = manager.launchPurchase(activity, offer)
-        if (result == null || result.responseCode != BillingClient.BillingResponseCode.OK) {
-            _entitlement.value = EntitlementPolicy.resolve(
-                billingOk = false,
-                purchase = null,
-                cachedVerifiedPro = cache.hasFreshVerifiedPro()
-            )
+        when (result?.responseCode) {
+            BillingClient.BillingResponseCode.OK -> Unit
+            BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> manager.refreshPurchases()
+            else -> {
+                _entitlement.value = EntitlementPolicy.resolve(
+                    billingOk = false,
+                    purchase = null,
+                    cachedVerifiedPro = cache.hasFreshVerifiedPro()
+                )
+            }
         }
     }
 
