@@ -33,8 +33,8 @@ android {
         applicationId = "com.elxvro.scan"
         minSdk = 24
         targetSdk = 37
-        versionCode = 65
-        versionName = "5.0.0"
+        versionCode = 66
+        versionName = "5.0.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
     }

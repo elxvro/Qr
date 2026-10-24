@@ -151,6 +151,7 @@ class BillingManager(
                         .orEmpty()
                         .map { offer ->
                             RawOneTimeOffer(
+                                purchaseOptionId = offer.purchaseOptionId,
                                 offerToken = offer.offerToken,
                                 formattedPrice = offer.formattedPrice,
                                 priceAmountMicros = offer.priceAmountMicros,

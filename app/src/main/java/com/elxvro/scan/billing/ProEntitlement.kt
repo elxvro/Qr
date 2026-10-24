@@ -15,6 +15,7 @@ enum class PurchaseStatus {
 }
 
 data class RawOneTimeOffer(
+    val purchaseOptionId: String?,
     val offerToken: String?,
     val formattedPrice: String,
     val priceAmountMicros: Long,
