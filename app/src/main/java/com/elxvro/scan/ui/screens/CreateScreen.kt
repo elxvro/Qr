@@ -1,6 +1,7 @@
 package com.elxvro.scan.ui.screens
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color as AndroidColor
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -95,6 +96,9 @@ fun CreateScreen(
     var wifiSecurity by remember { mutableStateOf(WifiSecurity.WPA) }
     var generatedPayload by remember { mutableStateOf("") }
     var generatedCard by remember { mutableStateOf<Bitmap?>(null) }
+    val freeCardBackground = remember {
+        context.assets.open("elxvro_free_card_bg.webp").use { BitmapFactory.decodeStream(it) }
+    }
 
     fun toast(message: String) = Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
 
@@ -125,7 +129,7 @@ fun CreateScreen(
                 background = AndroidColor.WHITE,
                 highErrorCorrection = true
             )
-            QrV2Renderer.renderFree(qr, 1080)
+            QrV2Renderer.renderFree(freeCardBackground, qr, 1080)
         }.onSuccess {
             generatedPayload = payload
             generatedCard = it
@@ -144,7 +148,7 @@ fun CreateScreen(
                 background = AndroidColor.WHITE,
                 highErrorCorrection = true
             )
-            QrV2Renderer.renderFree(qr, 900)
+            QrV2Renderer.renderFree(freeCardBackground, qr, 900)
         }.getOrNull()
     }
 
@@ -279,7 +283,7 @@ fun CreateScreen(
                     Text("i", color = FreeBlue, fontWeight = FontWeight.Bold)
                 }
                 Text(
-                    "Ücretsiz sürümde kart tasarımı sabittir ve ELXVRO tanıtımı içerir.",
+                    "Ücretsiz sürümde profesyonel ELXVRO kartı sabit kullanılır; QR kodun bu hazır görsele yerleştirilir.",
                     color = FreeMuted,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(start = 10.dp)
